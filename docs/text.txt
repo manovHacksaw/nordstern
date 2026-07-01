@@ -1,0 +1,86 @@
+I want to build a product on the Stellar blockchain using the Stellar Anchor Platform.
+We are building Anchor Infrastructure as a Service for the Indian market: a managed Stellar Anchor Platform layer that lets businesses with fiat and crypto liquidity launch compliant-looking fiat-crypto rails without building the full technical, KYC, banking, and operations stack themselves.
+
+
+
+Project context:
+- I have included Stellar-related documentation in `@docs/`.
+- I have also written independent research in `@docs/independent_research/`.
+- I have locally installed the Stellar Anchor Platform in `@anchor-platform/`.
+
+Product idea:
+Crypto payments are heavily regulated in India. If Stellar wants to onboard more anchors in India, the process is difficult because:
+
+1. Becoming an anchor requires significant technical expertise.
+2. Anchors need infrastructure, backend services, wallet/payment flows, KYC/AML, compliance workflows, banking integrations, and operational support.
+3. Legal and regulatory navigation is complex.
+4. Integrating KYC providers, banking APIs, UPI deposits, payouts, and fiat settlement systems is expensive and repetitive for each anchor.
+
+The product I want to build is an “Anchor Infrastructure as a Service” platform.
+
+The core idea:
+Anyone who already has fiat liquidity and crypto liquidity should be able to become a Stellar anchor without building the entire technical and compliance infrastructure themselves. We run and manage the infrastructure for them.
+
+Possible value propositions:
+- Hosted Stellar Anchor Platform infrastructure.
+- Subdomain-based launch, so anchors do not need to buy or configure their own domain.
+- Shared KYC/AML infrastructure.
+- Reduced KYC cost because users can be verified once through our system instead of separately for every anchor.
+- Banking/payment integrations abstracted away.
+- UPI deposits and fiat payouts.
+- Optional managed funds/accounts model, depending on legal feasibility.
+- Integrations with services like Cashfree Payments and RazorpayX payouts.
+- Future support for either:
+  - embedded banking,
+  - bring-your-own-bank,
+  - or a licensed managed-account model.
+
+Important uncertainty:
+The legal/compliance model is not finalized. I want the technical architecture to acknowledge this uncertainty and keep the system flexible. Do not assume one legal model is final. Treat compliance, licensing, custody, funds flow, and banking partnerships as open design questions.
+
+MVP goal:
+For the MVP, I do not want to build the full multi-tenant platform where anyone can instantly become an anchor.
+
+Instead, I want to first build one working anchor service of our own using Stellar Anchor Platform. This first anchor should act as the template/foundation for future anchors that we onboard.
+
+The MVP should explore and implement as much as realistically possible, including:
+- Stellar Anchor Platform setup.
+- Basic anchor service flow.
+- KYC flow, even if mocked initially.
+- UPI deposit flow, even if mocked initially.
+- Fiat payout flow, possibly designed around Cashfree/RazorpayX, even if not fully integrated yet.
+- Architecture that can later evolve into multi-anchor infrastructure.
+
+Your task:
+Help me create a proper Claude/Codex-ready project setup for this repository.
+
+Please inspect:
+- `@docs/`
+- `@docs/independent_research/`
+- `@anchor-platform/`
+- the current repository structure
+
+Then create or update the project guidance files needed for an AI coding agent to work effectively on this project, especially:
+- `CLAUDE.md`
+- `AGENTS.md`
+- any useful memory/context documents under `docs/`
+
+The setup should include:
+1. A clear product summary.
+2. The MVP scope.
+3. Non-goals for the MVP.
+4. Key technical assumptions.
+5. Open legal/compliance questions.
+6. Architecture principles.
+7. Development workflow instructions.
+8. How to work with the local Stellar Anchor Platform installation.
+9. How to use the documentation in `docs/`.
+10. Suggested future roadmap.
+11. Clear instructions for future agents so they do not misunderstand the product as a generic crypto exchange or wallet.
+
+Important:
+- Do not give legal advice. Instead, document legal/compliance uncertainty and list questions that require expert review.
+- Do not overbuild the full SaaS platform yet.
+- Prioritize creating a strong foundation for one working anchor service.
+- Keep the documentation practical and useful for future implementation.
+- Prefer concrete architecture notes and implementation guidance over vague strategy.
