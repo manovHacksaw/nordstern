@@ -121,3 +121,39 @@ export const Contactless = (p: SVGProps<SVGSVGElement>) => (
     <path d="M8.5 8a6 6 0 0 1 0 8M12 5.5a10 10 0 0 1 0 13M5 10.5a3 3 0 0 1 0 3" />
   </Svg>
 );
+
+export const Code = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="m9 8-4 4 4 4M15 8l4 4-4 4" />
+  </Svg>
+);
+
+export const Book = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19a2 2 0 0 0 2 2h13" />
+  </Svg>
+);
+
+export const Box = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M12 2 4 6.5v11L12 22l8-4.5v-11ZM4 6.5 12 11l8-4.5M12 22V11" />
+  </Svg>
+);
+
+export const Activity = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M3 12h4l3 8 4-16 3 8h4" />
+  </Svg>
+);
+
+export const Rocket = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M5 15c-1.5 1-2 4-2 4s3-.5 4-2M9 13a10 10 0 0 1 8-9c1 4-1 7-4 9M9 13l2 2M15 5l4 4M9 13l-3 1 1-4" />
+  </Svg>
+);
+
+export const Layers = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="m12 2 9 5-9 5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5" />
+  </Svg>
+);

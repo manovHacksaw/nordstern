@@ -3,12 +3,139 @@
  * branding/wording iterations happen here.
  */
 
-export const NAV_LINKS = [
-  { label: "Platform", href: "#platform" },
-  { label: "Anchors", href: "#audiences" },
-  { label: "Developers", href: "#build" },
-  { label: "Resources", href: "#resources" },
+/**
+ * Navigation with config-driven mega menus. Each item's `menu` renders the same
+ * reusable <MegaMenu> panel: two link columns + a featured card column.
+ */
+export const NAV = [
+  {
+    label: "Platform",
+    href: "#platform",
+    menu: {
+      columns: [
+        {
+          label: "Products",
+          items: [
+            { icon: "bank", title: "Virtual accounts", desc: "Dedicated INR account numbers & IFSC.", href: "#platform" },
+            { icon: "bolt", title: "On/Off Ramp", desc: "Same-day settlement across Indian rails.", href: "#platform" },
+            { icon: "shield", title: "Compliance", desc: "FIU-IND reporting & monitoring built in.", href: "#platform" },
+          ],
+        },
+        {
+          label: "Capabilities",
+          items: [
+            { icon: "users", title: "KYC & onboarding", desc: "Liveness, face-match, deepfake checks.", href: "#platform" },
+            { icon: "chart", title: "Treasury", desc: "Reserves, pricing and settlement.", href: "#platform" },
+            { icon: "layers", title: "Unified ledger", desc: "Fiat + Stellar bookkeeping in one.", href: "#platform" },
+          ],
+        },
+      ],
+      featured: {
+        label: "Featured",
+        cards: [
+          { icon: "box", title: "Sandbox", href: "#" },
+          { icon: "activity", title: "Status", href: "#" },
+        ],
+      },
+    },
+  },
+  {
+    label: "Anchors",
+    href: "#audiences",
+    menu: {
+      columns: [
+        {
+          label: "Use cases",
+          items: [
+            { icon: "bank", title: "Fintechs & PSPs", desc: "Become the money hub for your users.", href: "#audiences" },
+            { icon: "bolt", title: "Wallets", desc: "Instant on/off-ramps and balances.", href: "#audiences" },
+            { icon: "users", title: "Exchanges", desc: "A compliant fiat gateway with cards.", href: "#audiences" },
+          ],
+        },
+        {
+          label: "Outcomes",
+          items: [
+            { icon: "rocket", title: "Faster launch", desc: "Go live in weeks, not quarters.", href: "#outcomes" },
+            { icon: "chart", title: "New revenue", desc: "Monetise every ramp and flow.", href: "#outcomes" },
+            { icon: "shield", title: "Stay compliant", desc: "Audit-ready from day one.", href: "#outcomes" },
+          ],
+        },
+      ],
+      featured: {
+        label: "Featured",
+        cards: [
+          { icon: "book", title: "Case studies", href: "#" },
+          { icon: "box", title: "Sandbox", href: "#" },
+        ],
+      },
+    },
+  },
+  {
+    label: "Developers",
+    href: "#build",
+    menu: {
+      columns: [
+        {
+          label: "Documentation",
+          items: [
+            { icon: "code", title: "API Reference", desc: "Explore our APIs to start building.", href: "#build" },
+            { icon: "layers", title: "SDKs", desc: "Client libraries for every stack.", href: "#build" },
+            { icon: "rocket", title: "Ready-to-Launch", desc: "Embed with a single line of code.", href: "#build" },
+          ],
+        },
+        {
+          label: "Popular guides",
+          items: [
+            { icon: "book", title: "SEP-24 & SEP-10", desc: "Interactive deposits and auth.", href: "#build" },
+            { icon: "book", title: "On/Off ramp", desc: "Understand ramp flows end to end.", href: "#build" },
+            { icon: "book", title: "Compliance", desc: "FIU-IND, sanctions and monitoring.", href: "#build" },
+          ],
+        },
+      ],
+      featured: {
+        label: "Featured",
+        cards: [
+          { icon: "box", title: "Sandbox", href: "#" },
+          { icon: "activity", title: "Status", href: "#" },
+        ],
+      },
+    },
+  },
+  {
+    label: "Resources",
+    href: "#resources",
+    menu: {
+      columns: [
+        {
+          label: "Learn",
+          items: [
+            { icon: "book", title: "Blog", desc: "Product news and deep dives.", href: "#resources" },
+            { icon: "book", title: "Guides", desc: "How-tos for anchor operators.", href: "#resources" },
+            { icon: "layers", title: "Changelog", desc: "What shipped, every week.", href: "#resources" },
+          ],
+        },
+        {
+          label: "Company",
+          items: [
+            { icon: "users", title: "About", desc: "Our mission and team.", href: "#" },
+            { icon: "rocket", title: "Careers", desc: "Build the future of money.", href: "#" },
+            { icon: "shield", title: "Security", desc: "How we keep funds safe.", href: "#" },
+          ],
+        },
+      ],
+      featured: {
+        label: "Featured",
+        cards: [
+          { icon: "book", title: "FAQ", href: "#" },
+          { icon: "activity", title: "Status", href: "#" },
+        ],
+      },
+    },
+  },
 ] as const;
+
+export type NavItem = (typeof NAV)[number];
+export type NavMenu = NavItem["menu"];
 
 export const HERO = {
   eyebrow: { label: "Read more: SEP-24 & compliance", href: "#" },
