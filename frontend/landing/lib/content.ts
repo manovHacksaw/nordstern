@@ -145,13 +145,17 @@ export const HERO = {
   secondary: { label: "See a demo", href: "#" },
 } as const;
 
-export const BACKERS = [
-  "Stellar",
-  "Helix Capital",
-  "Northwind",
-  "NGC",
-  "NovaSeed",
-] as const;
+/** Social-proof logos. `logo` renders an image; otherwise the name is set in type. */
+export const BACKERS: ReadonlyArray<{
+  name: string;
+  logo?: { src: string; width: number; height: number };
+}> = [
+  { name: "Stellar", logo: { src: "/stellar-logo.png", width: 1417, height: 409 } },
+  { name: "Helix Capital" },
+  { name: "Northwind" },
+  { name: "NGC" },
+  { name: "NovaSeed" },
+];
 
 export const OUTCOMES = {
   eyebrow: "Built for modern money movement",
