@@ -3,6 +3,9 @@ dist/
 .next/
 *.tsbuildinfo
 
+# Per-anchor generated configs (created at provision time)
+anchor-configs/
+
 # Environment files — never commit secrets
 .env
 .env.*

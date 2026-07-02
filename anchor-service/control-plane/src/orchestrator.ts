@@ -95,6 +95,19 @@ function labels(role: 'ap' | 'biz', slug: string, homeDomain: string): Record<st
   };
 }
 
+async function ensureImage(image: string): Promise<void> {
+  const imgs = await docker.listImages({ filters: { reference: [image] } });
+  if (imgs.length) return;
+  // Not present locally — pull it (works for the AP image; a locally-built image
+  // like nordstern/business-server:dev should already exist via dev.sh).
+  await new Promise<void>((resolve, reject) => {
+    docker.pull(image, (err: any, stream: NodeJS.ReadableStream) => {
+      if (err) return reject(new Error(`Image ${image} missing and pull failed: ${err.message}. Did you run scripts/dev.sh?`));
+      docker.modem.followProgress(stream, (e: any) => (e ? reject(e) : resolve()));
+    });
+  });
+}
+
 async function runContainer(opts: Docker.ContainerCreateOptions): Promise<string> {
   // Remove any stale container with the same name (idempotent re-provision).
   try {
@@ -109,6 +122,9 @@ async function runContainer(opts: Docker.ContainerCreateOptions): Promise<string
 export async function createAnchorStack(p: StackParams): Promise<{ apId: string; bizId: string }> {
   if (!CONFIG_HOST_ROOT) throw new Error('ANCHOR_CONFIG_HOST_ROOT not set — cannot bind AP config.');
   const hostConfigDir = path.join(CONFIG_HOST_ROOT, p.slug);
+
+  await ensureImage(AP_IMAGE);
+  await ensureImage(BIZ_IMAGE);
 
   const apEnv = [
     'STELLAR_ANCHOR_CONFIG=/config/anchor-platform.yaml',

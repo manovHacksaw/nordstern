@@ -1,9 +1,12 @@
+# NordStern anchor factory — BASE stack (DL-005/DL-006).
+# This file runs only the shared infra. The per-anchor Anchor Platform +
+# business-server containers are created DYNAMICALLY by the control-plane
+# orchestrator (dockerode) and joined to the `nordstern-net` network below.
+
 services:
 
   # ─── PostgreSQL ─────────────────────────────────────────────────────────────
-  # Stores all transaction state, customer records, and event history.
-  # The Anchor Platform runs Flyway migrations on startup automatically.
-
+  # Hosts controldb (control plane) + one anchordb_<slug> per provisioned anchor.
   db:
     image: postgres:15
     restart: unless-stopped
@@ -22,73 +25,29 @@ services:
       timeout: 5s
       retries: 10
 
-  # ─── Anchor Platform ────────────────────────────────────────────────────────
-  # Handles all SEP protocol work: SEP-1 discovery, SEP-10 auth, SEP-24 flows.
-  # Exposes two ports:
-  #   8080 — SEP server  (wallets and users talk here)
-  #   8085 — Platform API (your Business Server talks here)
-
-  anchor-platform:
-    image: stellar/anchor-platform:latest
+  # ─── Traefik (reverse proxy) ────────────────────────────────────────────────
+  # Routes <slug>.anchors.localhost → that anchor's AP (default) and the
+  # /sep24/interactive path → that anchor's business-server (higher priority).
+  # Discovers dynamic containers via Docker labels the orchestrator sets.
+  traefik:
+    image: traefik:v3.0
     restart: unless-stopped
-    # -s = SEP server (8080), -p = Platform API (8085), -o = Stellar Observer
-    command: ["-s", "-p", "-o"]
-    depends_on:
-      db:
-        condition: service_healthy
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.network=nordstern-net
+      - --entrypoints.web.address=:80
+      - --api.insecure=true
     ports:
-      - "8080:8080"
-      - "8085:8085"
-    env_file:
-      - .env.testnet
-    environment:
-      # Tell the platform where its config file lives inside the container
-      STELLAR_ANCHOR_CONFIG: /config/anchor-platform.yaml
-
-      # SEP-10 secrets
-      SECRET_SEP10_SIGNING_SEED: ${SIGNING_SECRET}
-      SECRET_SEP10_JWT_SECRET: ${SEP10_JWT_SECRET}
-
-      # Database credentials — platform reads these as secret.data.username / secret.data.password
-      SECRET_DATA_USERNAME: anchor
-      SECRET_DATA_PASSWORD: anchor
-
-      # SEP-24 JWT secrets — used to sign tokens before redirecting to Business Server
-      SECRET_SEP24_INTERACTIVE_URL_JWT_SECRET: ${SEP24_INTERACTIVE_JWT_SECRET}
-      SECRET_SEP24_MORE_INFO_URL_JWT_SECRET: ${SEP24_MORE_INFO_JWT_SECRET}
-      SECRET_SEP6_MORE_INFO_URL_JWT_SECRET: ${SEP6_MORE_INFO_JWT_SECRET}
+      - "80:80"
+      - "8090:8080"   # Traefik dashboard (dev only)
     volumes:
-      - ./config:/config:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
-  # ─── Business Server ────────────────────────────────────────────────────────
-  # YOUR code. Makes business decisions the Platform cannot:
-  #   - Generate deposit addresses (unique_address callback)
-  #   - Calculate fees (fee callback)
-  #   - Handle KYC (customer callbacks)
-  #   - Disburse fiat on withdrawal (coming in later stages)
-
-  business-server:
-    build: ./business-server
-    restart: unless-stopped
-    depends_on:
-      - anchor-platform
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env.testnet
-    environment:
-      PORT: 3000
-      PLATFORM_API_URL: http://anchor-platform:8085
-      PLATFORM_API_SECRET: ${PLATFORM_API_SECRET}
-
-  # ─── Frontend (Next.js) ─────────────────────────────────────────────────────
-  # Browser wallet UI. Talks to the business server via /biz/* rewrites (same
-  # host, no CORS). Freighter wallet is bundled by Next.js — no CDN fetches.
-
-  # ─── Control Plane ──────────────────────────────────────────────────────────
-  # SaaS control layer: tenant auth, keypair provisioning, business rules.
-  # Talks to its own PostgreSQL database (controldb).
-
+  # ─── Control Plane (the factory / orchestrator) ─────────────────────────────
+  # Provisions anchors: generates keys/asset/config and spins up per-anchor
+  # containers via the Docker Engine API. Needs the Docker socket + a shared
+  # host config dir (see ANCHOR_CONFIG_HOST_ROOT).
   control-plane:
     build: ./control-plane
     restart: unless-stopped
@@ -105,23 +64,36 @@ services:
       DB_USER: anchor
       DB_PASSWORD: anchor
       JWT_SECRET: ${CP_JWT_SECRET:-change-me-in-production}
-      ASSET_CODE: ANCH
+      MASTER_KEK: ${MASTER_KEK:?MASTER_KEK is required — run scripts/setup-base.mjs}
+      DOCKER_NETWORK: nordstern-net
+      AP_IMAGE: stellar/anchor-platform:latest
+      BIZ_IMAGE: nordstern/business-server:dev
+      ANCHOR_CONFIG_DIR: /anchor-configs
+      ANCHOR_CONFIG_HOST_ROOT: ${ANCHOR_CONFIG_HOST_ROOT:?run scripts/setup-base.mjs}
+      ANCHOR_DOMAIN_SUFFIX: anchors.localhost
+      HORIZON_URL: https://horizon-testnet.stellar.org
+      NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+      SUREPASS_BASE_URL: ${SUREPASS_BASE_URL:-https://sandbox.surepass.io}
+      SUREPASS_TOKEN: ${SUREPASS_TOKEN:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${ANCHOR_CONFIG_HOST_ROOT}:/anchor-configs
 
   # ─── Frontend (Next.js) ─────────────────────────────────────────────────────
-  # Browser wallet UI + operator dashboard. Talks to the business server via
-  # /biz/* and the control plane via /cp/* rewrites (same host, no CORS).
-
+  # Operator management panel + wallet. Talks to the control plane via /cp/*.
   frontend:
     build: ./frontend
     restart: unless-stopped
     depends_on:
-      - business-server
       - control-plane
     ports:
       - "3001:3001"
     environment:
-      BIZ_URL: http://business-server:3000
       CP_URL: http://control-plane:3002
 
 volumes:
   pgdata:
+
+networks:
+  default:
+    name: nordstern-net
