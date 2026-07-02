@@ -56,6 +56,14 @@ export async function initDb() {
     ALTER TABLE tenants ADD COLUMN IF NOT EXISTS status_detail   TEXT;
     ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ap_container_id  VARCHAR(100);
     ALTER TABLE tenants ADD COLUMN IF NOT EXISTS biz_container_id VARCHAR(100);
+    
+    -- Business Profile extensions
+    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS legal_entity_name       VARCHAR(255);
+    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS company_type            VARCHAR(100);
+    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS use_case                VARCHAR(100);
+    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS country                 VARCHAR(50);
+    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS fiu_registration_status VARCHAR(50);
+    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS support_email           VARCHAR(255);
   `);
 
   // ── Encrypted secret vault (replaces plaintext tenant_keypairs.secret_key) ──

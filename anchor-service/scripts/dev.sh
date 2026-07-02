@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start the anchor factory: base stack (db + traefik + control-plane + frontend).
+# Start the anchor factory: base stack (db + traefik + control-plane + client).
 # Per-anchor Anchor Platform + business-server containers are created dynamically
 # by the control-plane once an operator provisions an anchor.
 

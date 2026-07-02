@@ -37,7 +37,16 @@ async function setStatus(id: string, status: string, detail = ''): Promise<void>
 
 // ── POST /anchors — create an anchor record (owner-scoped) ─────────────────────
 anchorsRouter.post('/', async (req: AuthedRequest, res: Response) => {
-  const { name, adapters } = req.body as { name: string; adapters?: Record<string, string> };
+  const { 
+    name, 
+    adapters,
+    legal_entity_name,
+    company_type,
+    use_case,
+    country,
+    fiu_registration_status,
+    support_email
+  } = req.body as any;
   if (!name) { res.status(400).json({ error: 'name is required' }); return; }
 
   let slug = slugify(name);
@@ -48,9 +57,16 @@ anchorsRouter.post('/', async (req: AuthedRequest, res: Response) => {
 
   try {
     const { rows: [anchor] } = await pool.query(
-      `INSERT INTO tenants (name, slug, owner_user_id, home_domain, stack_status, status)
-       VALUES ($1, $2, $3, $4, 'pending', 'pending') RETURNING *`,
-      [name, slug, req.userId, `${slug}.${DOMAIN_SUFFIX}`],
+      `INSERT INTO tenants (
+         name, slug, owner_user_id, home_domain, stack_status, status,
+         legal_entity_name, company_type, use_case, country, fiu_registration_status, support_email
+       )
+       VALUES ($1, $2, $3, $4, 'pending', 'pending', $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [
+        name, slug, req.userId, `${slug}.${DOMAIN_SUFFIX}`,
+        legal_entity_name || null, company_type || null, use_case || null, country || null, 
+        fiu_registration_status || null, support_email || null
+      ],
     );
     await pool.query(`INSERT INTO tenant_config (tenant_id) VALUES ($1) ON CONFLICT DO NOTHING`, [anchor.id]);
     await pool.query(
@@ -189,6 +205,29 @@ async function runProvision(anchor: any): Promise<void> {
   await setStatus(id, 'active', 'Anchor is live');
   console.log(`[provision] ${slug} → active (${home_domain})`);
 }
+
+// ── PATCH /anchors/:id — update anchor (compliance/business info) ───────────────
+anchorsRouter.patch('/:id', async (req: AuthedRequest, res: Response) => {
+  const anchor = await ownedAnchor(req.params.id, req.userId!);
+  if (!anchor) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const { fiu_registration_status, legal_entity_name, support_email } = req.body as any;
+
+  // Build dynamic update (very basic implementation for the MVP)
+  const updates = [];
+  const vals: any[] = [];
+  let i = 1;
+  if (fiu_registration_status !== undefined) { updates.push(`fiu_registration_status = $${i++}`); vals.push(fiu_registration_status); }
+  if (legal_entity_name !== undefined) { updates.push(`legal_entity_name = $${i++}`); vals.push(legal_entity_name); }
+  if (support_email !== undefined) { updates.push(`support_email = $${i++}`); vals.push(support_email); }
+
+  if (updates.length > 0) {
+    vals.push(anchor.id);
+    await pool.query(`UPDATE tenants SET ${updates.join(', ')} WHERE id = $${i}`, vals);
+  }
+  
+  res.json({ ok: true });
+});
 
 // ── DELETE /anchors/:id — teardown (soft-delete the record) ─────────────────────
 anchorsRouter.delete('/:id', async (req: AuthedRequest, res: Response) => {

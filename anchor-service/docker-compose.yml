@@ -81,8 +81,8 @@ services:
 
   # ─── Frontend (Next.js) ─────────────────────────────────────────────────────
   # Operator management panel + wallet. Talks to the control plane via /cp/*.
-  frontend:
-    build: ./frontend
+  client:
+    build: ./client
     restart: unless-stopped
     depends_on:
       - control-plane
