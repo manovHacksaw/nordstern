@@ -56,15 +56,17 @@ reconciliation) and short-circuits `completed`. A full idempotency ledger
 (match prior on-chain sends per tx, transfer-after-commit) is a Phase F hardening
 item. Reserve guardrail (`assertTreasuryReserve`) runs before any transfer.
 
-## AT-008 — Operator dashboard: Next.js 16 on live data
-`dashboard/` is a Next.js 16 (React 19.2) console showing **live** anchor data —
+## AT-008 — Operator console (`client/`): Next.js 16 on live data
+`client/` is a Next.js 16 (React 19.2) operator frontend showing **live** anchor data —
 treasury USDC float, KPIs (counts, on/off-ramp volumes), and the SEP-24 ledger.
 Follows the established visual direction: pure purple `#AB9FF2` accent (no gold),
 dark canvas, emerald-in `#2EC08B` / coral-out. Reads the business-server `/admin`
 API through a runtime proxy route (`app/biz/[...path]/route.ts`) that reads
 `BIZ_INTERNAL_URL` at request time, so one image works in dev and compose. Client
 components poll every 5s for a live feel. `output: standalone` → slim Docker image;
-runs as the `dashboard` compose service (host port `DASH_HOST_PORT`, default 3001).
+runs as the `client` compose service (host port `CLIENT_HOST_PORT`, default 3001).
+It is the frontend that will manage everything the operator needs, not just a
+read-only dashboard.
 No auth yet (same-origin dev); API keys/auth are a Phase E/F concern.
 
 ---
@@ -84,7 +86,7 @@ No auth yet (same-origin dev); API keys/auth are a Phase E/F concern.
   PayoutProvider → completed (`amount_in 10 USDC` / `amount_out 885.00 INR`).
   Treasury credited. Admin API (`/admin/summary`, `/admin/transactions`) added for
   the operator dashboard (read-only live data).
-- **Dashboard — ✅ built:** Next.js operator console (`dashboard/`) on live admin
-  data (see AT-008).
+- **Client (console) — ✅ built:** Next.js operator frontend (`client/`) on live
+  admin data (see AT-008).
 - Phase D — real adapters (KYC, UPI, Cashfree payout, live FX, SEP-38 /rate).
   Phase F — go-live + money-safety hardening (gated on legal/compliance).

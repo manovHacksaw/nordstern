@@ -32,7 +32,7 @@ well-built anchor that later becomes the template we provision from.
 | `anchor-platform`| 8080 | SEP server — wallets/users talk here        |
 | `anchor-platform`| 8085 | Platform API — the business server talks here |
 | `business-server`| 3000 | Callbacks + SEP-24 interactive + Stellar ops + `/admin` API |
-| `dashboard`      | 3001 | Next.js operator console (live data via `/biz` proxy)      |
+| `client`         | 3001 | Next.js operator console / management frontend (live data)  |
 
 ## Quick start (testnet)
 
@@ -63,8 +63,8 @@ docker compose up --build        # bring up db + anchor-platform + business-serv
   INR declared as an off-chain `iso4217:INR` asset.
 - **Phase C — USDC off-ramp ✅:** user returns USDC with a memo → AP Observer detects
   it → withdrawal poller disburses INR (mock payout) → completed. Admin API added.
-- **Dashboard ✅:** Next.js operator console (`dashboard/`) on live data — treasury
-  float, KPIs, and the transaction ledger.
+- **Client (console) ✅:** Next.js operator frontend (`client/`) on live data —
+  treasury float, KPIs, and the transaction ledger.
 - **Phase D — Real adapters (sandbox):** KYC, UPI deposit, Cashfree/RazorpayX payout,
   real FX — behind mock-first adapter seams.
 - **Phase F — Go-live hardening (gated on legal/compliance).**

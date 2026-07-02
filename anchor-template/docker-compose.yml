@@ -71,14 +71,14 @@ services:
       DEPOSIT_PROVIDER: ${DEPOSIT_PROVIDER:-mock}
       PAYOUT_PROVIDER: ${PAYOUT_PROVIDER:-mock}
 
-  # ── dashboard — Next.js operator console (live data via /biz proxy) ────────────
-  dashboard:
-    build: ./dashboard
+  # ── client — Next.js operator console / management frontend (live data) ────────
+  client:
+    build: ./client
     restart: unless-stopped
     depends_on:
       - business-server
     ports:
-      - "${DASH_HOST_PORT:-3001}:3001"
+      - "${CLIENT_HOST_PORT:-3001}:3001"
     environment:
       BIZ_INTERNAL_URL: http://business-server:3000
 

@@ -9,3 +9,5 @@ config/assets.yaml
 **/node_modules
 **/dist
 npm-debug.log*
+bun.lock
+**/bun.lock
