@@ -117,15 +117,29 @@ Ports: `db` 5432 · AP SEP server 8080 · AP Platform API 8085 · business-serve
 
 Because the legal model is open (`COMPLIANCE_OPEN_QUESTIONS.md`), every external
 dependency is an **adapter with a mock default**. Program to the interface; keep
-vendors out of core flow logic.
+vendors out of core flow logic. These interfaces are now **implemented** in
+`business-server/src/adapters/` (they used to be aspirational) and are selected
+per anchor via `*_PROVIDER` env injected by the orchestrator.
 
-| Seam              | Interface (target)   | Mock default (today)                 | Real impls (later)                 |
-|-------------------|----------------------|--------------------------------------|------------------------------------|
-| KYC / AML         | `KycProvider`        | `customer` callback → `ACCEPTED`     | HyperVerge, Signzy                 |
-| Fiat-in (deposit) | `DepositProvider`    | "wire" placeholder screen            | UPI collection (`upi://pay` / QR)  |
-| Fiat-out (payout) | `PayoutProvider`     | simulated release on Observer match  | Cashfree Payouts, RazorpayX        |
-| Banking / custody | `Ledger/AccountModel`| single distribution account, testnet | nodal/escrow · BYO-bank · managed  |
-| Tenancy           | tenant-scoped ids    | one implicit anchor                  | `control-plane` real multi-tenant  |
+| Seam              | Interface           | Default (mock)                       | Real impl status                        |
+|-------------------|---------------------|--------------------------------------|-----------------------------------------|
+| KYC / AML         | `KycProvider`       | `ACCEPTED`                           | **surepass (sandbox) implemented** (DL-009); HyperVerge/Signzy later |
+| Fee               | `FeeProvider`       | `0`                                  | spread/fee from `tenant_config` later    |
+| Fiat-in (deposit) | `DepositProvider`   | "wire" placeholder screen            | UPI collection (`upi://pay` / QR) later  |
+| Fiat-out (payout) | `PayoutProvider`    | simulated release on Observer match  | Cashfree Payouts, RazorpayX later        |
+| Banking / custody | (ledger — later)    | single distribution account, testnet | nodal/escrow · BYO-bank · managed        |
+| Tenancy           | anchor = own stack  | —                                    | **real: control-plane factory** (DL-005) |
+
+### The anchor factory (DL-005/006)
+
+Multi-anchor is now real: the **control-plane is an orchestrator** that provisions
+an **isolated stack per anchor** — its own Anchor Platform container, business-server
+container, `<slug>.anchors.localhost` subdomain (Traefik), encrypted keypairs
+(DL-007), generated AP config (DL-008), and `anchordb_<slug>`. An operator owns many
+anchors and manages them from the console. The base `docker-compose.yml` runs only
+shared infra (db + traefik + control-plane + frontend); anchors are created at
+provision time via the Docker Engine API. Secrets are encrypted at rest, not
+plaintext.
 
 Guidelines:
 - **Network & asset are config, not code** — testnet/`ANCH` today; mainnet/real

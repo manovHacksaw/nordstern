@@ -5,16 +5,27 @@ import { requireAuth, AuthedRequest } from './auth.js';
 export const configRouter = Router();
 configRouter.use(requireAuth as any);
 
-// GET /config — business rules for current tenant
-configRouter.get('/', async (req: AuthedRequest, res: Response) => {
+// Business rules are now scoped per anchor (an operator owns many). Every route
+// verifies the caller owns the anchor before touching its config.
+async function assertOwns(anchorId: string, userId: string): Promise<boolean> {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM tenants WHERE id = $1 AND owner_user_id = $2`, [anchorId, userId],
+  );
+  return rows.length > 0;
+}
+
+// GET /config/:anchorId — business rules for one anchor
+configRouter.get('/:anchorId', async (req: AuthedRequest, res: Response) => {
+  if (!(await assertOwns(req.params.anchorId, req.userId!))) { res.status(404).json({ error: 'Not found' }); return; }
   const { rows: [cfg] } = await pool.query(
-    `SELECT * FROM tenant_config WHERE tenant_id = $1`, [req.tenantId],
+    `SELECT * FROM tenant_config WHERE tenant_id = $1`, [req.params.anchorId],
   );
   res.json(cfg ?? {});
 });
 
-// PUT /config — save business rules
-configRouter.put('/', async (req: AuthedRequest, res: Response) => {
+// PUT /config/:anchorId — save business rules
+configRouter.put('/:anchorId', async (req: AuthedRequest, res: Response) => {
+  if (!(await assertOwns(req.params.anchorId, req.userId!))) { res.status(404).json({ error: 'Not found' }); return; }
   const {
     min_deposit, max_deposit, min_withdrawal, max_withdrawal, daily_limit,
     deposit_fee_pct, withdrawal_fee_pct,
@@ -35,7 +46,7 @@ configRouter.put('/', async (req: AuthedRequest, res: Response) => {
        fiat_account_number=$11, fiat_routing_number=$12, settlement_days=$13,
        alert_mismatch_pct=$14, alert_large_tx=$15, webhook_url=$16, updated_at=NOW()`,
     [
-      req.tenantId, min_deposit, max_deposit, min_withdrawal, max_withdrawal, daily_limit,
+      req.params.anchorId, min_deposit, max_deposit, min_withdrawal, max_withdrawal, daily_limit,
       deposit_fee_pct, withdrawal_fee_pct, fiat_method_name, fiat_bank_name,
       fiat_account_number, fiat_routing_number, settlement_days,
       alert_mismatch_pct, alert_large_tx, webhook_url,
@@ -44,32 +55,35 @@ configRouter.put('/', async (req: AuthedRequest, res: Response) => {
   res.json({ ok: true });
 });
 
-// GET /config/alerts — reconciliation alerts for current tenant
-configRouter.get('/alerts', async (req: AuthedRequest, res: Response) => {
+// GET /config/:anchorId/alerts — reconciliation alerts for one anchor
+configRouter.get('/:anchorId/alerts', async (req: AuthedRequest, res: Response) => {
+  if (!(await assertOwns(req.params.anchorId, req.userId!))) { res.status(404).json({ error: 'Not found' }); return; }
   const { rows } = await pool.query(
     `SELECT * FROM reconciliation_alerts WHERE tenant_id=$1 AND resolved=false ORDER BY created_at DESC LIMIT 10`,
-    [req.tenantId],
+    [req.params.anchorId],
   );
   res.json(rows);
 });
 
-// POST /config/alerts/inject — demo helper: injects a fake mismatch
-configRouter.post('/alerts/inject', async (req: AuthedRequest, res: Response) => {
-  const { rows: [tenant] } = await pool.query(`SELECT fiat_balance FROM tenants WHERE id=$1`, [req.tenantId]);
+// POST /config/:anchorId/alerts/inject — demo helper: injects a fake mismatch
+configRouter.post('/:anchorId/alerts/inject', async (req: AuthedRequest, res: Response) => {
+  if (!(await assertOwns(req.params.anchorId, req.userId!))) { res.status(404).json({ error: 'Not found' }); return; }
+  const { rows: [tenant] } = await pool.query(`SELECT fiat_balance FROM tenants WHERE id=$1`, [req.params.anchorId]);
   const delta = 500;
   await pool.query(
     `INSERT INTO reconciliation_alerts (tenant_id, fiat_balance, onchain_balance, delta)
      VALUES ($1, $2, $3, $4)`,
-    [req.tenantId, tenant.fiat_balance, Number(tenant.fiat_balance) - delta, delta],
+    [req.params.anchorId, tenant.fiat_balance, Number(tenant.fiat_balance) - delta, delta],
   );
   res.json({ ok: true, delta });
 });
 
-// POST /config/alerts/:id/resolve
-configRouter.post('/alerts/:id/resolve', async (req: AuthedRequest, res: Response) => {
+// POST /config/:anchorId/alerts/:alertId/resolve
+configRouter.post('/:anchorId/alerts/:alertId/resolve', async (req: AuthedRequest, res: Response) => {
+  if (!(await assertOwns(req.params.anchorId, req.userId!))) { res.status(404).json({ error: 'Not found' }); return; }
   await pool.query(
     `UPDATE reconciliation_alerts SET resolved=true WHERE id=$1 AND tenant_id=$2`,
-    [req.params.id, req.tenantId],
+    [req.params.alertId, req.params.anchorId],
   );
   res.json({ ok: true });
 });

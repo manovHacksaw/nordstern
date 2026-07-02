@@ -58,8 +58,13 @@ registration — a real operational risk.
 Who is the controller of KYC data? Can it be shared across anchors ("verify once,
 use everywhere")? Consent, retention, and residency limits?
 - *Technical impact:* the `KycProvider` seam and any shared-KYC store. *Current
-  assumption:* KYC is **mocked** (`ACCEPTED`); no real PII stored; shared-KYC is a
-  future value prop, not MVP plumbing.
+  assumption:* mock KYC (`ACCEPTED`) remains the default. A real **surepass**
+  (sandbox) provider now exists behind `KycProvider` (DL-009): it stores **only the
+  verification outcome** (status), never the raw PAN/Aadhaar, and state is
+  in-memory per business-server for now. Before any real (non-sandbox) use, the
+  controller/consent/retention/residency questions here must be answered, and a
+  durable, access-controlled store designed. Shared-KYC ("verify once") remains a
+  future value prop, still gated on this question.
 
 ## Q6 — Which licenses enable which flows 🟠
 Payments, PPI/wallet, cross-border/remittance, and VDA rules may each apply

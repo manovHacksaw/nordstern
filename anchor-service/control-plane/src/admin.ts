@@ -6,27 +6,27 @@ export const adminRouter = Router();
 adminRouter.use(requireAuth as any);
 adminRouter.use(requireAdmin as any);
 
-// GET /admin/tenants — all tenants (platform admin only)
-adminRouter.get('/tenants', async (_req: AuthedRequest, res: Response) => {
+// GET /admin/anchors — every anchor across all operators (platform admin only)
+adminRouter.get('/anchors', async (_req: AuthedRequest, res: Response) => {
   const { rows } = await pool.query(`
-    SELECT t.*,
-      COUNT(DISTINCT u.id) as user_count,
+    SELECT t.*, u.email as owner_email,
       COUNT(DISTINCT ra.id) FILTER (WHERE ra.resolved = false) as active_alerts
     FROM tenants t
-    LEFT JOIN users u ON u.tenant_id = t.id
+    LEFT JOIN users u ON u.id = t.owner_user_id
     LEFT JOIN reconciliation_alerts ra ON ra.tenant_id = t.id
-    GROUP BY t.id
+    GROUP BY t.id, u.email
     ORDER BY t.created_at DESC
   `);
   res.json(rows);
 });
 
-// PATCH /admin/tenants/:id — suspend or activate
-adminRouter.patch('/tenants/:id', async (req: AuthedRequest, res: Response) => {
-  const { status } = req.body as { status: string };
+// PATCH /admin/anchors/:id — platform-admin metadata flag (suspend/activate).
+// NOTE: metadata-only for now; it does not stop/start containers.
+adminRouter.patch('/anchors/:id', async (req: AuthedRequest, res: Response) => {
+  const { stack_status } = req.body as { stack_status: string };
   const { rows: [t] } = await pool.query(
-    `UPDATE tenants SET status=$1 WHERE id=$2 RETURNING *`,
-    [status, req.params.id],
+    `UPDATE tenants SET stack_status=$1 WHERE id=$2 RETURNING *`,
+    [stack_status, req.params.id],
   );
   res.json(t);
 });

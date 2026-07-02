@@ -7,41 +7,28 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-in-production';
 
 export const authRouter = Router();
 
-// POST /auth/register — create user + tenant in one step
+// POST /auth/register — create the OPERATOR only (no auto-anchor).
+// An operator later creates one or many anchors via POST /anchors (DL-005).
 authRouter.post('/register', async (req: Request, res: Response) => {
-  const { name, email, password, network = 'testnet' } = req.body as Record<string, string>;
-  if (!name || !email || !password) {
-    res.status(400).json({ error: 'name, email, and password are required' });
+  const { email, password } = req.body as Record<string, string>;
+  if (!email || !password) {
+    res.status(400).json({ error: 'email and password are required' });
     return;
   }
 
-  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
   const hash = await bcrypt.hash(password, 10);
 
   try {
-    // Create tenant
-    const { rows: [tenant] } = await pool.query(
-      `INSERT INTO tenants (name, slug, network) VALUES ($1, $2, $3) RETURNING *`,
-      [name, slug, network],
-    );
-
-    // Create user linked to tenant
     const { rows: [user] } = await pool.query(
-      `INSERT INTO users (tenant_id, email, password_hash) VALUES ($1, $2, $3) RETURNING id, email, role`,
-      [tenant.id, email, hash],
+      `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, role`,
+      [email, hash],
     );
 
-    // Seed default config
-    await pool.query(
-      `INSERT INTO tenant_config (tenant_id) VALUES ($1) ON CONFLICT DO NOTHING`,
-      [tenant.id],
-    );
-
-    const token = jwt.sign({ userId: user.id, tenantId: tenant.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, tenant, user });
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
   } catch (err: any) {
     if (err.code === '23505') {
-      res.status(400).json({ error: 'Email or company name already registered' });
+      res.status(400).json({ error: 'Email already registered' });
     } else {
       res.status(500).json({ error: err.message });
     }
@@ -52,9 +39,7 @@ authRouter.post('/register', async (req: Request, res: Response) => {
 authRouter.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body as Record<string, string>;
   const { rows } = await pool.query(
-    `SELECT u.*, t.id as tenant_id, t.name as tenant_name, t.status as tenant_status, t.network
-     FROM users u JOIN tenants t ON u.tenant_id = t.id
-     WHERE u.email = $1`,
+    `SELECT id, email, password_hash, role FROM users WHERE email = $1`,
     [email],
   );
   const user = rows[0];
@@ -62,8 +47,8 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     res.status(401).json({ error: 'Invalid email or password' });
     return;
   }
-  const token = jwt.sign({ userId: user.id, tenantId: user.tenant_id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, user: { id: user.id, email: user.email, role: user.role, tenantId: user.tenant_id, tenantName: user.tenant_name, tenantStatus: user.tenant_status, network: user.network } });
+  const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
 });
 
 // ── JWT middleware ────────────────────────────────────────────────────────────
