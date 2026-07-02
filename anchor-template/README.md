@@ -39,20 +39,27 @@ well-built anchor that later becomes the template we provision from.
 cd anchor-template
 node scripts/setup-testnet.mjs   # gen signing + treasury keys, fund via Friendbot,
                                  # add USDC trustline, render config, write .env
+node scripts/fund-treasury.mjs   # swap treasury XLM → USDC on the testnet DEX
+                                 # (seeds the USDC float; Circle's web faucet also works)
 docker compose up --build        # bring up db + anchor-platform + business-server
 ```
 
 - **`.env` does not exist until you run the setup script** — that's the first thing
   to check if the stack won't start.
 - Verify: `curl http://localhost:8080/.well-known/stellar.toml` and
-  `curl http://localhost:3000/health`.
+  `curl http://localhost:3000/health` (shows the treasury USDC float).
+- Smoke tests: `node scripts/test-handshake.mjs` (Phase A) and
+  `node scripts/test-deposit.mjs` (Phase B — real INR→USDC on-ramp). On a machine
+  where 3000/5432 are taken, run the stack with `BIZ_HOST_PORT` / `DB_HOST_PORT`
+  and pass `BIZ_URL=http://localhost:<port>` to the test scripts.
 
 ## Build phases
 
-- **Phase A — Skeleton (this):** stack boots against USDC; SEP-10 auth + SEP-24
+- **Phase A — Skeleton ✅:** stack boots against USDC; SEP-10 auth + SEP-24
   interactive reachable; `/customer` mocked (`ACCEPTED`).
-- **Phase B — USDC on-ramp + treasury:** fund a USDC float; real USDC transfer on
-  deposit with reserve checks; INR/USD FX via SEP-38 `/rate`.
+- **Phase B — USDC on-ramp + treasury ✅:** USDC float funded; real USDC transfer on
+  deposit with a reserve check; INR/USD FX applied to `amount_in` (mock RateProvider).
+  INR declared as an off-chain `iso4217:INR` asset.
 - **Phase C — USDC off-ramp:** Observer detects returned USDC by memo; mock payout.
 - **Phase D — Real adapters (sandbox):** KYC, UPI deposit, Cashfree/RazorpayX payout,
   real FX — behind mock-first adapter seams.

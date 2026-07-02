@@ -39,12 +39,34 @@ without changing the canonical template defaults. The SEP-24 `interactive_url`
 base_url assumes business-server on 3000 — change both together for a real wallet
 flow on a remapped port.
 
+## AT-006 — SEP-31 stays enabled; fiat assets set sep31.enabled=false
+`Sep24Service` depends on the `exchangeAmountsCalculator` bean, which is
+`@OnAllSepsEnabled(sep6, sep24, sep31)` (SepBeans.java:194,230) — so SEP-31 cannot
+be disabled without breaking SEP-24. But fiat assets (`iso4217:INR`) default their
+SEP-31 block *on* (they are the SEP-31 receive side) and then fail validation for a
+missing receive method (AssetValidator.java:181). Fix: set `sep31: { enabled: false }`
+on the INR asset. INR is declared as an off-chain asset with a SEP-38 link to USDC
+so transactions can record `amount_in` in `iso4217:INR`.
+
+## AT-007 — Money-safety: no auto-resend after the pre-transfer checkpoint
+The deposit releases USDC (`sendUsdc`) before the final `completed` PATCH; if that
+PATCH fails, USDC is out but the tx isn't completed. `complete` now refuses to
+re-send for a tx already in `pending_anchor`/`error` (surfaces for manual
+reconciliation) and short-circuits `completed`. A full idempotency ledger
+(match prior on-chain sends per tx, transfer-after-commit) is a Phase F hardening
+item. Reserve guardrail (`assertTreasuryReserve`) runs before any transfer.
+
 ---
 
 ## Phase status
-- **Phase A — Skeleton: ✅ done & verified.** Stack boots against the official
-  image; `scripts/test-handshake.mjs` proves SEP-10 → SEP-24 → interactive read of
-  the Platform API. `/customer` mocked; treasury has an (empty) USDC trustline.
-- Phase B — USDC on-ramp + treasury (next).
-- Phase C — USDC off-ramp. Phase D — real adapters. Phase E — console. Phase F —
-  go-live (gated on legal/compliance).
+- **Phase A — Skeleton: ✅ done & verified.** SEP-10 → SEP-24 → interactive
+  (`scripts/test-handshake.mjs`).
+- **Phase B — USDC on-ramp + treasury: ✅ done & verified.** Treasury float funded
+  via DEX path payment (`scripts/fund-treasury.mjs`); `scripts/test-deposit.mjs`
+  proves a real INR→USDC on-ramp: 10 USDC moved treasury→user, tx recorded
+  `amount_in 885.00 iso4217:INR` / `amount_out 10 USDC` (FX 88.50 via mock
+  RateProvider), reserve-checked, treasury debited. Withdrawal *initiation* wired;
+  detection/payout is Phase C.
+- Phase C — USDC off-ramp (Observer detection by memo + mock payout). Phase D —
+  real adapters (KYC, UPI, Cashfree payout, live FX, SEP-38 /rate). Phase E —
+  console. Phase F — go-live + money-safety hardening (gated on legal/compliance).

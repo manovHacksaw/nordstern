@@ -1,13 +1,16 @@
-import { Horizon } from '@stellar/stellar-sdk';
 import {
-  HORIZON_URL, TREASURY_PUBLIC, ASSET_CODE, ASSET_ISSUER_PUBLIC,
+  Keypair, Horizon, TransactionBuilder, BASE_FEE, Operation, Asset,
+} from '@stellar/stellar-sdk';
+import {
+  HORIZON_URL, TREASURY_PUBLIC, TREASURY_SECRET, ASSET_CODE, ASSET_ISSUER_PUBLIC, NET_PASS,
 } from './config.js';
 
 // ─── Stellar helpers ───────────────────────────────────────────────────────────
-// Phase A only needs to read the treasury and derive memos. The actual USDC
-// transfer (deposit) and withdrawal detection land in Phases B/C.
+// The anchor holds a USDC float and TRANSFERS real USDC (it does not mint).
+// Deposit = treasury → user; withdrawal detection/payout is Phase C.
 
 const horizon = new Horizon.Server(HORIZON_URL);
+const usdcAsset = () => new Asset(ASSET_CODE, ASSET_ISSUER_PUBLIC);
 
 // Deterministic memo derived from the transaction id. On withdrawal the Platform
 // stores it and the Observer matches the incoming USDC payment by it.
@@ -24,4 +27,41 @@ export async function getTreasuryUsdcBalance(): Promise<string | null> {
     (b: any) => b.asset_code === ASSET_CODE && b.asset_issuer === ASSET_ISSUER_PUBLIC,
   );
   return bal ? bal.balance : null;
+}
+
+// Reserve guardrail — refuse to release USDC the treasury float can't cover.
+// This is what makes the anchor a liquidity provider rather than a minter.
+export async function assertTreasuryReserve(amount: string): Promise<void> {
+  const bal = await getTreasuryUsdcBalance();
+  if (bal === null) throw new Error('treasury has no USDC trustline — run scripts/fund-treasury.mjs');
+  if (Number(bal) < Number(amount)) {
+    throw new Error(`insufficient USDC float: treasury holds ${bal}, deposit needs ${amount}`);
+  }
+}
+
+// Does the recipient have a USDC trustline? A payment to an account without one
+// fails; a real wallet establishes it before deposit. We surface a clear error.
+export async function hasUsdcTrustline(account: string): Promise<boolean> {
+  try {
+    const acct = await horizon.loadAccount(account);
+    return acct.balances.some(
+      (b: any) => b.asset_code === ASSET_CODE && b.asset_issuer === ASSET_ISSUER_PUBLIC,
+    );
+  } catch {
+    return false; // account not found / unfunded
+  }
+}
+
+// Deposit on-ramp: transfer USDC from the treasury float to the user.
+export async function sendUsdc(destination: string, amount: string): Promise<string> {
+  if (!TREASURY_SECRET) throw new Error('TREASURY_SECRET not set');
+  const keypair = Keypair.fromSecret(TREASURY_SECRET);
+  const account = await horizon.loadAccount(TREASURY_PUBLIC);
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: NET_PASS })
+    .addOperation(Operation.payment({ destination, asset: usdcAsset(), amount }))
+    .setTimeout(30)
+    .build();
+  tx.sign(keypair);
+  const result = await horizon.submitTransaction(tx);
+  return (result as any).hash;
 }
