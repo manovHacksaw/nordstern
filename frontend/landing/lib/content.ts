@@ -145,6 +145,16 @@ export const HERO = {
   secondary: { label: "See a demo", href: "#" },
 } as const;
 
+/**
+ * Mission statement — one large editorial paragraph. `lead` reads in ink, `tail`
+ * fades to gray (reference two-tone). `lead` keeps its trailing space so the two
+ * clauses join naturally.
+ */
+export const MISSION = {
+  lead: "Leading brands — from fintechs and banks to digital asset platforms and large-scale corporates — use our API to benefit from our fully regulated ",
+  tail: "banking infrastructure and real-time payments access.",
+} as const;
+
 /** Social-proof logos. `logo` renders an image; otherwise the name is set in type. */
 export const BACKERS: ReadonlyArray<{
   name: string;
