@@ -17,4 +17,9 @@ export class MockDepositProvider implements DepositProvider {
       note: 'Sandbox: no real payment is taken. Confirming releases USDC to your wallet.',
     };
   }
+
+  // No real collection — the confirm click IS the payment in sandbox.
+  async isPaid(): Promise<boolean> {
+    return true;
+  }
 }

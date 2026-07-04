@@ -2,13 +2,17 @@ import { Router } from 'express';
 import express from 'express';
 import crypto from 'crypto';
 import { fetchTransaction, patchTransaction } from './platform.js';
-import { assetId, DIDIT_WEBHOOK_SECRET } from './config.js';
+import { assetId, DIDIT_WEBHOOK_SECRET, RAZORPAY_WEBHOOK_SECRET } from './config.js';
 import { applyWebhook } from './adapters/kyc/didit.js';
+import { markPaidByOrder } from './adapters/deposit/razorpay.js';
+import { releaseDeposit } from './sep24.js';
+import { pool } from './db.js';
 
 // ─── Webhooks Router ────────────────────────────────────────────────────────
 // Handles incoming async event notifications from external providers:
-//   POST /payout-webhook  — Cashfree Payouts status (Phase D slice 2)
-//   POST /webhooks/didit  — DIDIT KYC decision (source of truth for verification)
+//   POST /payout-webhook     — Cashfree Payouts status (Phase D slice 2)
+//   POST /webhooks/didit     — DIDIT KYC decision (source of truth for verification)
+//   POST /webhooks/razorpay  — Razorpay deposit collection (source of truth for payment)
 
 export const webhooksRouter = Router();
 
@@ -69,6 +73,64 @@ webhooksRouter.post(['/webhooks/didit', '/'], async (req, res) => {
     console.error('[didit-webhook] apply error:', err instanceof Error ? err.message : err);
     res.status(500).send('processing error');
   }
+});
+
+// ─── Razorpay deposit webhook (source of truth for collection) ──────────────────
+// payment.captured / order.paid confirm the INR landed. We authenticate with
+// X-Razorpay-Signature = HMAC-SHA256 over the EXACT raw request bytes (captured in
+// app.ts via express.json's `verify` hook — never re-stringify), dedupe on
+// X-Razorpay-Event-Id, ack fast, then RE-VERIFY against the Razorpay API and release
+// USDC through the shared, idempotent releaseDeposit. This is what makes a user who
+// paid and closed the tab still get their tokens — and the atomic paid→releasing
+// claim inside releaseDeposit means it can never double-send with the webview path.
+webhooksRouter.post('/webhooks/razorpay', async (req, res) => {
+  if (!RAZORPAY_WEBHOOK_SECRET) {
+    console.error('[razorpay-webhook] RAZORPAY_WEBHOOK_SECRET not configured');
+    res.status(500).send('not configured');
+    return;
+  }
+
+  const sig = (req.headers['x-razorpay-signature'] as string) ?? '';
+  const raw: Buffer | undefined = (req as unknown as { rawBody?: Buffer }).rawBody;
+  if (!raw || !raw.length) { res.status(400).send('no body'); return; }
+
+  const expected = crypto.createHmac('sha256', RAZORPAY_WEBHOOK_SECRET).update(raw).digest('hex');
+  if (sig.length !== expected.length ||
+      !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) {
+    res.status(401).send('bad sig');
+    return;
+  }
+
+  const event = String(req.body?.event ?? '');
+  const eventId = (req.headers['x-razorpay-event-id'] as string) ?? '';
+  const orderId = req.body?.payload?.payment?.entity?.order_id
+    ?? req.body?.payload?.order?.entity?.id ?? null;
+  const paymentId = req.body?.payload?.payment?.entity?.id ?? null;
+
+  // Ack immediately (Razorpay expects a fast 2xx), then process asynchronously.
+  res.status(200).send('ok');
+
+  if (event !== 'payment.captured' && event !== 'order.paid') return;
+  if (!orderId) return;
+
+  (async () => {
+    try {
+      // Durable dedupe. The idempotent release makes this best-effort, not load-bearing.
+      if (eventId) {
+        const dup = await pool.query(
+          'INSERT INTO nordstern.razorpay_webhook_events (event_id) VALUES ($1) ON CONFLICT DO NOTHING RETURNING event_id',
+          [eventId],
+        );
+        if (dup.rowCount === 0) { console.log(`[razorpay-webhook] duplicate event ${eventId} — skipping`); return; }
+      }
+      const transactionId = await markPaidByOrder(orderId, paymentId);   // re-verify + mark paid
+      if (!transactionId) { console.log(`[razorpay-webhook] order ${orderId} not paid / unknown — skipping`); return; }
+      const outcome = await releaseDeposit(transactionId);
+      console.log(`[razorpay-webhook] ${event} order=${orderId} → release: ${outcome.kind}`);
+    } catch (err) {
+      console.error('[razorpay-webhook] processing error:', err instanceof Error ? err.message : err);
+    }
+  })();
 });
 
 const APP_ID = process.env.CASHFREE_APP_ID ?? '';

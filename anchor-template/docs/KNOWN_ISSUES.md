@@ -4,11 +4,6 @@
 
 ---
 
-## 🐞 Bugs
-
-- **Missing Amount Collection in Interactive UI:** Currently, if a wallet (like the Stellar Demo Wallet) initiates a SEP-24 deposit without providing an amount upfront, our `business-server` forcefully defaults the amount to `10.00` USDC to prevent a crash.
-  - *Fix Required:* We need to build an HTML `<form>` step in the `/interactive` route that asks the user "How much do you want to deposit?" if `tx.amount_expected` is missing.
-
 ## 🏗️ Technical Debt
 
 - **Lack of Transaction Idempotency:** Right now, in `sep24.ts`, we call `sendUsdc()` to release funds on the Stellar network, and *then* we call `patchTransaction()` to update the AP database to `completed`. 

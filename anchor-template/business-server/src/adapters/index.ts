@@ -8,6 +8,7 @@ import { CmcRateProvider } from './rate/cmc.js';
 import { DepositProvider } from './deposit/DepositProvider.js';
 import { MockDepositProvider } from './deposit/mock.js';
 import { UpiDepositProvider } from './deposit/upi.js';
+import { RazorpayDepositProvider } from './deposit/razorpay.js';
 
 import { PayoutProvider } from './payout/PayoutProvider.js';
 import { MockPayoutProvider } from './payout/mock.js';
@@ -32,8 +33,9 @@ function makeRate(): RateProvider {
 
 function makeDeposit(): DepositProvider {
   switch (PROVIDERS.deposit) {
-    case 'upi': return new UpiDepositProvider();
-    default: return new MockDepositProvider();
+    case 'razorpay': return new RazorpayDepositProvider();   // real INR collection + verification
+    case 'upi':      return new UpiDepositProvider();
+    default:         return new MockDepositProvider();
   }
 }
 

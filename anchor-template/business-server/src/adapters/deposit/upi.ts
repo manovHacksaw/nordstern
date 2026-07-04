@@ -35,4 +35,11 @@ export class UpiDepositProvider implements DepositProvider {
       qrDataUri,
     };
   }
+
+  // Sandbox UX — the collection isn't verified against a PSP webhook yet, so the
+  // confirm click releases USDC (same as mock). A real UPI collection provider
+  // would gate this on an auto-collect / virtual-account webhook.
+  async isPaid(): Promise<boolean> {
+    return true;
+  }
 }

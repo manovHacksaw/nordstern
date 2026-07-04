@@ -98,6 +98,13 @@ services:
       DIDIT_WORKFLOW_ID: ${DIDIT_WORKFLOW_ID:-6caaf537-a69b-48db-9141-c6180edaea88}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}
       KYC_REVERIFY_TTL_SECONDS: ${KYC_REVERIFY_TTL_SECONDS:-300}
+      # Razorpay deposit collection (active when DEPOSIT_PROVIDER=razorpay). KEY_ID
+      # is public; KEY_SECRET + WEBHOOK_SECRET are server-side secrets from .env.
+      # Webhook is delivered to ${PUBLIC_BASE_URL}/webhooks/razorpay.
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      RAZORPAY_BUSINESS_NAME: ${RAZORPAY_BUSINESS_NAME:-NordStern}
 
   # ── ngrok — public HTTPS tunnel to business-server ─────────────────────────────
   # DIDIT delivers webhooks (the SOURCE OF TRUTH for a KYC result) and the hosted-

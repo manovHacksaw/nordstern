@@ -43,6 +43,17 @@ export const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? 'http://localhost:
 // for testing the re-verification path; raise to a real policy window for prod.
 export const KYC_REVERIFY_TTL_SECONDS = Number(process.env.KYC_REVERIFY_TTL_SECONDS ?? 300);
 
+// ─── Razorpay (fiat-in / deposit collection) ────────────────────────────────────
+// DEPOSIT_PROVIDER=razorpay collects the INR via Razorpay Checkout before USDC is
+// released. KEY_ID is public (shipped to the browser to open Checkout); KEY_SECRET
+// and WEBHOOK_SECRET are server-side only. Test (rzp_test_…) vs live (rzp_live_…)
+// is purely the key prefix — swapping keys is the only thing separating sandbox
+// from real money. The webhook is delivered to `${PUBLIC_BASE_URL}/webhooks/razorpay`.
+export const RAZORPAY_KEY_ID         = process.env.RAZORPAY_KEY_ID         ?? '';
+export const RAZORPAY_KEY_SECRET     = process.env.RAZORPAY_KEY_SECRET     ?? '';
+export const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET ?? '';
+export const RAZORPAY_BUSINESS_NAME  = process.env.RAZORPAY_BUSINESS_NAME  ?? 'NordStern';
+
 // Adapter selection (mock-first). Real vendors land behind these seams in Phase D.
 export const PROVIDERS = {
   kyc:     process.env.KYC_PROVIDER     ?? 'mock',   // mock | surepass | didit
