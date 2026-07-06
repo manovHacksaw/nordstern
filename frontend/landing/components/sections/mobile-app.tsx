@@ -353,8 +353,10 @@ function HdfcLogo({ className = "size-10" }: { className?: string }) {
   return (
     <svg viewBox="0 0 40 40" className={`${className} shrink-0 rounded-xl shadow-sm ring-1 ring-black/5`} aria-hidden>
       <rect width="40" height="40" fill="#fff" />
-      <rect x="8" y="8" width="24" height="24" fill="#004C8F" />
-      <rect x="11" y="11" width="12" height="12" fill="none" stroke="#ED232A" strokeWidth="2.6" />
+      {/* solid navy square, bottom-right */}
+      <rect x="14" y="14" width="19" height="19" fill="#004C8F" />
+      {/* red outline square, offset top-left — HDFC's overlapping-squares mark */}
+      <rect x="7" y="7" width="19" height="19" fill="none" stroke="#ED232A" strokeWidth="2.4" />
     </svg>
   );
 }

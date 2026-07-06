@@ -234,28 +234,18 @@ export const PRIMITIVES = {
   items: [
     {
       id: "users",
-      title: "A Native App for Users",
-      caption: "We provide the secure mobile app so your users can discover anchors, complete quick liveness verifications, and swap INR ↔ USDC directly in the wallets they trust.",
+      title: "A native app for your users",
+      caption: "A secure mobile app where your users discover anchors, verify once with Didit, and swap INR ↔ USDC right inside the wallets they already trust.",
     },
     {
       id: "businesses",
-      title: "B2B Console for Businesses",
-      caption: "We run the SEP servers, payment rails, console, and treasury. Bring your licensing, bank account, and liquidity — and launch with your compliances completely done.",
-    },
-    {
-      id: "compliance",
-      title: "Screened and Sealed",
-      caption: "Every transaction is screened for sanctions/PEP and logged in a tamper-evident audit ledger to maintain robust compliance dynamically.",
-    },
-    {
-      id: "identity",
-      title: "Identity Verified Once",
-      caption: "Document, face-match, and deepfake verification. Users check once with Didit and use it across the entire network.",
+      title: "Everything B2B, done for you",
+      caption: "SEP servers, payment rails, KYC, compliance, treasury and the operator console — all run for you. Bring your licence, bank and liquidity; launch with compliance done.",
     },
     {
       id: "developers",
-      title: "Complete Control for Developers",
-      caption: "Embed anchor flows or design custom money experiences. Integrate via our unified SDK or direct REST APIs, test in sandboxes, and listen to real-time webhook events.",
+      title: "Complete control for developers",
+      caption: "Embed anchor flows or build a custom money experience — one unified SDK, REST APIs, sandboxes and real-time webhooks.",
     },
   ],
 } as const;

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Bell, Check, ChevronDown, Search, ShieldCheck } from "lucide-react";
+import { Bell, Check, ChevronDown, Search } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { SectionHeader } from "@/components/ui/typography";
 import { PRIMITIVES } from "@/lib/content";
@@ -16,10 +16,20 @@ type Tone = "light" | "tint" | "dark";
 const LAYOUT: Record<string, { span: string; tone: Tone }> = {
   users: { span: "md:col-span-4 md:row-span-2", tone: "light" },
   businesses: { span: "md:col-span-8", tone: "tint" },
-  compliance: { span: "md:col-span-5", tone: "dark" },
-  identity: { span: "md:col-span-3", tone: "tint" },
-  developers: { span: "md:col-span-12", tone: "dark" },
+  developers: { span: "md:col-span-8", tone: "dark" },
 };
+
+/** Every platform feature — shown as chips inside the Businesses card so the
+ *  "B2B everything" promise is concrete without needing repeated feature cards. */
+const FEATURES = [
+  "SEP servers",
+  "INR rails",
+  "USDC settlement",
+  "Didit KYC",
+  "Compliance & audit",
+  "Treasury",
+  "Operator console",
+];
 
 const TONE_CLASS: Record<Tone, string> = {
   light: "bg-surface text-ink border border-line",
@@ -78,34 +88,24 @@ const CARDS: Record<string, (p: CardProps) => ReactNode> = {
     </>
   ),
 
-  /* Businesses — B2B console panel */
+  /* Businesses — B2B console panel + every-feature chips */
   businesses: (p) => (
-    <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center md:h-full w-full">
+    <div className="flex w-full flex-col justify-between gap-6 md:h-full md:flex-row md:items-center">
       <div className="md:max-w-[48%]">
         <Heading {...p} />
+        <div className="mt-5 flex flex-wrap gap-2">
+          {FEATURES.map((f) => (
+            <span
+              key={f}
+              className="rounded-full border border-brand-200/70 bg-white px-2.5 py-1 text-[11px] font-medium text-brand-800"
+            >
+              {f}
+            </span>
+          ))}
+        </div>
       </div>
-      <div className="flex items-center justify-center md:justify-end flex-1 w-full">
+      <div className="flex w-full flex-1 items-center justify-center md:justify-end">
         <ConsolePanel />
-      </div>
-    </div>
-  ),
-
-  /* Compliance — audit log and sealing checks */
-  compliance: (p) => (
-    <div className="flex flex-col justify-between gap-6 h-full w-full">
-      <Heading {...p} />
-      <div className="mt-auto flex justify-center w-full">
-        <SealedCard />
-      </div>
-    </div>
-  ),
-
-  /* Identity — KYC verified badge */
-  identity: (p) => (
-    <div className="flex flex-col justify-between gap-6 h-full w-full">
-      <Heading {...p} />
-      <div className="mt-auto w-full">
-        <IdentityBadge />
       </div>
     </div>
   ),
@@ -232,77 +232,6 @@ function ConsolePanel() {
   );
 }
 
-/* Settlement — floating asset cards (USDC + INR) */
-function AssetCards() {
-  return (
-    <div className="relative h-[168px] w-full max-w-[240px] shrink-0">
-      <div className="absolute right-4 top-0 w-[190px] rotate-[5deg] rounded-2xl bg-white p-3.5 shadow-[0_18px_40px_-18px_rgba(20,20,40,.5)]">
-        <div className="flex items-center gap-2">
-          <UsdcMark className="size-6" />
-          <span className="text-[11px] font-medium text-ink">USDC · Stellar</span>
-        </div>
-        <p className="mt-2 text-[18px] font-semibold tracking-tight text-ink">262.60 USDC</p>
-      </div>
-      <div className="absolute bottom-0 left-0 w-[190px] -rotate-[4deg] rounded-2xl bg-white p-3.5 shadow-[0_18px_40px_-18px_rgba(20,20,40,.5)]">
-        <div className="flex items-center gap-2">
-          <span className="grid size-6 place-items-center rounded-full bg-brand-100 text-[9px] font-bold text-brand-700">₹</span>
-          <span className="text-[11px] font-medium text-ink">INR deposit</span>
-        </div>
-        <p className="mt-2 text-[18px] font-semibold tracking-tight text-ink">₹25,000.00</p>
-      </div>
-    </div>
-  );
-}
-
-/* Identity — KYC badge */
-function IdentityBadge() {
-  return (
-    <div className="w-full rounded-2xl bg-white p-4 shadow-[0_12px_30px_-18px_rgba(20,20,40,.4)]">
-      <div className="flex items-center gap-3">
-        <div className="relative">
-          <span className="grid size-11 place-items-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">BS</span>
-          <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
-            <Check className="size-3" strokeWidth={3} />
-          </span>
-        </div>
-        <div>
-          <p className="text-[13px] font-semibold text-ink">Identity verified</p>
-          <p className="text-[10.5px] text-subtle">Document · liveness · face</p>
-        </div>
-      </div>
-      <span className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-2.5 py-1 text-[10.5px] font-medium text-brand-800">
-        <ShieldCheck className="size-3 text-brand-700" /> Powered by <span className="font-semibold text-ink">Didit</span>
-      </span>
-    </div>
-  );
-}
-
-/* Compliance — a "sealed" audit card on the dark surface */
-function SealedCard() {
-  return (
-    <div className="w-full max-w-[240px] shrink-0 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur">
-      <div className="flex items-center gap-2 text-white">
-        <span className="grid size-8 place-items-center rounded-xl bg-white/15"><ShieldCheck className="size-4" /></span>
-        <span className="text-[12px] font-medium">Transaction sealed</span>
-      </div>
-      <div className="mt-3 space-y-1.5">
-        {[
-          ["Sanctions", "clear"],
-          ["Monitoring", "ok"],
-          ["Audit hash", "0x9f2a…"],
-        ].map(([k, v]) => (
-          <div key={k} className="flex items-center justify-between text-[10.5px]">
-            <span className="flex items-center gap-1.5 text-white/70">
-              <Check className="size-3 text-emerald-300" strokeWidth={3} /> {k}
-            </span>
-            <span className="font-mono text-white/90">{v}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* MiniTerminal — developer SDK code terminal mock */
 function MiniTerminal() {
   return (
@@ -313,9 +242,9 @@ function MiniTerminal() {
         <span className="size-2 rounded-full bg-green-500/80" />
       </div>
       <div className="space-y-1 select-none">
-        <p className="text-zinc-500">// Initialize client</p>
+        <p className="text-zinc-500">{"// Initialize client"}</p>
         <p><span className="text-purple-400">const</span> client = <span className="text-purple-400">new</span> <span className="text-yellow-300">NordStern</span>();</p>
-        <p className="text-zinc-500">// Start interactive ramp</p>
+        <p className="text-zinc-500">{"// Start interactive ramp"}</p>
         <p><span className="text-purple-400">const</span> tx = <span className="text-purple-400">await</span> client.<span className="text-blue-400">deposit</span>({"{"}</p>
         <p className="pl-4">amount: <span className="text-emerald-400">&quot;25000.00&quot;</span>,</p>
         <p className="pl-4">rail: <span className="text-emerald-400">&quot;upi&quot;</span></p>
