@@ -1,0 +1,131 @@
+name: nordstern-platform
+
+# The ONE compose that runs the connected control-plane end-to-end:
+#   platform-api (onboarding)  →  control-plane (REAL dockerode provisioner)  →  aggregator
+# plus shared Postgres + Traefik (for provisioned-anchor routing).
+#
+# ── PREREQUISITES (real provisioning genuinely needs these — see deploy/README.md) ──
+#   1. cd anchor-service && node scripts/setup-base.mjs
+#        → generates MASTER_KEK + the anchor-config host dir; export them (or use a .env here).
+#   2. Build the business-server image the provisioner launches per anchor:
+#        docker build -t nordstern/business-server:dev anchor-service/business-server
+#   3. export MASTER_KEK=... ANCHOR_CONFIG_HOST_ROOT=/abs/path   (this file interpolates them)
+#
+#   Then:  docker compose -f docker-compose.platform.yml up --build
+#   Verify: deploy/README.md walks the full apply → approve → redeem → provision → route flow.
+
+networks:
+  nordstern-net:
+    name: nordstern-net          # control-plane launches provisioned anchors onto this network
+
+volumes:
+  pgdata:
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: anchor
+      POSTGRES_PASSWORD: anchor
+      POSTGRES_DB: anchordb
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/pg-init.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anchor"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [nordstern-net]
+
+  traefik:
+    image: traefik:v3.7
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=nordstern-net
+      - --entrypoints.web.address=:80
+      - --api.dashboard=true
+      - --api.insecure=true
+    ports: ["80:80", "8090:8080"]
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    networks: [nordstern-net]
+
+  # ── REAL provisioner (dockerode → keygen, Friendbot, asset issuance, container stack) ──
+  control-plane:
+    build: ./anchor-service/control-plane
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["3002:3002"]
+    environment:
+      PORT: 3002
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: controldb
+      DB_USER: anchor
+      DB_PASSWORD: anchor
+      JWT_SECRET: ${CP_JWT_SECRET:-dev-cp-secret}
+      MASTER_KEK: ${MASTER_KEK:?run anchor-service/scripts/setup-base.mjs and export MASTER_KEK}
+      DOCKER_NETWORK: nordstern-net
+      AP_IMAGE: stellar/anchor-platform:latest
+      BIZ_IMAGE: nordstern/business-server:dev
+      ANCHOR_CONFIG_DIR: /anchor-configs
+      ANCHOR_CONFIG_HOST_ROOT: ${ANCHOR_CONFIG_HOST_ROOT:?run anchor-service/scripts/setup-base.mjs and export ANCHOR_CONFIG_HOST_ROOT}
+      ANCHOR_DOMAIN_SUFFIX: anchors.localhost
+      HORIZON_URL: https://horizon-testnet.stellar.org
+      NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock        # dockerode spins up anchor stacks
+      - ${ANCHOR_CONFIG_HOST_ROOT}:/anchor-configs
+    networks: [nordstern-net]
+
+  # ── Aggregator (routing/quote + registry). Discovers real anchors registered by the platform. ──
+  aggregator:
+    build: ./anchor-template/aggregator-service
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["3005:3005"]
+    environment:
+      PORT: 3005
+      DATABASE_URL: postgres://anchor:anchor@db:5432/aggregatordb
+    networks: [nordstern-net]
+
+  # ── One-shot schema push for the platform DB, then exits. ──
+  platform-migrate:
+    build: ./platform/api
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://anchor:anchor@db:5432/platformdb
+    command: ["npx", "drizzle-kit", "push"]
+    restart: "no"
+    networks: [nordstern-net]
+
+  # ── Onboarding platform. Drives the REAL provisioner + registers with the aggregator. ──
+  platform-api:
+    build: ./platform/api
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      platform-migrate: { condition: service_completed_successfully }
+      control-plane: { condition: service_started }
+      aggregator: { condition: service_started }
+    ports: ["4000:4000"]
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      DATABASE_URL: postgres://anchor:anchor@db:5432/platformdb
+      # Required by the platform's env schema (zod) — server won't boot without these.
+      JWT_ACCESS_SECRET: ${PLATFORM_JWT_ACCESS_SECRET:-dev-access-secret-change-me}
+      JWT_REFRESH_SECRET: ${PLATFORM_JWT_REFRESH_SECRET:-dev-refresh-secret-change-me}
+      # Integration wiring (this is what connects the three services):
+      CONTROL_PLANE_URL: http://control-plane:3002
+      AGGREGATOR_URL: http://aggregator:3005
+      CP_SERVICE_EMAIL: platform-service@nordstern.internal
+      CP_SERVICE_PASSWORD: ${CP_SERVICE_PASSWORD:-dev-service-secret}
+    networks: [nordstern-net]
