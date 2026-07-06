@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/tokens/radius.css">
+  <link rel="stylesheet" href="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/tokens/motion.css">
+  <link rel="stylesheet" href="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/styles.css">
+  <script src="_ds/phantom-design-system-a666e0ec-b06a-442b-9330-f0acd73e7929/_ds_bundle.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #0E0E10; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+    @keyframes sheetUp { from { transform: translateY(22px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+    @keyframes popIn { from { transform: scale(.96); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+    @keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-7px) } }
+    @keyframes spin { to { transform: rotate(360deg) } }
+    @keyframes pulseDot { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
+  </style>
+</helmet>
+<div style="min-height:100vh;width:100%;background:radial-gradient(130% 90% at 50% -5%, #241F33 0%, #0E0E10 55%);display:flex;align-items:center;justify-content:center;padding:24px;font-family:var(--font-body);">
+  <div style="position:relative;width:390px;height:844px;background:#000;border-radius:54px;padding:12px;box-shadow:var(--shadow-lg), 0 0 0 2px rgba(255,255,255,.05);flex-shrink:0;">
+    <div style="position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:var(--color-bg-canvas);display:flex;flex-direction:column;">
+
+      <div style="position:relative;z-index:20;height:52px;display:flex;align-items:center;justify-content:space-between;padding:15px 26px 0;flex-shrink:0;">
+        <span style="font-family:var(--font-mono);font-size:14px;font-weight:500;color:var(--color-text-primary);">9:41</span>
+        <div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:104px;height:28px;background:#000;border-radius:999px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;color:var(--color-text-primary);">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5" width="3" height="7" rx="1"></rect><rect x="10" y="2" width="3" height="10" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1" opacity="0.4"></rect></svg>
+          <svg width="17" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01"></path></svg>
+          <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="0.5" y="0.5" width="21" height="12" rx="3" stroke="currentColor" opacity="0.5"></rect><rect x="2.5" y="2.5" width="16" height="8" rx="1.5" fill="currentColor"></rect><rect x="23" y="4" width="2" height="5" rx="1" fill="currentColor" opacity="0.5"></rect></svg>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;position:relative;">
+
+        <sc-if value="{{ screenHome }}" hint-placeholder-val="{{ true }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;padding-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 2px;">
+            <div style="width:38px;height:38px;border-radius:999px;background:linear-gradient(135deg,var(--color-brand-500),var(--color-brand-900));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:14px;color:#fff;border:1px solid var(--color-border);">AR</div>
+            <button style="display:flex;align-items:center;gap:6px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:999px;padding:7px 14px;color:var(--color-text-primary);font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer;">Account 1 <span style="color:var(--color-text-secondary);">▾</span></button>
+            <button onClick="{{ onScan }}" aria-label="Scan" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path></svg>
+            </button>
+          </div>
+
+          <div style="text-align:center;padding:20px 0 6px;">
+            <div style="font-size:13px;color:var(--color-text-secondary);letter-spacing:.02em;">Total balance</div>
+            <div style="font-family:var(--font-mono);font-size:42px;font-weight:600;color:var(--color-text-primary);letter-spacing:-.01em;margin-top:6px;">{{ totalBalance }}</div>
+            <div style="margin-top:10px;display:inline-flex;">
+              <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Badge" tone="success" hint-size="auto,22px">+$48.20 · +2.13%</x-import>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;gap:4px;padding:16px 18px 18px;">
+            <button onClick="{{ onDeposit }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0;">
+              <span style="width:50px;height:50px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-brand-500);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+              <span style="font-family:var(--font-display);font-weight:600;font-size:11.5px;color:var(--color-text-primary);">Deposit</span>
+            </button>
+            <button onClick="{{ onWithdraw }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0;">
+              <span style="width:50px;height:50px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-brand-500);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 20h14"></path></svg></span>
+              <span style="font-family:var(--font-display);font-weight:600;font-size:11.5px;color:var(--color-text-primary);">Withdraw</span>
+            </button>
+            <button onClick="{{ onSend }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0;">
+              <span style="width:50px;height:50px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-brand-500);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M8 7h9v9"></path></svg></span>
+              <span style="font-family:var(--font-display);font-weight:600;font-size:11.5px;color:var(--color-text-primary);">Send</span>
+            </button>
+            <button onClick="{{ onReceive }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0;">
+              <span style="width:50px;height:50px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-brand-500);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 7 7 17M16 17H7V8"></path></svg></span>
+              <span style="font-family:var(--font-display);font-weight:600;font-size:11.5px;color:var(--color-text-primary);">Receive</span>
+            </button>
+            <button onClick="{{ onSwap }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0;">
+              <span style="width:50px;height:50px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-brand-500);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4l4 4-4 4M20 8H8M8 20l-4-4 4-4M4 16h12"></path></svg></span>
+              <span style="font-family:var(--font-display);font-weight:600;font-size:11.5px;color:var(--color-text-primary);">Swap</span>
+            </button>
+          </div>
+
+          <div style="padding:0 16px 16px;">
+            <button onClick="{{ onFeatured }}" style="width:100%;text-align:left;border:none;cursor:pointer;border-radius:var(--radius-lg);padding:15px 16px;background:linear-gradient(135deg,var(--color-brand-500) 0%,var(--color-brand-900) 100%);color:#fff;display:flex;align-items:center;gap:13px;box-shadow:var(--shadow-md);">
+              <span style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16v10H4z"></path><path d="M4 11h16"></path><path d="M8 15h3"></path></svg></span>
+              <div style="flex:1;">
+                <div style="font-family:var(--font-display);font-weight:600;font-size:15px;">Add money instantly</div>
+                <div style="font-size:12.5px;opacity:.85;margin-top:2px;">UPI, Google Pay &amp; bank via Meridian</div>
+              </div>
+              <span style="font-size:20px;opacity:.9;">→</span>
+            </button>
+          </div>
+
+          <div style="padding:0 16px 12px;">
+            <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Tabs" tabs="{{ homeTabs }}" value="{{ homeTab }}" onChange="{{ setHomeTab }}" hint-size="100%,44px"></x-import>
+          </div>
+
+          <sc-if value="{{ homeTabTokens }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:0 8px;">
+            <sc-for list="{{ homeTokens }}" as="t" hint-placeholder-count="4">
+              <button onClick="{{ t.open }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:11px 12px;background:none;border:none;border-radius:var(--radius-md);cursor:pointer;text-align:left;">
+                <span style="width:42px;height:42px;border-radius:999px;background:{{ t.color }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:14px;flex-shrink:0;">{{ t.initials }}</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--color-text-primary);">{{ t.name }}</div>
+                  <div style="font-family:var(--font-mono);font-size:12.5px;color:var(--color-text-secondary);">{{ t.amtStr }}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-family:var(--font-mono);font-size:15px;color:var(--color-text-primary);">{{ t.usdStr }}</div>
+                  <div style="font-family:var(--font-mono);font-size:12.5px;color:{{ t.chgColor }};">{{ t.chg }}</div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ homeTabActivity }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:0 12px;">
+            <sc-for list="{{ activityPreview }}" as="x" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 6px;border-bottom:1px solid var(--color-border);">
+                <span style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="{{ x.icon }}"></path></svg></span>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">{{ x.title }}</div>
+                  <div style="font-size:12px;color:var(--color-text-secondary);">{{ x.sub }}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-family:var(--font-mono);font-size:13.5px;color:{{ x.amtColor }};">{{ x.amount }}</div>
+                  <div style="font-family:var(--font-body);font-size:11px;color:{{ x.statusColor }};">{{ x.status }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ screenAnchors }}" hint-placeholder-val="{{ false }}">
+<div style="padding:6px 16px 24px;">
+  <h1 style="font-family:var(--font-display);font-weight:600;font-size:26px;color:var(--color-text-primary);letter-spacing:-.02em;margin:8px 2px 4px;">Anchors</h1>
+  <p style="font-size:13.5px;color:var(--color-text-secondary);margin:0 2px 16px;line-height:19px;">Move between crypto and your local money. Connect an anchor to deposit or withdraw.</p>
+
+  <button onClick="{{ startCrossborder }}" style="width:100%;text-align:left;border:none;cursor:pointer;border-radius:var(--radius-lg);padding:15px 16px;margin-bottom:18px;background:linear-gradient(135deg,var(--color-brand-500) 0%,var(--color-brand-900) 100%);color:#fff;display:flex;align-items:center;gap:13px;box-shadow:var(--shadow-md);">
+    <span style="width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.4 2.7 2.4 15.3 0 18M12 3c-2.4 2.7-2.4 15.3 0 18"></path></svg></span>
+    <div style="flex:1;"><div style="font-family:var(--font-display);font-weight:600;font-size:15px;">Send money abroad</div><div style="font-size:12.5px;opacity:.85;margin-top:2px;">Cross-border payout via SEP-31</div></div>
+    <span style="font-size:20px;opacity:.9;">→</span>
+  </button>
+
+  <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin:0 2px 10px;">Connected</div>
+  <sc-for list="{{ anchorsConnected }}" as="a" hint-placeholder-count="2">
+    <button onClick="{{ a.open }}" style="width:100%;display:flex;align-items:center;gap:13px;padding:14px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);cursor:pointer;text-align:left;margin-bottom:10px;box-shadow:var(--shadow-sm);">
+      <span style="width:44px;height:44px;border-radius:999px;background:{{ a.color }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:15px;flex-shrink:0;">{{ a.initials }}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span style="font-family:var(--font-display);font-weight:600;font-size:15.5px;color:var(--color-text-primary);">{{ a.name }}</span>
+          <sc-if value="{{ a.featured }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--font-body);font-size:10px;font-weight:600;color:var(--color-brand-500);background:var(--color-brand-100);padding:2px 7px;border-radius:999px;white-space:nowrap;flex-shrink:0;">Your anchor</span></sc-if>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">{{ a.railLabels }}</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);margin-top:3px;">{{ a.region }} · fee {{ a.fee }}</div>
+      </div>
+      <span style="color:var(--color-text-tertiary);font-size:22px;">›</span>
+    </button>
+  </sc-for>
+
+  <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin:18px 2px 10px;">Available</div>
+  <sc-for list="{{ anchorsAvailable }}" as="a" hint-placeholder-count="4">
+    <button onClick="{{ a.open }}" style="width:100%;display:flex;align-items:center;gap:13px;padding:14px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);cursor:pointer;text-align:left;margin-bottom:10px;">
+      <span style="width:44px;height:44px;border-radius:999px;background:{{ a.color }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:15px;flex-shrink:0;">{{ a.initials }}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--font-display);font-weight:600;font-size:15.5px;color:var(--color-text-primary);">{{ a.name }}</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">{{ a.railLabels }}</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);margin-top:3px;">{{ a.region }} · fee {{ a.fee }}</div>
+      </div>
+      <span style="color:var(--color-text-tertiary);font-size:22px;">›</span>
+    </button>
+  </sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenAnchorDetail }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 4px;flex-shrink:0;">
+    <button onClick="{{ ad.back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+    </button>
+    <span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Anchor details</span>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:0 18px 16px;">
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 0 16px;">
+      <span style="width:66px;height:66px;border-radius:999px;background:{{ ad.color }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:24px;box-shadow:var(--shadow-md);">{{ ad.initials }}</span>
+      <h2 style="font-family:var(--font-display);font-weight:600;font-size:22px;color:var(--color-text-primary);margin:14px 0 2px;letter-spacing:-.01em;">{{ ad.name }}</h2>
+      <div style="font-size:13px;color:var(--color-text-secondary);">{{ ad.tagline }} · {{ ad.region }}</div>
+      <button onClick="{{ ad.toggle }}" style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;background:{{ ad.connectBg }};border:1px solid {{ ad.connectBorder }};border-radius:999px;padding:7px 16px;color:{{ ad.connectColor }};font-family:var(--font-display);font-weight:600;font-size:13px;cursor:pointer;">{{ ad.connectLabel }}</button>
+    </div>
+
+    <p style="font-size:14px;line-height:21px;color:var(--color-text-secondary);text-align:center;margin:0 4px 18px;">{{ ad.blurb }}</p>
+
+    <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;">
+      <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:10px;">Supported assets</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <sc-for list="{{ ad.assets }}" as="sym" hint-placeholder-count="2">
+          <span style="font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--color-text-primary);background:var(--color-bg-surface-2);border:1px solid var(--color-border);padding:6px 12px;border-radius:999px;">{{ sym }}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;">
+      <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:6px;">Funding methods</div>
+      <sc-for list="{{ ad.rails }}" as="r" hint-placeholder-count="3">
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+          <span style="width:38px;height:38px;border-radius:12px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);flex-shrink:0;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="{{ r.icon }}"></path></svg></span>
+          <div><div style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">{{ r.label }}</div><div style="font-size:12px;color:var(--color-text-secondary);">{{ r.desc }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Fee</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ ad.fee }}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Settlement</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ ad.settle }}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;"><span style="font-size:13.5px;color:var(--color-text-secondary);">Identity</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ ad.kyc }}</span></div>
+    </div>
+  </div>
+
+  <div style="flex-shrink:0;padding:12px 18px 26px;background:var(--color-bg-canvas);border-top:1px solid var(--color-border);display:flex;gap:10px;">
+    <div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ ad.deposit }}" full-width="{{ true }}" hint-size="100%,48px">Deposit</x-import></div>
+    <div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" variant="secondary" onClick="{{ ad.withdraw }}" full-width="{{ true }}" hint-size="100%,48px">Withdraw</x-import></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenDeposit }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;">
+    <sc-if value="{{ dep.showSteps }}" hint-placeholder-val="{{ true }}"><button onClick="{{ dep.back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button></sc-if>
+    <span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Deposit</span>
+  </div>
+
+  <sc-if value="{{ dep.showSteps }}" hint-placeholder-val="{{ true }}">
+  <div style="padding:8px 18px 12px;">
+    <div style="display:flex;gap:6px;margin-bottom:7px;">
+      <sc-for list="{{ dep.stepBars }}" as="b" hint-placeholder-count="4"><span style="flex:1;height:4px;border-radius:999px;background:{{ b.color }};"></span></sc-for>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);">{{ dep.stepCaption }}</div>
+  </div>
+  </sc-if>
+
+  <div style="flex:1;overflow-y:auto;padding:4px 18px 14px;">
+
+    <sc-if value="{{ dep.s0 }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:12px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:18px;">
+        <span style="width:40px;height:40px;border-radius:999px;background:{{ dep.anchorColor }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:14px;flex-shrink:0;">{{ dep.anchorInitials }}</span>
+        <div style="flex:1;"><div style="font-size:11.5px;color:var(--color-text-tertiary);">Adding {{ dep.asset }} via</div><div style="font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--color-text-primary);">{{ dep.anchorName }}</div></div>
+      </div>
+      <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin-bottom:12px;">Choose how to pay</div>
+      <sc-for list="{{ dep.methods }}" as="m" hint-placeholder-count="4">
+        <button onClick="{{ m.pick }}" style="width:100%;display:flex;align-items:center;gap:13px;padding:14px;background:var(--color-bg-surface);border:1.5px solid {{ m.borderColor }};border-radius:var(--radius-md);cursor:pointer;text-align:left;margin-bottom:10px;">
+          <span style="width:40px;height:40px;border-radius:12px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="{{ m.icon }}"></path></svg></span>
+          <div style="flex:1;min-width:0;"><div style="font-family:var(--font-display);font-weight:600;font-size:14.5px;color:var(--color-text-primary);">{{ m.label }}</div><div style="font-size:12px;color:var(--color-text-secondary);">{{ m.desc }}</div></div>
+          <span style="font-family:var(--font-body);font-size:10.5px;font-weight:600;color:var(--color-success);background:var(--color-success-fill);padding:3px 8px;border-radius:999px;white-space:nowrap;">{{ m.badge }}</span>
+        </button>
+      </sc-for>
+    </sc-if>
+
+    <sc-if value="{{ dep.s1 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:22px 0 8px;">
+        <div style="font-size:13px;color:var(--color-text-secondary);">You pay</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;">
+          <span style="font-family:var(--font-mono);font-size:34px;font-weight:600;color:var(--color-text-secondary);">{{ dep.fiatSym }}</span>
+          <input value="{{ dep.fiat }}" onChange="{{ dep.onFiat }}" inputMode="decimal" style="width:180px;background:none;border:none;outline:none;color:var(--color-text-primary);font-family:var(--font-mono);font-size:44px;font-weight:600;text-align:center;padding:0;" />
+        </div>
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:16px;">
+          <sc-for list="{{ dep.chips }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.set }}" style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary);background:var(--color-bg-surface);border:1px solid var(--color-border);padding:8px 14px;border-radius:999px;cursor:pointer;">{{ c.label }}</button></sc-for>
+        </div>
+      </div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-top:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">You pay</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ dep.youPay }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Anchor fee · {{ dep.feePct }}</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ dep.feeStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Rate</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ dep.rateStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;"><span style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">You receive</span><span style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--color-brand-500);">{{ dep.youGet }}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;justify-content:center;margin-top:14px;color:var(--color-text-tertiary);font-size:12px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Arrives {{ dep.eta }}</div>
+    </sc-if>
+
+    <sc-if value="{{ dep.s2 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:16px 0 4px;">
+        <div style="font-size:13px;color:var(--color-text-secondary);">You’ll receive</div>
+        <div style="font-family:var(--font-mono);font-size:34px;font-weight:600;color:var(--color-text-primary);margin-top:4px;">{{ dep.youGet }}</div>
+      </div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Pay with</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ dep.methodLabel }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Anchor</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ dep.anchorName }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">You pay</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ dep.youPay }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Anchor fee</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ dep.feeStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;"><span style="font-size:13.5px;color:var(--color-text-secondary);">Arrives</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ dep.eta }}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;background:var(--color-success-fill);border-radius:var(--radius-md);padding:12px 14px;margin-top:14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6z"></path><path d="M9 12l2 2 4-4"></path></svg>
+        <span style="font-size:12.5px;color:var(--color-text-primary);">Identity verified · your info is shared securely with the anchor.</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dep.s3 }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ dep.isUpi }}" hint-placeholder-val="{{ true }}">
+        <div style="text-align:center;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:20px 16px;">
+          <div style="font-size:12px;color:var(--color-text-tertiary);">Paying to</div>
+          <div style="font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--color-text-primary);margin-top:2px;">Meridian</div>
+          <div style="font-family:var(--font-mono);font-size:12.5px;color:var(--color-text-secondary);">{{ dep.upiRef }}</div>
+          <div style="font-family:var(--font-mono);font-size:36px;font-weight:600;color:var(--color-text-primary);margin-top:14px;">{{ dep.youPay }}</div>
+        </div>
+        <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin:18px 0 12px;">Choose a UPI app</div>
+        <div style="display:flex;gap:10px;">
+          <sc-for list="{{ dep.upiApps }}" as="ap" hint-placeholder-count="4">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:12px 4px;">
+              <span style="width:34px;height:34px;border-radius:999px;background:{{ ap.color }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:13px;">{{ ap.initials }}</span>
+              <span style="font-size:10px;color:var(--color-text-secondary);text-align:center;">{{ ap.name }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dep.isCard }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin-bottom:12px;">Card details</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Card number" placeholder="1234 5678 9012 3456" hint-size="100%,68px"></x-import>
+          <div style="display:flex;gap:12px;"><div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Expiry" placeholder="MM / YY" hint-size="100%,68px"></x-import></div><div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="CVC" placeholder="123" hint-size="100%,68px"></x-import></div></div>
+          <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Name on card" placeholder="Aarav Sharma" hint-size="100%,68px"></x-import>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dep.isBank }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin-bottom:12px;">Transfer to this account</div>
+        <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13px;color:var(--color-text-secondary);">Account number</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">5729 1183 4471</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13px;color:var(--color-text-secondary);">IFSC</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">MERD0000123</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13px;color:var(--color-text-secondary);">Beneficiary</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">Meridian Payments</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;"><span style="font-size:13px;color:var(--color-text-secondary);">Amount</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-brand-500);">{{ dep.youPay }}</span></div>
+        </div>
+        <div style="margin-top:12px;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Alert" tone="info" hint-size="100%,60px">Send the exact amount from your bank app, then tap below to confirm.</x-import></div>
+      </sc-if>
+
+      <sc-if value="{{ dep.isCash }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:22px 16px;">
+          <div style="font-size:12px;color:var(--color-text-tertiary);">Reference code</div>
+          <div style="font-family:var(--font-mono);font-size:26px;font-weight:600;color:var(--color-text-primary);letter-spacing:.04em;margin-top:6px;">MG-4821-9930</div>
+          <div style="font-size:12.5px;color:var(--color-text-secondary);margin-top:12px;line-height:19px;">Show this code at any MoneyGram location and pay {{ dep.youPay }} in cash.</div>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ dep.s4 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:16px 0 8px;">
+        <sc-if value="{{ dep.txDone }}" hint-placeholder-val="{{ false }}">
+          <div style="width:84px;height:84px;border-radius:999px;background:var(--color-success-fill);display:inline-flex;align-items:center;justify-content:center;animation:popIn .4s var(--ease-bounce);"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"></path></svg></div>
+          <div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--color-text-primary);margin-top:14px;">Deposit complete</div>
+        </sc-if>
+        <sc-if value="{{ dep.txPending }}" hint-placeholder-val="{{ true }}">
+          <div style="width:84px;height:84px;border-radius:999px;border:4px solid var(--color-bg-surface-2);border-top-color:var(--color-brand-500);display:inline-block;animation:spin 1s linear infinite;"></div>
+          <div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--color-text-primary);margin-top:14px;">Processing your deposit</div>
+        </sc-if>
+        <div style="font-family:var(--font-mono);font-size:16px;color:var(--color-success);margin-top:4px;">{{ dep.receivedText }}</div>
+      </div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:8px 16px;margin-top:16px;">
+        <sc-for list="{{ dep.tl }}" as="r" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+            <span style="width:26px;height:26px;border-radius:999px;background:{{ r.dotColor }};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><sc-if value="{{ r.done }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"></path></svg></sc-if></span>
+            <span style="font-size:14px;color:{{ r.textColor }};">{{ r.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="flex-shrink:0;padding:12px 18px 26px;background:var(--color-bg-canvas);border-top:1px solid var(--color-border);">
+    <sc-if value="{{ dep.s0 }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ dep.hasMethod }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ dep.proceed }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+      <sc-if value="{{ dep.noMethod }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" disabled="{{ true }}" full-width="{{ true }}" hint-size="100%,50px">Choose a method</x-import></sc-if>
+    </sc-if>
+    <sc-if value="{{ dep.s1 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ dep.toReview }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ dep.s2 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ dep.proceed }}" full-width="{{ true }}" hint-size="100%,50px">Confirm &amp; continue</x-import></sc-if>
+    <sc-if value="{{ dep.s3 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ dep.payNow }}" full-width="{{ true }}" hint-size="100%,50px">Pay {{ dep.youPay }}</x-import></sc-if>
+    <sc-if value="{{ dep.s4 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ dep.done }}" full-width="{{ true }}" hint-size="100%,50px">Done</x-import></sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenWithdraw }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;">
+    <sc-if value="{{ wd.showSteps }}" hint-placeholder-val="{{ true }}"><button onClick="{{ wd.back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button></sc-if>
+    <span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Withdraw</span>
+  </div>
+  <sc-if value="{{ wd.showSteps }}" hint-placeholder-val="{{ true }}">
+  <div style="padding:8px 18px 12px;">
+    <div style="display:flex;gap:6px;margin-bottom:7px;"><sc-for list="{{ wd.stepBars }}" as="b" hint-placeholder-count="3"><span style="flex:1;height:4px;border-radius:999px;background:{{ b.color }};"></span></sc-for></div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);">{{ wd.stepCaption }}</div>
+  </div>
+  </sc-if>
+
+  <div style="flex:1;overflow-y:auto;padding:4px 18px 14px;">
+    <sc-if value="{{ wd.s0 }}" hint-placeholder-val="{{ true }}">
+      <div style="text-align:center;padding:22px 0 6px;">
+        <div style="font-size:13px;color:var(--color-text-secondary);">You withdraw</div>
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:8px;">
+          <input value="{{ wd.assetAmt }}" onChange="{{ wd.onAmt }}" inputMode="decimal" style="width:150px;background:none;border:none;outline:none;color:var(--color-text-primary);font-family:var(--font-mono);font-size:44px;font-weight:600;text-align:right;padding:0;" />
+          <span style="font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--color-text-secondary);">{{ wd.asset }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;">
+          <span style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary);">Available {{ wd.balance }}</span>
+          <button onClick="{{ wd.setMax }}" style="font-family:var(--font-display);font-weight:600;font-size:11px;color:var(--color-brand-500);background:var(--color-brand-100);border:none;padding:4px 10px;border-radius:999px;cursor:pointer;">MAX</button>
+        </div>
+      </div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">You send</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ wd.youSend }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Anchor fee · {{ wd.feePct }}</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ wd.feeStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Rate</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ wd.rateStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;"><span style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">You receive</span><span style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--color-brand-500);">{{ wd.youGet }}</span></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ wd.s1 }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin:6px 0 10px;">Where should the money go?</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <sc-for list="{{ wd.destTypes }}" as="d" hint-placeholder-count="3"><button onClick="{{ d.pick }}" style="flex:1;padding:11px 6px;border-radius:var(--radius-md);background:var(--color-bg-surface);border:1.5px solid {{ d.borderColor }};color:{{ d.textColor }};font-family:var(--font-display);font-weight:600;font-size:12.5px;cursor:pointer;">{{ d.label }}</button></sc-for>
+      </div>
+      <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="{{ wd.destLabel }}" placeholder="{{ wd.destPlaceholder }}" value="{{ wd.dest }}" onChange="{{ wd.onDest }}" hint-size="100%,70px"></x-import>
+      <div style="display:flex;align-items:center;gap:11px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:12px 14px;margin-top:16px;">
+        <span style="width:36px;height:36px;border-radius:999px;background:{{ wd.anchorColor }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:13px;flex-shrink:0;">{{ wd.anchorInitials }}</span>
+        <div><div style="font-size:11.5px;color:var(--color-text-tertiary);">Cashing out via</div><div style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">{{ wd.anchorName }}</div></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ wd.s2 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:16px 0 4px;">
+        <div style="font-size:13px;color:var(--color-text-secondary);">You’ll receive</div>
+        <div style="font-family:var(--font-mono);font-size:34px;font-weight:600;color:var(--color-text-primary);margin-top:4px;">{{ wd.youGet }}</div>
+      </div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">You send</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ wd.youSend }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Anchor fee</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ wd.feeStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Sent to</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ wd.dest }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;"><span style="font-size:13.5px;color:var(--color-text-secondary);">Arrives</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ wd.eta }}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;background:var(--color-success-fill);border-radius:var(--radius-md);padding:12px 14px;margin-top:14px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6z"></path><path d="M9 12l2 2 4-4"></path></svg><span style="font-size:12.5px;color:var(--color-text-primary);">Identity verified · Meridian Tier 2</span></div>
+    </sc-if>
+
+    <sc-if value="{{ wd.s3 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:16px 0 8px;">
+        <sc-if value="{{ wd.txDone }}" hint-placeholder-val="{{ false }}"><div style="width:84px;height:84px;border-radius:999px;background:var(--color-success-fill);display:inline-flex;align-items:center;justify-content:center;animation:popIn .4s var(--ease-bounce);"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"></path></svg></div><div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--color-text-primary);margin-top:14px;">Withdrawal complete</div></sc-if>
+        <sc-if value="{{ wd.txPending }}" hint-placeholder-val="{{ true }}"><div style="width:84px;height:84px;border-radius:999px;border:4px solid var(--color-bg-surface-2);border-top-color:var(--color-brand-500);display:inline-block;animation:spin 1s linear infinite;"></div><div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--color-text-primary);margin-top:14px;">Processing withdrawal</div></sc-if>
+        <div style="font-family:var(--font-mono);font-size:16px;color:var(--color-text-primary);margin-top:4px;">{{ wd.youGet }}</div>
+      </div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:8px 16px;margin-top:16px;">
+        <sc-for list="{{ wd.tl }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:10px 0;"><span style="width:26px;height:26px;border-radius:999px;background:{{ r.dotColor }};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><sc-if value="{{ r.done }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"></path></svg></sc-if></span><span style="font-size:14px;color:{{ r.textColor }};">{{ r.label }}</span></div></sc-for>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="flex-shrink:0;padding:12px 18px 26px;background:var(--color-bg-canvas);border-top:1px solid var(--color-border);">
+    <sc-if value="{{ wd.s0 }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ wd.proceed }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ wd.s1 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ wd.toReview }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ wd.s2 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ wd.confirm }}" full-width="{{ true }}" hint-size="100%,50px">Confirm &amp; withdraw</x-import></sc-if>
+    <sc-if value="{{ wd.s3 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ wd.done }}" full-width="{{ true }}" hint-size="100%,50px">Done</x-import></sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenKyc }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;">
+    <sc-if value="{{ kyc.showBack }}" hint-placeholder-val="{{ true }}"><button onClick="{{ kyc.back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button></sc-if>
+    <span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Verify identity</span>
+  </div>
+  <sc-if value="{{ kyc.showBack }}" hint-placeholder-val="{{ true }}">
+  <div style="padding:8px 18px 12px;">
+    <div style="display:flex;gap:6px;margin-bottom:7px;"><sc-for list="{{ kyc.stepBars }}" as="b" hint-placeholder-count="4"><span style="flex:1;height:4px;border-radius:999px;background:{{ b.color }};"></span></sc-for></div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);">{{ kyc.stepCaption }}</div>
+  </div>
+  </sc-if>
+
+  <div style="flex:1;overflow-y:auto;padding:4px 18px 14px;">
+    <sc-if value="{{ kyc.k0 }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:11px;background:var(--color-brand-100);border-radius:var(--radius-md);padding:13px 14px;margin-bottom:16px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-700)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6z"></path></svg><span style="font-size:12.5px;color:var(--color-brand-900);line-height:18px;">Anchors are regulated. Your details are verified once and reused across every deposit and withdrawal.</span></div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Legal name" placeholder="Full name" value="{{ kyc.name }}" onChange="{{ kyc.onName }}" hint-size="100%,70px"></x-import>
+        <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Date of birth" placeholder="DD / MM / YYYY" value="{{ kyc.dob }}" onChange="{{ kyc.onDob }}" hint-size="100%,70px"></x-import>
+        <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Country" value="India" hint-size="100%,70px"></x-import>
+      </div>
+    </sc-if>
+    <sc-if value="{{ kyc.k1 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Residential address" placeholder="Street address" value="{{ kyc.addr }}" onChange="{{ kyc.onAddr }}" hint-size="100%,70px"></x-import>
+        <div style="display:flex;gap:12px;"><div style="flex:1.4;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="City" placeholder="City" hint-size="100%,70px"></x-import></div><div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="PIN code" placeholder="560001" hint-size="100%,70px"></x-import></div></div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ kyc.k2 }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin-bottom:10px;">Document type</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <sc-for list="{{ kyc.idTypes }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.pick }}" style="padding:9px 14px;border-radius:999px;background:var(--color-bg-surface);border:1.5px solid {{ t.borderColor }};color:{{ t.textColor }};font-family:var(--font-display);font-weight:600;font-size:12.5px;cursor:pointer;">{{ t.label }}</button></sc-for>
+      </div>
+      <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Document number" placeholder="XXXX XXXX XXXX" value="{{ kyc.idNum }}" onChange="{{ kyc.onIdNum }}" hint-size="100%,70px"></x-import>
+      <div style="margin-top:14px;border:2px dashed var(--color-border);border-radius:var(--radius-lg);padding:26px 16px;text-align:center;background:var(--color-bg-surface);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-500)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style="margin-bottom:8px;"><path d="M4 7h3l2-3h6l2 3h3v12H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg><div style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">Photograph your document</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px;">Front side · well lit · all corners visible</div></div>
+    </sc-if>
+    <sc-if value="{{ kyc.k3 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:10px 0;">
+        <div style="width:160px;height:160px;border-radius:999px;margin:0 auto;border:2px dashed var(--color-border);display:flex;align-items:center;justify-content:center;background:var(--color-bg-surface);">
+          <sc-if value="{{ kyc.selfie }}" hint-placeholder-val="{{ false }}"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"></path></svg></sc-if>
+          <sc-if value="{{ kyc.noSelfie }}" hint-placeholder-val="{{ true }}"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="4"></circle><path d="M5.5 20a7 7 0 0 1 13 0"></path></svg></sc-if>
+        </div>
+        <sc-if value="{{ kyc.selfie }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--color-text-primary);margin-top:16px;">Looks good</div><div style="font-size:12.5px;color:var(--color-text-secondary);margin-top:2px;">Your selfie was captured.</div></sc-if>
+        <sc-if value="{{ kyc.noSelfie }}" hint-placeholder-val="{{ true }}"><div style="font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--color-text-primary);margin-top:16px;">Take a selfie</div><div style="font-size:12.5px;color:var(--color-text-secondary);margin:2px 0 16px;">Center your face in the circle.</div><div style="display:inline-block;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" variant="secondary" onClick="{{ kyc.takeSelfie }}" hint-size="160px,44px">Capture selfie</x-import></div></sc-if>
+      </div>
+    </sc-if>
+    <sc-if value="{{ kyc.k4 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:40px 0;">
+        <div style="width:84px;height:84px;border-radius:999px;border:4px solid var(--color-bg-surface-2);border-top-color:var(--color-brand-500);display:inline-block;animation:spin 1s linear infinite;"></div>
+        <div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--color-text-primary);margin-top:18px;">Verifying your identity</div>
+        <div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px;">This usually takes a few seconds.</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ kyc.showBack }}" hint-placeholder-val="{{ true }}">
+  <div style="flex-shrink:0;padding:12px 18px 26px;background:var(--color-bg-canvas);border-top:1px solid var(--color-border);">
+    <sc-if value="{{ kyc.k0 }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ kyc.next }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ kyc.k1 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ kyc.next }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ kyc.k2 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ kyc.next }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ kyc.k3 }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ kyc.canSubmit }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ kyc.submit }}" full-width="{{ true }}" hint-size="100%,50px">Submit for verification</x-import></sc-if>
+      <sc-if value="{{ kyc.noSelfie }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" disabled="{{ true }}" full-width="{{ true }}" hint-size="100%,50px">Capture a selfie first</x-import></sc-if>
+    </sc-if>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenCrossborder }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;">
+    <sc-if value="{{ cb.showSteps }}" hint-placeholder-val="{{ true }}"><button onClick="{{ cb.back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button></sc-if>
+    <span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);white-space:nowrap;">Send abroad</span>
+  </div>
+  <sc-if value="{{ cb.showSteps }}" hint-placeholder-val="{{ true }}">
+  <div style="padding:8px 18px 12px;">
+    <div style="display:flex;gap:6px;margin-bottom:7px;"><sc-for list="{{ cb.stepBars }}" as="b" hint-placeholder-count="3"><span style="flex:1;height:4px;border-radius:999px;background:{{ b.color }};"></span></sc-for></div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);">{{ cb.stepCaption }}</div>
+  </div>
+  </sc-if>
+
+  <div style="flex:1;overflow-y:auto;padding:4px 18px 14px;">
+    <sc-if value="{{ cb.s0 }}" hint-placeholder-val="{{ true }}">
+      <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin:6px 0 10px;">Recipient country</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+        <sc-for list="{{ cb.countries }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.pick }}" style="padding:9px 14px;border-radius:999px;background:var(--color-bg-surface);border:1.5px solid {{ c.borderColor }};color:{{ c.textColor }};font-family:var(--font-display);font-weight:600;font-size:12.5px;cursor:pointer;">{{ c.label }}</button></sc-for>
+      </div>
+      <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin:6px 0 10px;">Delivery method</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+        <sc-for list="{{ cb.methods }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.pick }}" style="width:100%;text-align:left;padding:13px 14px;border-radius:var(--radius-md);background:var(--color-bg-surface);border:1.5px solid {{ m.borderColor }};color:{{ m.textColor }};font-family:var(--font-display);font-weight:600;font-size:14px;cursor:pointer;">{{ m.label }}</button></sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Recipient full name" placeholder="e.g. Adaeze Okonkwo" value="{{ cb.name }}" onChange="{{ cb.onName }}" hint-size="100%,70px"></x-import>
+        <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Account / phone" placeholder="Account or mobile number" value="{{ cb.account }}" onChange="{{ cb.onAccount }}" hint-size="100%,70px"></x-import>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ cb.s1 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:22px 0 8px;">
+        <div style="font-size:13px;color:var(--color-text-secondary);">You send</div>
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:8px;">
+          <input value="{{ cb.cbAmt }}" onChange="{{ cb.onAmt }}" inputMode="decimal" style="width:150px;background:none;border:none;outline:none;color:var(--color-text-primary);font-family:var(--font-mono);font-size:44px;font-weight:600;text-align:right;padding:0;" />
+          <span style="font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--color-text-secondary);">USDC</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 4px;color:var(--color-text-tertiary);"><span style="height:1px;flex:1;background:var(--color-border);"></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"></path></svg><span style="height:1px;flex:1;background:var(--color-border);"></span></div>
+      <div style="text-align:center;"><div style="font-size:13px;color:var(--color-text-secondary);">They receive</div><div style="font-family:var(--font-mono);font-size:30px;font-weight:600;color:var(--color-brand-500);margin-top:4px;">{{ cb.youGet }}</div></div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-top:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Rate</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ cb.rateStr }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;"><span style="font-size:13.5px;color:var(--color-text-secondary);">Fee</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ cb.feeStr }}</span></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ cb.s2 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:16px 0 4px;"><div style="font-size:13px;color:var(--color-text-secondary);">They receive</div><div style="font-family:var(--font-mono);font-size:34px;font-weight:600;color:var(--color-text-primary);margin-top:4px;">{{ cb.youGet }}</div></div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Recipient</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ cb.name }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">Destination</span><span style="font-family:var(--font-body);font-size:13.5px;color:var(--color-text-primary);">{{ cb.country }} · {{ cb.methodName }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13.5px;color:var(--color-text-secondary);">You send</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ cb.youSend }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;"><span style="font-size:13.5px;color:var(--color-text-secondary);">Fee</span><span style="font-family:var(--font-mono);font-size:13.5px;color:var(--color-text-primary);">{{ cb.feeStr }}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;background:var(--color-info-fill);border-radius:var(--radius-md);padding:12px 14px;margin-top:14px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg><span style="font-size:12.5px;color:var(--color-text-primary);">Sent over Stellar via SEP-31. The receiving anchor pays out locally.</span></div>
+    </sc-if>
+
+    <sc-if value="{{ cb.s3 }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:16px 0 8px;">
+        <sc-if value="{{ cb.txDone }}" hint-placeholder-val="{{ false }}"><div style="width:84px;height:84px;border-radius:999px;background:var(--color-success-fill);display:inline-flex;align-items:center;justify-content:center;animation:popIn .4s var(--ease-bounce);"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"></path></svg></div><div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--color-text-primary);margin-top:14px;">Money is on its way</div></sc-if>
+        <sc-if value="{{ cb.txPending }}" hint-placeholder-val="{{ true }}"><div style="width:84px;height:84px;border-radius:999px;border:4px solid var(--color-bg-surface-2);border-top-color:var(--color-brand-500);display:inline-block;animation:spin 1s linear infinite;"></div><div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--color-text-primary);margin-top:14px;">Sending your transfer</div></sc-if>
+        <div style="font-family:var(--font-mono);font-size:16px;color:var(--color-success);margin-top:4px;">{{ cb.youGet }} to {{ cb.name }}</div>
+      </div>
+      <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:8px 16px;margin-top:16px;"><sc-for list="{{ cb.tl }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:10px 0;"><span style="width:26px;height:26px;border-radius:999px;background:{{ r.dotColor }};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><sc-if value="{{ r.done }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7"></path></svg></sc-if></span><span style="font-size:14px;color:{{ r.textColor }};">{{ r.label }}</span></div></sc-for></div>
+    </sc-if>
+  </div>
+
+  <div style="flex-shrink:0;padding:12px 18px 26px;background:var(--color-bg-canvas);border-top:1px solid var(--color-border);">
+    <sc-if value="{{ cb.s0 }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ cb.proceed }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ cb.s1 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ cb.toReview }}" full-width="{{ true }}" hint-size="100%,50px">Continue</x-import></sc-if>
+    <sc-if value="{{ cb.s2 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ cb.confirm }}" full-width="{{ true }}" hint-size="100%,50px">Confirm &amp; send</x-import></sc-if>
+    <sc-if value="{{ cb.s3 }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ cb.done }}" full-width="{{ true }}" hint-size="100%,50px">Done</x-import></sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenAsset }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;">
+    <button onClick="{{ ass.back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+    <span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">{{ ass.name }}</span>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:8px 18px 16px;">
+    <div style="text-align:center;padding:8px 0 4px;">
+      <span style="width:60px;height:60px;border-radius:999px;background:{{ ass.color }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:20px;">{{ ass.initials }}</span>
+      <div style="font-family:var(--font-mono);font-size:32px;font-weight:600;color:var(--color-text-primary);margin-top:12px;">{{ ass.amtStr }}</div>
+      <div style="font-family:var(--font-mono);font-size:14px;color:var(--color-text-secondary);">{{ ass.usdStr }} · <span style="color:{{ ass.chgColor }};">{{ ass.chg }}</span></div>
+    </div>
+    <div style="height:96px;margin:16px 0 8px;position:relative;">
+      <svg viewBox="0 0 300 96" preserveAspectRatio="none" style="width:100%;height:100%;"><defs><linearGradient id="spark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--color-brand-500)" stop-opacity="0.28"></stop><stop offset="100%" stop-color="var(--color-brand-500)" stop-opacity="0"></stop></linearGradient></defs><path d="M0 70 L30 62 L60 66 L90 48 L120 54 L150 36 L180 42 L210 26 L240 32 L270 18 L300 22 L300 96 L0 96 Z" fill="url(#spark)"></path><path d="M0 70 L30 62 L60 66 L90 48 L120 54 L150 36 L180 42 L210 26 L240 32 L270 18 L300 22" fill="none" stroke="var(--color-brand-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </div>
+    <div style="display:flex;gap:8px;margin:14px 0 4px;">
+      <div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ ass.deposit }}" full-width="{{ true }}" size="sm" hint-size="100%,42px">Deposit</x-import></div>
+      <div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" variant="secondary" onClick="{{ ass.withdraw }}" full-width="{{ true }}" size="sm" hint-size="100%,42px">Withdraw</x-import></div>
+      <div style="flex:1;"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" variant="secondary" onClick="{{ ass.swap }}" full-width="{{ true }}" size="sm" hint-size="100%,42px">Swap</x-import></div>
+    </div>
+    <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px;margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:13px;color:var(--color-text-secondary);">Issuer</span><span style="font-family:var(--font-body);font-size:13px;color:var(--color-text-primary);">{{ ass.issuer }}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;"><span style="font-size:13px;color:var(--color-text-secondary);">Asset</span><span style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary);">{{ ass.sym }}</span></div>
+    </div>
+    <div style="font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--color-text-tertiary);margin:20px 2px 6px;">Recent</div>
+    <sc-for list="{{ ass.activity }}" as="x" hint-placeholder-count="2">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--color-border);">
+        <span style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="{{ x.icon }}"></path></svg></span>
+        <div style="flex:1;min-width:0;"><div style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">{{ x.title }}</div><div style="font-size:12px;color:var(--color-text-secondary);">{{ x.time }}</div></div>
+        <div style="font-family:var(--font-mono);font-size:13.5px;color:{{ x.amtColor }};">{{ x.amount }}</div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenActivity }}" hint-placeholder-val="{{ false }}">
+<div style="padding:6px 16px 24px;">
+  <h1 style="font-family:var(--font-display);font-weight:600;font-size:26px;color:var(--color-text-primary);letter-spacing:-.02em;margin:8px 2px 18px;">Activity</h1>
+  <sc-for list="{{ activity }}" as="x" hint-placeholder-count="7">
+    <div style="display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--color-border);">
+      <span style="width:42px;height:42px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);flex-shrink:0;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="{{ x.icon }}"></path></svg></span>
+      <div style="flex:1;min-width:0;"><div style="font-family:var(--font-display);font-weight:600;font-size:14.5px;color:var(--color-text-primary);">{{ x.title }}</div><div style="font-size:12px;color:var(--color-text-secondary);">{{ x.sub }} · {{ x.time }}</div></div>
+      <div style="text-align:right;"><div style="font-family:var(--font-mono);font-size:14px;color:{{ x.amtColor }};">{{ x.amount }}</div><div style="font-family:var(--font-body);font-size:11px;color:{{ x.statusColor }};">{{ x.status }}</div></div>
+    </div>
+  </sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenSettings }}" hint-placeholder-val="{{ false }}">
+<div style="padding:6px 16px 24px;">
+  <h1 style="font-family:var(--font-display);font-weight:600;font-size:26px;color:var(--color-text-primary);letter-spacing:-.02em;margin:8px 2px 18px;">Settings</h1>
+  <div style="display:flex;align-items:center;gap:13px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:15px;margin-bottom:16px;">
+    <span style="width:48px;height:48px;border-radius:999px;background:linear-gradient(135deg,var(--color-brand-500),var(--color-brand-900));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:16px;">AR</span>
+    <div style="flex:1;"><div style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Account 1</div><div style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-secondary);">{{ walletAddr }}</div></div>
+    <button onClick="{{ copyAddr }}" aria-label="Copy" style="width:36px;height:36px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:inline-flex;align-items:center;justify-content:center;color:var(--color-text-secondary);cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg></button>
+  </div>
+
+  <button onClick="{{ settingsKyc }}" style="width:100%;display:flex;align-items:center;gap:13px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:15px;margin-bottom:16px;cursor:pointer;text-align:left;">
+    <span style="width:42px;height:42px;border-radius:12px;background:var(--color-brand-100);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
+    <div style="flex:1;"><div style="font-family:var(--font-display);font-weight:600;font-size:14.5px;color:var(--color-text-primary);">Identity verification</div><div style="font-size:12.5px;color:{{ kycStatusColor }};">{{ kycStatusLabel }}</div></div>
+    <span style="color:var(--color-text-tertiary);font-size:20px;">›</span>
+  </button>
+
+  <div style="font-family:var(--font-display);font-weight:600;font-size:12px;color:var(--color-text-tertiary);margin:4px 2px 8px;text-transform:uppercase;letter-spacing:.04em;">Preferences</div>
+  <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:4px 16px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:14.5px;color:var(--color-text-primary);">Hide balances</span><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Switch" checked="{{ balancesHidden }}" onChange="{{ toggleHide }}" hint-size="46px,28px"></x-import></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:14.5px;color:var(--color-text-primary);">Face ID</span><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Switch" checked="{{ faceId }}" onChange="{{ toggleFace }}" hint-size="46px,28px"></x-import></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--color-border);"><span style="font-size:14.5px;color:var(--color-text-primary);">Notifications</span><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Switch" checked="{{ notif }}" onChange="{{ toggleNotif }}" hint-size="46px,28px"></x-import></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;"><span style="font-size:14.5px;color:var(--color-text-primary);">Light theme</span><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Switch" checked="{{ isLight }}" onChange="{{ toggleTheme }}" hint-size="46px,28px"></x-import></div>
+  </div>
+
+  <div style="font-family:var(--font-display);font-weight:600;font-size:12px;color:var(--color-text-tertiary);margin:4px 2px 8px;text-transform:uppercase;letter-spacing:.04em;">Security</div>
+  <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:4px 16px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--color-border);cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg><span style="flex:1;font-size:14.5px;color:var(--color-text-primary);">Recovery phrase</span><span style="color:var(--color-text-tertiary);font-size:20px;">›</span></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:13px 0;cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg><span style="flex:1;font-size:14.5px;color:var(--color-text-primary);">Help &amp; support</span><span style="color:var(--color-text-tertiary);font-size:20px;">›</span></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenReceive }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;"><button onClick="{{ back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Receive</span></div>
+  <div style="flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;align-items:center;">
+    <p style="font-size:13.5px;color:var(--color-text-secondary);text-align:center;margin:6px 12px 18px;line-height:20px;">Share your Stellar address or QR to receive any asset.</p>
+    <div style="width:216px;height:216px;background:#fff;border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-md);">
+      <svg viewBox="0 0 100 100" style="width:100%;height:100%;" shape-rendering="crispEdges"><rect width="100" height="100" fill="#fff"></rect><g fill="#000"><rect x="6" y="6" width="22" height="22"></rect><rect x="12" y="12" width="10" height="10" fill="#fff"></rect><rect x="72" y="6" width="22" height="22"></rect><rect x="78" y="12" width="10" height="10" fill="#fff"></rect><rect x="6" y="72" width="22" height="22"></rect><rect x="12" y="78" width="10" height="10" fill="#fff"></rect><rect x="36" y="8" width="6" height="6"></rect><rect x="48" y="8" width="6" height="6"></rect><rect x="58" y="14" width="6" height="6"></rect><rect x="36" y="20" width="6" height="6"></rect><rect x="8" y="36" width="6" height="6"></rect><rect x="20" y="36" width="6" height="6"></rect><rect x="32" y="32" width="6" height="6"></rect><rect x="44" y="36" width="6" height="6"></rect><rect x="56" y="32" width="6" height="6"></rect><rect x="68" y="36" width="6" height="6"></rect><rect x="80" y="32" width="6" height="6"></rect><rect x="88" y="44" width="6" height="6"></rect><rect x="36" y="44" width="6" height="6"></rect><rect x="48" y="48" width="6" height="6"></rect><rect x="60" y="44" width="6" height="6"></rect><rect x="72" y="48" width="6" height="6"></rect><rect x="36" y="60" width="6" height="6"></rect><rect x="48" y="60" width="6" height="6"></rect><rect x="60" y="60" width="6" height="6"></rect><rect x="72" y="60" width="6" height="6"></rect><rect x="84" y="60" width="6" height="6"></rect><rect x="36" y="72" width="6" height="6"></rect><rect x="48" y="80" width="6" height="6"></rect><rect x="60" y="72" width="6" height="6"></rect><rect x="72" y="80" width="6" height="6"></rect><rect x="84" y="80" width="6" height="6"></rect></g></svg>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:13px 15px;margin-top:22px;width:100%;">
+      <span style="flex:1;font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary);word-break:break-all;">{{ walletAddr }}</span>
+      <button onClick="{{ copyAddr }}" aria-label="Copy" style="width:34px;height:34px;border-radius:999px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);cursor:pointer;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg></button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenSend }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;"><button onClick="{{ back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Send</span></div>
+  <div style="flex:1;overflow-y:auto;padding:12px 18px;">
+    <div style="text-align:center;padding:16px 0 6px;"><div style="font-size:13px;color:var(--color-text-secondary);">Amount</div><div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:8px;"><input value="120.00" inputMode="decimal" style="width:150px;background:none;border:none;outline:none;color:var(--color-text-primary);font-family:var(--font-mono);font-size:44px;font-weight:600;text-align:right;padding:0;" /><span style="font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--color-text-secondary);">USDC</span></div></div>
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:12px;">
+      <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Recipient" placeholder="Stellar address or *name" hint-size="100%,70px"></x-import>
+      <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Input" label="Memo (optional)" placeholder="Note to recipient" hint-size="100%,70px"></x-import>
+    </div>
+  </div>
+  <div style="flex-shrink:0;padding:12px 18px 26px;background:var(--color-bg-canvas);border-top:1px solid var(--color-border);"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ sendGo }}" full-width="{{ true }}" hint-size="100%,50px">Review send</x-import></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ screenSwap }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 2px;flex-shrink:0;"><button onClick="{{ back }}" style="width:38px;height:38px;border-radius:999px;background:var(--color-bg-surface);border:1px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><span style="font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--color-text-primary);">Swap</span></div>
+  <div style="flex:1;overflow-y:auto;padding:16px 18px;">
+    <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px;position:relative;">
+      <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:6px;">You pay</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;"><input value="350" inputMode="decimal" style="width:60%;background:none;border:none;outline:none;color:var(--color-text-primary);font-family:var(--font-mono);font-size:28px;font-weight:600;padding:0;" /><span style="display:inline-flex;align-items:center;gap:7px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);border-radius:999px;padding:6px 12px;"><span style="width:22px;height:22px;border-radius:999px;background:#5B54C9;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--font-display);font-weight:600;">XL</span><span style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">XLM</span></span></div>
+    </div>
+    <div style="display:flex;justify-content:center;margin:-13px 0;position:relative;z-index:2;"><span style="width:40px;height:40px;border-radius:999px;background:var(--color-bg-surface-2);border:3px solid var(--color-bg-canvas);display:inline-flex;align-items:center;justify-content:center;color:var(--color-brand-500);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"></path></svg></span></div>
+    <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px;">
+      <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:6px;">You receive</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-family:var(--font-mono);font-size:28px;font-weight:600;color:var(--color-text-primary);">42.60</span><span style="display:inline-flex;align-items:center;gap:7px;background:var(--color-bg-surface-2);border:1px solid var(--color-border);border-radius:999px;padding:6px 12px;"><span style="width:22px;height:22px;border-radius:999px;background:#2775CA;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--font-display);font-weight:600;">US</span><span style="font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--color-text-primary);">USDC</span></span></div>
+    </div>
+    <div style="background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:6px 14px;margin-top:14px;"><div style="display:flex;justify-content:space-between;padding:9px 0;"><span style="font-size:13px;color:var(--color-text-secondary);">Rate</span><span style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary);">1 XLM = 0.1218 USDC</span></div></div>
+  </div>
+  <div style="flex-shrink:0;padding:12px 18px 26px;background:var(--color-bg-canvas);border-top:1px solid var(--color-border);"><x-import component-from-global-scope="PhantomDesignSystem_a666e0.Button" onClick="{{ swapGo }}" full-width="{{ true }}" hint-size="100%,50px">Review swap</x-import></div>
+</div>
+</sc-if>
+
+<!--SCREENS-->
+
+      </div>
+
+      <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
+      <div style="flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-around;padding:10px 10px 22px;background:rgba(20,20,22,.82);backdrop-filter:blur(16px);border-top:1px solid var(--color-border);">
+        <button onClick="{{ goHome }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 14px;color:{{ navWalletColor }};">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M16 12.5h.01"></path><path d="M3 10h18"></path></svg>
+          <span style="font-family:var(--font-display);font-weight:600;font-size:10.5px;">Wallet</span>
+        </button>
+        <button onClick="{{ goAnchors }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 14px;color:{{ navAnchorsColor }};">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 7.5V21M7 11H4.5m15 0H17M5 12a7 7 0 0 0 14 0"></path></svg>
+          <span style="font-family:var(--font-display);font-weight:600;font-size:10.5px;">Anchors</span>
+        </button>
+        <button onClick="{{ goActivity }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 14px;color:{{ navActivityColor }};">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h3l2.5 6 4-14 2.5 8h4"></path></svg>
+          <span style="font-family:var(--font-display);font-weight:600;font-size:10.5px;">Activity</span>
+        </button>
+        <button onClick="{{ goSettings }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 14px;color:{{ navSettingsColor }};">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"></path><path d="M15 6v4M9 14v4"></path></svg>
+          <span style="font-family:var(--font-display);font-weight:600;font-size:10.5px;">Settings</span>
+        </button>
+      </div>
+      </sc-if>
+
+      <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;border-radius:999px;background:rgba(255,255,255,.28);z-index:40;pointer-events:none;"></div>
+
+      <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:14px;right:14px;bottom:96px;z-index:60;animation:sheetUp .3s var(--ease-bounce);">
+          <x-import component-from-global-scope="PhantomDesignSystem_a666e0.Alert" tone="{{ toastTone }}" title="{{ toastTitle }}" onClose="{{ closeToast }}" hint-size="100%,64px">{{ toastMsg }}</x-import>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 440, &quot;height&quot;: 900 },
+  &quot;startKycVerified&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo&quot;, &quot;label&quot;: &quot;Start identity verified&quot; },
+  &quot;balancesHidden&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo&quot;, &quot;label&quot;: &quot;Hide balances&quot; },
+  &quot;theme&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;dark&quot;, &quot;options&quot;: [&quot;dark&quot;, &quot;light&quot;], &quot;tsType&quot;: &quot;\&quot;dark\&quot; | \&quot;light\&quot;&quot;, &quot;section&quot;: &quot;Appearance&quot; }
+}">
+class Component extends DCLogic {
+  state = {
+    screen: 'home', stack: [], homeTab: 'tokens',
+    flow: null, step: 0,
+    anchorId: 'meridian', asset: 'INRC', method: null,
+    fiat: '5,000', assetAmt: '4,975',
+    destType: 'upi', dest: '',
+    cbCountry: 'Nigeria', cbMethod: 'Bank deposit', cbName: '', cbAccount: '', cbAmt: '150',
+    kycVerified: false, kycStep: 0, kycReturn: null,
+    kName: 'Aarav Sharma', kDob: '', kAddr: '', kIdType: 'Aadhaar', kIdNum: '', kSelfie: false,
+    toast: null, balancesHidden: false, conn: {}, faceId: true, notif: true, uiTheme: 'dark',
+    balances: { XLM: 4208.55, USDC: 1250, EURC: 300, INRC: 18400 },
+    txStatus: 'processing',
+  };
+
+  PRICES = { XLM: 0.1218, USDC: 1, EURC: 1.09, INRC: 0.012004, NGNC: 0.00065 };
+  META = {
+    XLM:  { name: 'Stellar Lumens', color: '#5B54C9', chg: '+3.24%', up: true,  issuer: 'Native asset' },
+    USDC: { name: 'USD Coin',       color: '#2775CA', chg: '0.00%',  up: true,  issuer: 'Circle' },
+    EURC: { name: 'Euro Coin',      color: '#1A4D8F', chg: '+0.12%', up: true,  issuer: 'Circle' },
+    INRC: { name: 'Indian Rupee',   color: '#00B39F', chg: '0.00%',  up: true,  issuer: 'Meridian' },
+  };
+  ORDER = ['XLM', 'USDC', 'EURC', 'INRC'];
+  FIAT = { INRC: { code: 'INR', sym: '₹' }, USDC: { code: 'USD', sym: '$' }, EURC: { code: 'EUR', sym: '€' }, NGNC: { code: 'NGN', sym: '₦' } };
+  METHODS = {
+    upi:    { label: 'UPI',                 desc: 'Pay from any UPI app',        badge: 'Instant' },
+    gpay:   { label: 'Google Pay',          desc: 'One-tap with GPay',           badge: 'Instant' },
+    imps:   { label: 'Bank transfer',       desc: 'IMPS / NEFT',                 badge: '~5 min' },
+    card:   { label: 'Debit / credit card', desc: 'Visa · Mastercard · RuPay',   badge: 'Instant' },
+    ach:    { label: 'Bank transfer',       desc: 'ACH',                         badge: '1–2 days' },
+    sepa:   { label: 'Bank transfer',       desc: 'SEPA',                        badge: '1 day' },
+    wire:   { label: 'Wire',                desc: 'Same-day domestic wire',      badge: 'Same day' },
+    cashin: { label: 'Cash deposit',        desc: 'At any MoneyGram location',   badge: 'Minutes' },
+  };
+  MICON = {
+    upi: 'M4 7h16v10H4zM4 11h16M8 15h3', gpay: 'M4 7h16v10H4zM4 11h16M8 15h3',
+    imps: 'M3 21h18M4 10h16M6 10V7l6-4 6 4v3', ach: 'M3 21h18M4 10h16M6 10V7l6-4 6 4v3',
+    sepa: 'M3 21h18M4 10h16M6 10V7l6-4 6 4v3', wire: 'M3 21h18M4 10h16M6 10V7l6-4 6 4v3',
+    card: 'M3 7h18v10H3zM3 11h18M7 15h3', cashin: 'M3 7h18v10H3zM12 12h.01M6 12h.01M18 12h.01',
+  };
+  TICON = {
+    deposit: 'M12 3v11m0 0 4-4m-4 4-4-4M5 20h14',
+    withdraw: 'M12 21V7m0 0 4 4m-4-4-4 4M5 4h14',
+    receive: 'M17 7 7 17M16 17H7V8',
+    send: 'M7 17 17 7M8 7h9v9',
+    swap: 'M16 4l4 4-4 4M20 8H8M8 20l-4-4 4-4M4 16h12',
+    crossborder: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M3 12h18M12 3c2.4 2.7 2.4 15.3 0 18M12 3c-2.4 2.7-2.4 15.3 0 18',
+  };
+  STONE = { Completed: 'success', Processing: 'info', Pending: 'warning', Failed: 'error' };
+  SCOLOR = { Completed: 'var(--color-success)', Processing: 'var(--color-info)', Pending: 'var(--color-warning)', Failed: 'var(--color-error)' };
+  ANCHORS = [
+    { id: 'meridian', name: 'Meridian', tagline: 'Your anchor', color: '#00B39F', initials: 'M', region: 'India', assets: ['INRC'], rails: ['upi', 'gpay', 'imps', 'card'], railLabels: 'UPI · GPay · Bank · Card', feeNum: 0.005, fee: '0.5%', settle: 'Instant', kyc: 'Verified · Tier 2', connected: true, featured: true, blurb: 'Instant Indian Rupee on- and off-ramp over UPI, Google Pay and bank transfer.' },
+    { id: 'circle', name: 'Circle', tagline: 'USDC · EURC issuer', color: '#2775CA', initials: 'C', region: 'US · Europe', assets: ['USDC', 'EURC'], rails: ['ach', 'sepa', 'wire', 'card'], railLabels: 'ACH · SEPA · Wire · Card', feeNum: 0.01, fee: '1.0%', settle: '1–2 days', kyc: 'Required', connected: true, blurb: 'Issuer of USDC and EURC. Fund in US dollars or euros by bank or card.' },
+    { id: 'moneygram', name: 'MoneyGram Access', tagline: 'Cash in / out', color: '#E0457B', initials: 'MG', region: 'Global', assets: ['USDC'], rails: ['cashin'], railLabels: 'Cash pickup · deposit', feeNum: 0.015, fee: '1.5%', settle: 'Minutes', kyc: 'Required', connected: false, blurb: 'Turn cash into USDC — and back — at 350,000+ retail locations worldwide.' },
+    { id: 'vibrant', name: 'Vibrant', tagline: 'Latin America', color: '#7B61FF', initials: 'V', region: 'LatAm', assets: ['USDC'], rails: ['ach'], railLabels: 'Local bank', feeNum: 0.009, fee: '0.9%', settle: 'Same day', kyc: 'Required', connected: false, blurb: 'USDC on- and off-ramp across Latin America by local bank transfer.' },
+    { id: 'cowrie', name: 'Cowrie', tagline: 'Nigeria', color: '#F2994A', initials: 'Co', region: 'Nigeria', assets: ['NGNC'], rails: ['ach'], railLabels: 'Bank transfer', feeNum: 0.012, fee: '1.2%', settle: 'Same day', kyc: 'Required', connected: false, blurb: 'Nigerian Naira on- and off-ramp by bank transfer.' },
+    { id: 'settle', name: 'Settle Network', tagline: 'Argentina · Brazil', color: '#6C7BF2', initials: 'S', region: 'LatAm', assets: ['ARST', 'BRLT'], rails: ['ach'], railLabels: 'Local bank · PIX', feeNum: 0.011, fee: '1.1%', settle: 'Same day', kyc: 'Required', connected: false, blurb: 'Peso and real on- and off-ramp for Argentina and Brazil.' },
+  ];
+  ACTIVITY = [
+    { id: 1, type: 'deposit', title: 'Deposit · Meridian', sub: 'UPI · aarav@okhdfc', amount: '+5,000.00 INRC', up: true, status: 'Completed', time: 'Today · 2:14 PM' },
+    { id: 2, type: 'withdraw', title: 'Withdraw · Circle', sub: 'To bank ••4821', amount: '-200.00 USDC', up: false, status: 'Processing', time: 'Today · 11:02 AM' },
+    { id: 3, type: 'receive', title: 'Received USDC', sub: 'From GB7X…9F2A', amount: '+500.00 USDC', up: true, status: 'Completed', time: 'Yesterday' },
+    { id: 4, type: 'swap', title: 'Swapped XLM → USDC', sub: '350 XLM', amount: '+42.60 USDC', up: true, status: 'Completed', time: 'Yesterday' },
+    { id: 5, type: 'deposit', title: 'Deposit · MoneyGram', sub: 'Cash · Walmart #221', amount: '+100.00 USDC', up: true, status: 'Pending', time: 'Jul 1' },
+    { id: 6, type: 'crossborder', title: 'Sent to Nigeria', sub: 'Adaeze O. · bank', amount: '-150.00 USDC', up: false, status: 'Completed', time: 'Jun 30' },
+    { id: 7, type: 'send', title: 'Sent XLM', sub: 'To vault.stellar', amount: '-50.00 XLM', up: false, status: 'Completed', time: 'Jun 30' },
+  ];
+
+  componentDidMount() {
+    const p = this.props || {};
+    const patch = {};
+    if (p.startKycVerified != null) patch.kycVerified = !!p.startKycVerified;
+    if (p.balancesHidden != null) patch.balancesHidden = !!p.balancesHidden;
+    patch.uiTheme = (p.theme === 'light') ? 'light' : 'dark';
+    if (Object.keys(patch).length) this.setState(patch);
+    this.applyTheme();
+  }
+  componentDidUpdate(prev) {
+    const p = this.props || {}, pp = prev || {};
+    if (p.theme !== pp.theme) { this.applyTheme(); this.setState({ uiTheme: p.theme === 'light' ? 'light' : 'dark' }); }
+    if (p.startKycVerified !== pp.startKycVerified) this.setState({ kycVerified: !!p.startKycVerified });
+    if (p.balancesHidden !== pp.balancesHidden) this.setState({ balancesHidden: !!p.balancesHidden });
+  }
+  applyTheme() { try { document.documentElement.setAttribute('data-theme', (this.props && this.props.theme === 'light') ? 'light' : 'dark'); } catch (e) {} }
+
+  fmt(n, dp) { if (dp == null) dp = 2; return (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
+  parse(s) { return parseFloat(String(s).replace(/,/g, '')) || 0; }
+  money(n) { return '$' + this.fmt(n, 2); }
+  total() { return this.ORDER.reduce((t, s) => t + (this.state.balances[s] || 0) * (this.PRICES[s] || 0), 0); }
+  anchor(id) { return this.ANCHORS.find(a => a.id === (id || this.state.anchorId)) || this.ANCHORS[0]; }
+  isConnected(id) { const o = this.state.conn[id]; return o == null ? this.anchor(id).connected : o; }
+  issuerAnchor(sym) { return sym === 'INRC' ? 'meridian' : (sym === 'USDC' || sym === 'EURC') ? 'circle' : 'meridian'; }
+
+  go(screen) { this.setState(s => ({ stack: [...s.stack, s.screen], screen })); }
+  back() { this.setState(s => { const st = [...s.stack]; const prev = st.pop() || 'home'; return { stack: st, screen: prev }; }); }
+  home() { this.setState({ screen: 'home', stack: [], flow: null, step: 0 }); }
+  tab(t) { this.setState({ screen: t, stack: [] }); }
+  openAsset(sym) { this.setState(s => ({ stack: [...s.stack, s.screen], screen: 'asset', asset: sym })); }
+  openAnchor(id) { this.setState(s => ({ stack: [...s.stack, s.screen], screen: 'anchorDetail', anchorId: id })); }
+  startDeposit(anchorId, asset) { this.setState(s => ({ stack: [...s.stack, s.screen], screen: 'deposit', flow: 'deposit', step: 0, anchorId: anchorId || s.anchorId, asset: asset || s.asset, method: null })); }
+  startWithdraw(anchorId, asset) { this.setState(s => ({ stack: [...s.stack, s.screen], screen: 'withdraw', flow: 'withdraw', step: 0, anchorId: anchorId || s.anchorId, asset: asset || s.asset, destType: 'upi' })); }
+  startCrossborder() { this.setState(s => ({ stack: [...s.stack, s.screen], screen: 'crossborder', flow: 'crossborder', step: 0 })); }
+
+  setMethod(m) { this.setState({ method: m }); }
+  setField(k, v) { this.setState({ [k]: v }); }
+  proceed() { this.setState(s => ({ step: s.step + 1 })); }
+  prev() { this.setState(s => { if (s.step > 0) return { step: s.step - 1 }; const st = [...s.stack]; const p = st.pop() || 'home'; return { stack: st, screen: p, flow: null, step: 0 }; }); }
+  needKyc() { return !this.state.kycVerified; }
+  toReview() { if (this.needKyc()) { this.gotoKyc(this.state.screen, 2); } else { this.setState({ step: 2 }); } }
+  gotoKyc(rs, rstep) { this.setState(s => ({ kycReturn: { screen: rs || s.screen, step: rstep != null ? rstep : s.step }, screen: 'kyc', kycStep: 0 })); }
+  kycNext() { this.setState(s => ({ kycStep: s.kycStep + 1 })); }
+  kycBack() { this.setState(s => { if (s.kycStep > 0) return { kycStep: s.kycStep - 1 }; return { screen: s.kycReturn ? s.kycReturn.screen : 'home' }; }); }
+  finishKyc() {
+    this.setState({ kycStep: 4 });
+    setTimeout(() => { this.setState(s => ({ kycVerified: true, screen: s.kycReturn ? s.kycReturn.screen : 'home', step: s.kycReturn ? s.kycReturn.step : 0 })); this.flash('success', 'Identity verified', 'You’re all set to move money.'); }, 1800);
+  }
+  runTx() {
+    const flow = this.state.flow;
+    this.setState(s => ({ step: s.step + 1, txStatus: 'processing' }));
+    clearTimeout(this._t1); clearTimeout(this._t2);
+    this._t1 = setTimeout(() => this.setState({ txStatus: 'converting' }), 1200);
+    this._t2 = setTimeout(() => {
+      this.setState(s => {
+        const b = { ...s.balances };
+        if (flow === 'deposit') { b[s.asset] = (b[s.asset] || 0) + this.parse(s.assetAmt); }
+        if (flow === 'withdraw') { b[s.asset] = Math.max(0, (b[s.asset] || 0) - this.parse(s.assetAmt)); }
+        if (flow === 'crossborder') { b['USDC'] = Math.max(0, (b['USDC'] || 0) - this.parse(s.cbAmt)); }
+        return { txStatus: 'completed', balances: b };
+      });
+    }, 2600);
+  }
+  finishFlow() { this.home(); }
+  toggleConnect(id) { const now = !this.isConnected(id); this.setState(s => ({ conn: { ...s.conn, [id]: now } })); this.flash('success', now ? 'Anchor connected' : 'Anchor disconnected', now ? this.anchor(id).name + ' is ready to use.' : this.anchor(id).name + ' was removed.'); }
+  flash(tone, title, msg) { this.setState({ toast: { tone, title, msg } }); clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast: null }), 3200); }
+  toggleTheme() { this.setState(s => { const t = s.uiTheme === 'light' ? 'dark' : 'light'; try { document.documentElement.setAttribute('data-theme', t); } catch (e) {} return { uiTheme: t }; }); }
+  toggleFace() { this.setState(s => ({ faceId: !s.faceId })); }
+  toggleNotif() { this.setState(s => ({ notif: !s.notif })); }
+  settingsKyc() { this.gotoKyc('settings', 0); }
+  fauxSend(kind) { this.setState({ screen: 'home', stack: [] }); this.flash('success', kind === 'swap' ? 'Swap submitted' : 'Sent', kind === 'swap' ? 'Your swap is on its way.' : 'Your transfer is on its way.'); }
+  copyAddr() { this.flash('info', 'Address copied', 'Paste it wherever you need to receive.'); }
+
+  tokensList() {
+    const s = this.state;
+    return this.ORDER.map(sym => {
+      const m = this.META[sym]; const bal = s.balances[sym] || 0; const usd = bal * (this.PRICES[sym] || 0);
+      return { sym, name: m.name, color: m.color, chg: m.chg, chgColor: m.up ? 'var(--color-success)' : 'var(--color-error)', initials: sym.slice(0, 2),
+        amtStr: s.balancesHidden ? '••••' : this.fmt(bal, 2) + ' ' + sym, usdStr: s.balancesHidden ? '••••' : this.money(usd), open: () => this.openAsset(sym) };
+    });
+  }
+  activityList() {
+    return this.ACTIVITY.map(x => ({ ...x, tone: this.STONE[x.status], statusColor: this.SCOLOR[x.status], amtColor: x.up ? 'var(--color-success)' : 'var(--color-text-primary)', icon: this.TICON[x.type] }));
+  }
+  anchorsList() {
+    return this.ANCHORS.map(a => ({ ...a, connected: this.isConnected(a.id), assetsStr: a.assets.join(' · '), open: () => this.openAnchor(a.id) }));
+  }
+  depData() {
+    const s = this.state; const a = this.anchor(); const asset = s.asset; const f = this.FIAT[asset] || { sym: '$', code: 'USD' };
+    const fiatN = this.parse(s.fiat); const feeN = fiatN * a.feeNum; const getN = fiatN - feeN; const st = s.txStatus;
+    const methods = a.rails.map(id => ({ id, label: this.METHODS[id].label, desc: this.METHODS[id].desc, badge: this.METHODS[id].badge, icon: this.MICON[id], chosen: s.method === id, borderColor: s.method === id ? 'var(--color-brand-500)' : 'var(--color-border)', pick: () => this.setMethod(id) }));
+    const labels = ['Method', 'Amount', 'Review', 'Pay'];
+    const rows = [
+      { label: 'Payment received', state: st === 'processing' ? 'active' : 'done' },
+      { label: 'Converting to ' + asset, state: st === 'processing' ? 'pending' : (st === 'converting' ? 'active' : 'done') },
+      { label: 'Delivered to your wallet', state: st === 'completed' ? 'done' : 'pending' },
+    ];
+    return { step: s.step, s0: s.step === 0, s1: s.step === 1, s2: s.step === 2, s3: s.step === 3, s4: s.step === 4, showSteps: s.step < 4,
+      anchor: a, anchorColor: a.color, anchorInitials: a.initials, anchorName: a.name, asset, fiatSym: f.sym, fiatCode: f.code,
+      methods, method: s.method, hasMethod: !!s.method, noMethod: !s.method, methodLabel: s.method ? this.METHODS[s.method].label : '',
+      stepCaption: labels[Math.min(s.step, 3)], stepBars: labels.map((l, i) => ({ color: i <= Math.min(s.step, 3) ? 'var(--color-brand-500)' : 'var(--color-border)' })),
+      chips: ['1,000', '5,000', '10,000'].map(v => ({ label: f.sym + v, set: () => this.setField('fiat', v) })),
+      fiat: s.fiat, onFiat: e => this.setField('fiat', e && e.target ? e.target.value : e),
+      youPay: f.sym + this.fmt(fiatN), feeStr: f.sym + this.fmt(feeN), feePct: a.fee, rateStr: '1 ' + asset + ' = ' + f.sym + '1.00', youGet: this.fmt(getN) + ' ' + asset, receivedText: '+' + this.fmt(getN) + ' ' + asset, eta: a.settle,
+      kycVerified: s.kycVerified,
+      isUpi: (s.method === 'upi' || s.method === 'gpay'), isGpay: s.method === 'gpay', isCard: s.method === 'card', isBank: (s.method === 'imps' || s.method === 'ach' || s.method === 'sepa' || s.method === 'wire'), isCash: s.method === 'cashin',
+      upiApps: [{ name: 'Google Pay', initials: 'G', color: '#4285F4' }, { name: 'PhonePe', initials: 'Pe', color: '#5F259F' }, { name: 'Paytm', initials: 'P', color: '#00BAF2' }, { name: 'BHIM', initials: 'B', color: '#00A9E0' }],
+      tl: rows.map(r => ({ label: r.label, done: r.state === 'done', active: r.state === 'active', dotColor: r.state === 'done' ? 'var(--color-success)' : r.state === 'active' ? 'var(--color-brand-500)' : 'var(--color-bg-surface-2)', textColor: r.state === 'pending' ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)' })),
+      toReview: () => this.toReview(), proceed: () => this.proceed(), payNow: () => this.runTx(), done: () => this.finishFlow(), back: () => this.prev(),
+      txStatus: st, txProcessing: st === 'processing', txConverting: st === 'converting', txDone: st === 'completed', txPending: st !== 'completed',
+      upiRef: 'meridian@stellar' };
+  }
+  wdData() {
+    const s = this.state; const a = this.anchor(); const asset = s.asset; const f = this.FIAT[asset] || { sym: '$' };
+    const amtN = this.parse(s.assetAmt); const feeN = amtN * a.feeNum; const getN = amtN - feeN; const bal = s.balances[asset] || 0; const st = s.txStatus;
+    const labels = ['Amount', 'Destination', 'Review'];
+    const rows = [
+      { label: 'Sent to ' + a.name, state: st === 'processing' ? 'active' : 'done' },
+      { label: 'Converting to ' + (f.code || 'cash'), state: st === 'processing' ? 'pending' : (st === 'converting' ? 'active' : 'done') },
+      { label: 'Paid out to you', state: st === 'completed' ? 'done' : 'pending' },
+    ];
+    return { step: s.step, s0: s.step === 0, s1: s.step === 1, s2: s.step === 2, s3: s.step === 3, showSteps: s.step < 3,
+      stepCaption: labels[Math.min(s.step, 2)], stepBars: labels.map((l, i) => ({ color: i <= Math.min(s.step, 2) ? 'var(--color-brand-500)' : 'var(--color-border)' })),
+      anchor: a, anchorColor: a.color, anchorInitials: a.initials, anchorName: a.name, asset, fiatSym: f.sym, fiatCode: f.code || '',
+      balance: this.fmt(bal, 2) + ' ' + asset, assetAmt: s.assetAmt, onAmt: e => this.setField('assetAmt', e && e.target ? e.target.value : e), setMax: () => this.setField('assetAmt', this.fmt(bal, 2)),
+      dest: s.dest, onDest: e => this.setField('dest', e && e.target ? e.target.value : e),
+      destTypes: [{ id: 'upi', label: 'UPI ID' }, { id: 'bank', label: 'Bank account' }, { id: 'cash', label: 'Cash pickup' }].map(d => ({ ...d, chosen: s.destType === d.id, borderColor: s.destType === d.id ? 'var(--color-brand-500)' : 'var(--color-border)', textColor: s.destType === d.id ? 'var(--color-brand-500)' : 'var(--color-text-secondary)', pick: () => this.setField('destType', d.id) })),
+      isUpiDest: s.destType === 'upi', isBankDest: s.destType === 'bank', isCashDest: s.destType === 'cash',
+      destLabel: s.destType === 'upi' ? 'UPI ID' : s.destType === 'bank' ? 'Bank account number' : 'Recipient name',
+      destPlaceholder: s.destType === 'upi' ? 'name@bank' : s.destType === 'bank' ? '5729 1183 4471' : 'Full name',
+      youSend: this.fmt(amtN, 2) + ' ' + asset, feeStr: this.fmt(feeN, 2) + ' ' + asset, feePct: a.fee, rateStr: '1 ' + asset + ' = ' + f.sym + '1.00', youGet: f.sym + this.fmt(getN), eta: a.settle,
+      kycVerified: s.kycVerified,
+      tl: rows.map(r => ({ label: r.label, done: r.state === 'done', active: r.state === 'active', dotColor: r.state === 'done' ? 'var(--color-success)' : r.state === 'active' ? 'var(--color-brand-500)' : 'var(--color-bg-surface-2)', textColor: r.state === 'pending' ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)' })),
+      proceed: () => this.proceed(), toReview: () => this.toReview(), confirm: () => this.runTx(), done: () => this.finishFlow(), back: () => this.prev(),
+      txStatus: st, txProcessing: st === 'processing', txConverting: st === 'converting', txDone: st === 'completed', txPending: st !== 'completed' };
+  }
+  cbData() {
+    const s = this.state; const sendN = this.parse(s.cbAmt); const feeN = sendN * 0.01; const rate = 1650; const recvN = (sendN - feeN) * rate; const st = s.txStatus;
+    const labels = ['Recipient', 'Amount', 'Review'];
+    const rows = [
+      { label: 'Submitted to anchor', state: st === 'processing' ? 'active' : 'done' },
+      { label: 'Converting USDC → NGN', state: st === 'processing' ? 'pending' : (st === 'converting' ? 'active' : 'done') },
+      { label: 'Delivered to ' + (s.cbName || 'recipient'), state: st === 'completed' ? 'done' : 'pending' },
+    ];
+    return { step: s.step, s0: s.step === 0, s1: s.step === 1, s2: s.step === 2, s3: s.step === 3, showSteps: s.step < 3,
+      stepCaption: labels[Math.min(s.step, 2)], stepBars: labels.map((l, i) => ({ color: i <= Math.min(s.step, 2) ? 'var(--color-brand-500)' : 'var(--color-border)' })),
+      country: s.cbCountry, methodName: s.cbMethod, name: s.cbName, account: s.cbAccount,
+      countries: ['Nigeria', 'Kenya', 'Philippines', 'Mexico', 'Brazil'].map(c => ({ label: c, chosen: s.cbCountry === c, borderColor: s.cbCountry === c ? 'var(--color-brand-500)' : 'var(--color-border)', textColor: s.cbCountry === c ? 'var(--color-brand-500)' : 'var(--color-text-secondary)', pick: () => this.setField('cbCountry', c) })),
+      methods: ['Bank deposit', 'Mobile money', 'Cash pickup'].map(m => ({ label: m, chosen: s.cbMethod === m, borderColor: s.cbMethod === m ? 'var(--color-brand-500)' : 'var(--color-border)', textColor: s.cbMethod === m ? 'var(--color-brand-500)' : 'var(--color-text-secondary)', pick: () => this.setField('cbMethod', m) })),
+      onName: e => this.setField('cbName', e && e.target ? e.target.value : e), onAccount: e => this.setField('cbAccount', e && e.target ? e.target.value : e),
+      cbAmt: s.cbAmt, onAmt: e => this.setField('cbAmt', e && e.target ? e.target.value : e),
+      youSend: this.fmt(sendN, 2) + ' USDC', feeStr: this.fmt(feeN, 2) + ' USDC', rateStr: '1 USDC = ₦' + this.fmt(rate, 0), youGet: '₦' + this.fmt(recvN, 0),
+      kycVerified: s.kycVerified,
+      tl: rows.map(r => ({ label: r.label, done: r.state === 'done', active: r.state === 'active', dotColor: r.state === 'done' ? 'var(--color-success)' : r.state === 'active' ? 'var(--color-brand-500)' : 'var(--color-bg-surface-2)', textColor: r.state === 'pending' ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)' })),
+      proceed: () => this.proceed(), toReview: () => this.toReview(), confirm: () => this.runTx(), done: () => this.finishFlow(), back: () => this.prev(),
+      txStatus: st, txDone: st === 'completed', txPending: st !== 'completed' };
+  }
+  kycData() {
+    const s = this.state; const st = s.kycStep;
+    return { step: st, k0: st === 0, k1: st === 1, k2: st === 2, k3: st === 3, k4: st === 4, showBack: st < 4,
+      stepCaption: ['Personal details', 'Address', 'ID document', 'Selfie', 'Verifying'][Math.min(st, 4)],
+      stepBars: [0, 1, 2, 3].map(i => ({ color: i <= Math.min(st, 3) ? 'var(--color-brand-500)' : 'var(--color-border)' })),
+      name: s.kName, onName: e => this.setField('kName', e && e.target ? e.target.value : e),
+      dob: s.kDob, onDob: e => this.setField('kDob', e && e.target ? e.target.value : e),
+      addr: s.kAddr, onAddr: e => this.setField('kAddr', e && e.target ? e.target.value : e),
+      idType: s.kIdType, idTypes: ['Aadhaar', 'PAN card', 'Passport', 'Driver’s licence'].map(t => ({ label: t, chosen: s.kIdType === t, borderColor: s.kIdType === t ? 'var(--color-brand-500)' : 'var(--color-border)', textColor: s.kIdType === t ? 'var(--color-brand-500)' : 'var(--color-text-secondary)', pick: () => this.setField('kIdType', t) })),
+      idNum: s.kIdNum, onIdNum: e => this.setField('kIdNum', e && e.target ? e.target.value : e),
+      selfie: s.kSelfie, noSelfie: !s.kSelfie, canSubmit: s.kSelfie, takeSelfie: () => this.setField('kSelfie', true),
+      next: () => this.kycNext(), back: () => this.kycBack(), submit: () => this.finishKyc() };
+  }
+  adData() {
+    const a = this.anchor(this.state.anchorId); const c = this.isConnected(a.id);
+    return { ...a, connected: c, assetsStr: a.assets.join(' · '),
+      connectLabel: c ? '✓ Connected · tap to remove' : 'Connect anchor',
+      connectColor: c ? 'var(--color-success)' : 'var(--color-brand-500)',
+      connectBg: c ? 'var(--color-success-fill)' : 'var(--color-brand-100)',
+      connectBorder: c ? 'transparent' : 'transparent',
+      deposit: () => this.startDeposit(a.id, a.assets[0]), withdraw: () => this.startWithdraw(a.id, a.assets[0]),
+      toggle: () => this.toggleConnect(a.id), back: () => this.back(),
+      rails: a.rails.map(id => ({ id, label: this.METHODS[id] ? this.METHODS[id].label : id, desc: this.METHODS[id] ? this.METHODS[id].desc : '', icon: this.MICON[id] || 'M4 7h16v10H4z' })) };
+  }
+  assData() {
+    const s = this.state; const sym = s.asset; const m = this.META[sym] || {}; const bal = s.balances[sym] || 0; const usd = bal * (this.PRICES[sym] || 0);
+    return { sym, name: m.name, color: m.color, issuer: m.issuer, chg: m.chg, chgColor: m.up ? 'var(--color-success)' : 'var(--color-error)', initials: sym.slice(0, 2),
+      amtStr: this.fmt(bal, 2) + ' ' + sym, usdStr: this.money(usd),
+      deposit: () => this.startDeposit(this.issuerAnchor(sym), sym), withdraw: () => this.startWithdraw(this.issuerAnchor(sym), sym),
+      send: () => this.go('send'), receive: () => this.go('receive'), swap: () => this.go('swap'), back: () => this.back(),
+      activity: this.activityList().filter(x => x.amount.indexOf(sym) !== -1) };
+  }
+
+  renderVals() {
+    const s = this.state;
+    return {
+      screenHome: s.screen === 'home', screenAnchors: s.screen === 'anchors', screenActivity: s.screen === 'activity', screenSettings: s.screen === 'settings',
+      screenAnchorDetail: s.screen === 'anchorDetail', screenAsset: s.screen === 'asset', screenDeposit: s.screen === 'deposit', screenWithdraw: s.screen === 'withdraw',
+      screenCrossborder: s.screen === 'crossborder', screenKyc: s.screen === 'kyc', screenReceive: s.screen === 'receive', screenSend: s.screen === 'send', screenSwap: s.screen === 'swap',
+      showTabBar: ['home', 'anchors', 'activity', 'settings'].indexOf(s.screen) !== -1,
+      navWalletColor: s.screen === 'home' ? 'var(--color-brand-500)' : 'var(--color-text-secondary)',
+      navAnchorsColor: s.screen === 'anchors' ? 'var(--color-brand-500)' : 'var(--color-text-secondary)',
+      navActivityColor: s.screen === 'activity' ? 'var(--color-brand-500)' : 'var(--color-text-secondary)',
+      navSettingsColor: s.screen === 'settings' ? 'var(--color-brand-500)' : 'var(--color-text-secondary)',
+      goHome: () => this.tab('home'), goAnchors: () => this.tab('anchors'), goActivity: () => this.tab('activity'), goSettings: () => this.tab('settings'), back: () => this.back(),
+      toast: s.toast, hasToast: !!s.toast, toastTitle: s.toast && s.toast.title, toastMsg: s.toast && s.toast.msg, toastTone: s.toast ? s.toast.tone : 'success', closeToast: () => this.setState({ toast: null }),
+      balancesHidden: s.balancesHidden, toggleHide: () => this.setField('balancesHidden', !s.balancesHidden),
+      totalBalance: s.balancesHidden ? '••••••' : this.money(this.total()),
+      homeTab: s.homeTab, setHomeTab: v => this.setField('homeTab', v), homeTabs: [{ value: 'tokens', label: 'Tokens' }, { value: 'activity', label: 'Activity' }],
+      homeTabTokens: s.homeTab === 'tokens', homeTabActivity: s.homeTab === 'activity',
+      homeTokens: this.tokensList(), activity: this.activityList(), activityPreview: this.activityList().slice(0, 4),
+      onDeposit: () => this.startDeposit(), onWithdraw: () => this.startWithdraw(), onSend: () => this.go('send'), onReceive: () => this.go('receive'), onSwap: () => this.go('swap'),
+      onScan: () => this.flash('info', 'Scan to pay', 'The QR scanner would open here.'), onFeatured: () => this.startDeposit('meridian', 'INRC'),
+      openAsset: sym => this.openAsset(sym), openAnchor: id => this.openAnchor(id),
+      anchorsConnected: this.anchorsList().filter(a => a.connected), anchorsAvailable: this.anchorsList().filter(a => !a.connected),
+      ad: this.adData(), ass: this.assData(), dep: this.depData(), wd: this.wdData(), cb: this.cbData(), kyc: this.kycData(),
+      startCrossborder: () => this.startCrossborder(),
+      faceId: s.faceId, notif: s.notif, isLight: s.uiTheme === 'light',
+      toggleFace: () => this.toggleFace(), toggleNotif: () => this.toggleNotif(), toggleTheme: () => this.toggleTheme(),
+      kycVerified: s.kycVerified, settingsKyc: () => this.settingsKyc(),
+      kycStatusLabel: s.kycVerified ? 'Verified · Tier 2' : 'Not verified',
+      kycStatusColor: s.kycVerified ? 'var(--color-success)' : 'var(--color-warning)',
+      fauxSend: k => this.fauxSend(k), copyAddr: () => this.copyAddr(),
+      sendGo: () => this.fauxSend('send'), swapGo: () => this.fauxSend('swap'),
+      walletAddr: 'GBQK…7X4F9A2B',
+    };
+  }
+}
+</script>
+</body>
+</html>
