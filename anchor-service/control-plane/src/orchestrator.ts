@@ -203,6 +203,7 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
 
   const bizEnv = [
     'PORT=3000',
+    `ANCHOR_SLUG=${p.slug}`,   // tags this anchor's structured logs (logger.ts svc field)
     `PLATFORM_API_URL=http://${apName(p.slug)}:8085`,
     // The hardened business-server owns a per-anchor `nordstern.*` money schema and
     // migrates-on-start into THIS anchor's already-created database (createAnchorDb →

@@ -7,9 +7,13 @@ import { webhooksRouter } from './webhooks.js';
 import { walletRouter } from './walletApi.js';
 import { ASSET_CODE, TREASURY_PUBLIC } from './config.js';
 import { getTreasuryUsdcBalance } from './stellar.js';
+import { requestLogger } from './logger.js';
 
 export function createApp() {
   const app = express();
+  // Structured request logging + correlation id (X-Request-Id) — first, so every
+  // request (including auth rejections) is traced.
+  app.use(requestLogger);
   // Stash the raw request bytes so webhook handlers can verify HMAC signatures
   // over the exact payload (DIDIT's X-Signature) without re-serialisation drift.
   app.use(express.json({ verify: (req, _res, buf) => { (req as any).rawBody = buf; } }));
