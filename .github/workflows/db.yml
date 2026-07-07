@@ -91,16 +91,52 @@ jobs:
           fi
           echo "✅ no runtime DDL in src/ — migrations are the single source of schema truth"
 
+  # anchor-template/business-server — node-pg-migrate (R6 M4.2, money DB)
+  business-server:
+    name: business-server-migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env: { POSTGRES_PASSWORD: pw, POSTGRES_DB: anchordb }
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:pw@localhost:5434/anchordb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with: { workspace: anchor-template/business-server }
+      - name: Migrations apply cleanly (fresh DB)
+        working-directory: anchor-template/business-server
+        run: npm run db:migrate
+      - name: Idempotency (re-run is a no-op)
+        working-directory: anchor-template/business-server
+        run: |
+          OUT="$(npm run db:migrate 2>&1)"; echo "$OUT"
+          echo "$OUT" | grep -qi "No migrations to run" \
+            || { echo "::error::second migrate was not a no-op — not idempotent"; exit 1; }
+      - name: No un-versioned runtime DDL (drift guard)
+        working-directory: anchor-template/business-server
+        run: |
+          HITS="$(grep -rniE 'CREATE TABLE|ALTER TABLE|CREATE INDEX' src/ || true)"
+          if [ -n "$HITS" ]; then
+            echo "::error title=Un-versioned schema change::runtime DDL found in src/ — move it to a migration"
+            echo "$HITS"; exit 1
+          fi
+          echo "✅ no runtime DDL in src/ — migrations are the single source of schema truth"
+
   # Single deadlock-safe required check across all DB-owning services.
   db-required:
     name: db-required
     if: always()
-    needs: [platform-api, control-plane]
+    needs: [platform-api, control-plane, business-server]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "platform-api=${{ needs.platform-api.result }} control-plane=${{ needs.control-plane.result }}"
-          if [ "${{ needs.platform-api.result }}" != "success" ] || [ "${{ needs.control-plane.result }}" != "success" ]; then
+          echo "platform-api=${{ needs.platform-api.result }} control-plane=${{ needs.control-plane.result }} business-server=${{ needs.business-server.result }}"
+          if [ "${{ needs.platform-api.result }}" != "success" ] || [ "${{ needs.control-plane.result }}" != "success" ] || [ "${{ needs.business-server.result }}" != "success" ]; then
             echo "::error::a database migration check failed"; exit 1
           fi
           echo "All database migration checks passed"

@@ -57,12 +57,19 @@ Order and rationale unchanged from the M2-c roadmap. Each is its own reviewable 
   aggregation (also fixes a latent required-check/path-filter deadlock).
 - Rollback: baseline ships a `down`; future migrations additive with `down`s.
 
-### M4.2 — business-server (per-anchor `nordstern`) — highest value
-- Baseline from a provisioned anchor's live `nordstern` schema.
-- Migrations run **per anchor** at stack start (replace `initSchema()`); idempotent and
-  safe on N existing anchors. Money tables (`deposit_releases`, `withdrawal_payouts`)
-  are **additive-only, never dropped/recreated**. Preserve seeds as idempotent seeds.
-- Canary one anchor before fleet-wide. Snapshot each anchor DB (M5) before applying.
+### M4.2 — business-server (per-anchor `nordstern`, money DB) ✅ (done)
+- **Baseline** (`migrations/1719800000000_baseline.cjs`) reproduces the exact `initSchema()`
+  schema **and** its conditional seeds (compliance cases, hash-chained audit logs, mock
+  API keys, default strategy config), idempotent (`IF NOT EXISTS` + `WHERE NOT EXISTS` seed
+  guards). Runs **per anchor** at stack start via `runMigrations()`; `initSchema()` removed.
+- The M3 money-flow harness now sets up via `runMigrations()` — tests exercise the real path.
+- **Verified against real Postgres:** schema byte-for-byte identical + seed content identical
+  (rows 4/5/2/1); **existing anchor with real money data** → `deposit_releases`/
+  `withdrawal_payouts` rows **byte-identical** after adoption, seeds not duplicated, idempotent;
+  **fresh anchor** image builds + migrate-on-start (12 tables + seeds) + `/health` ok;
+  money-flow suite **green (14)** on the migrated schema.
+- **CI (`db.yml` `business-server-migrations`):** apply + idempotency + no-runtime-DDL guard
+  (blocking, under `db-required`). Additive-only; no destructive change/data rewrite/behaviour change.
 
 ### M4.3 — aggregator-service (`aggregator`) — lowest risk
 - Baseline from live `aggregator` schema; migrate-on-start; idempotent initial-anchors seed.

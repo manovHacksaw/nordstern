@@ -1,13 +1,14 @@
 import { createApp } from './app.js';
 import { startWithdrawalPoller } from './poller.js';
 import { reconcileDepositReleases, startReleaseReconciler } from './releases.js';
-import { initSchema } from './db.js';
+import { runMigrations } from './migrate.js';
 import {
   PORT, ASSET_CODE, ASSET_ISSUER_PUBLIC, TREASURY_PUBLIC, PLATFORM_API_URL, IS_MAINNET,
 } from './config.js';
 
-// Ensure the durable stores exist before serving (idempotent DDL).
-await initSchema();
+// Migrate-on-start (R6 M4.2) — replaces runtime initSchema() DDL. The idempotent
+// baseline is a no-op on existing anchor DBs and creates fresh ones.
+await runMigrations();
 
 // Recover any deposit release left mid-flight by a prior crash before we serve
 // traffic — settles on-chain-completed transfers and re-drives ones that never

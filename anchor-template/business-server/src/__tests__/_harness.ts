@@ -21,7 +21,9 @@ export async function startTestDb(): Promise<TestDb> {
   process.env.ASSET_ISSUER_PUBLIC = 'GISSUERTESTONLY';
 
   const db = await import('../db.js');
-  await db.initSchema();
+  // Set up the schema the same way production does now — via migrations (R6 M4.2).
+  const { runMigrations } = await import('../migrate.js');
+  await runMigrations();
   return {
     container,
     pool: db.pool as unknown as Pool,
