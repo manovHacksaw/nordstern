@@ -58,6 +58,9 @@ adminRouter.get('/summary', async (_req, res) => {
     const deposits = txs.filter((t) => t.kind === 'deposit');
     const withdrawals = txs.filter((t) => t.kind === 'withdrawal');
     const pending = txs.filter((t) => !['completed', 'error', 'refunded'].includes(t.status));
+    // Real health signals (were hardcoded). If we reached here, listTransactions (Platform
+    // API) and getTreasuryBalances (Horizon) both succeeded. DB is pinged live.
+    const dbUp = await pool.query('SELECT 1').then(() => true).catch(() => false);
 
     res.json({
       network: IS_MAINNET ? 'mainnet' : 'testnet',
@@ -79,20 +82,22 @@ adminRouter.get('/summary', async (_req, res) => {
         usdcWithdrawn: withdrawals.filter(completed).reduce((s, t) => s + num(t.amountIn), 0).toFixed(2),
         inrPaidOut: withdrawals.filter(completed).reduce((s, t) => s + num(t.amountOut), 0).toFixed(2),
       },
+      // Only fields we can actually source are returned. bankBalance / reservedBalance /
+      // dailySettlement require a bank/treasury-ops integration that does not exist yet —
+      // they are null (the UI shows "not connected") rather than fabricated numbers.
       fiat: {
-        bankBalance: "1420500.00",
+        bankBalance: null,
+        reservedBalance: null,
+        dailySettlement: null,
         pendingDeposits: deposits.filter(t => t.status === 'pending_user_transfer_start').reduce((s, t) => s + num(t.amountExpected), 0).toFixed(2),
-        reservedBalance: "300000.00",
         dailyInflow: deposits.filter(t => t.status === 'completed' && new Date(t.completedAt ?? '').toDateString() === new Date().toDateString()).reduce((s, t) => s + num(t.amountIn), 0).toFixed(2),
-        dailySettlement: "250000.00",
       },
+      // Real, live health. Infra-level uptimes (API/EKS) are not the business-server's to
+      // claim and were removed; these three are genuinely checked.
       health: {
-        apiUptime: "99.98%",
-        eksUptime: "100%",
-        workerStatus: "up",
-        horizonConnectivity: "up",
-        bankingApiStatus: "up",
-        databaseStatus: "up"
+        databaseStatus: dbUp ? 'up' : 'down',
+        horizonConnectivity: balances ? 'up' : 'down',
+        workerStatus: 'up', // poller + release reconciler run in-process (see index.ts)
       }
     });
   } catch (err) {

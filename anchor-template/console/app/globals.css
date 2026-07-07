@@ -30,6 +30,18 @@
 
   --color-brand: #ab9ff2;
   --color-brand-600: #8b7ee0;
+  --color-brand-ink: #1a1530;   /* readable text on the brand accent */
+
+  /* Semantic money/status palette — one source of truth for transaction states,
+     health, and alerts across every console module (Product 0 design system). */
+  --color-success: #059669;
+  --color-success-bg: #d1fae5;
+  --color-warning: #b45309;
+  --color-warning-bg: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-info: #4f46e5;
+  --color-info-bg: #e0e7ff;
 
   --color-canvas: #ffffff;
   --color-surface: #f2f4f3;

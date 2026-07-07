@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, KeyRound, ArrowLeftRight, Settings } from 'lucide-react';
+import { LayoutDashboard, KeyRound, ArrowLeftRight, Landmark } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const ITEMS = [
   { href: '/overview', label: 'Overview', icon: LayoutDashboard },
   { href: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { href: '/treasury', label: 'Treasury', icon: Landmark },
   { href: '/credentials', label: 'Credentials', icon: KeyRound },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function Nav() {

@@ -35,10 +35,24 @@ export const api = {
   del: <T>(p: string) => request<T>('DELETE', p),
 };
 
-// Live anchor data straight from this anchor's business-server (no auth needed for
-// read-only operational reads in dev; gated behind the console session in the UI).
+// Live anchor data straight from this anchor's business-server. The console session
+// cookie is forwarded to the biz-server, which now org-scopes /admin (requireOperator),
+// so these are authenticated operator calls end to end.
 export async function bizGet<T>(path: string): Promise<T> {
   const res = await fetch(`/biz${path}`, { credentials: 'include' });
   if (!res.ok) throw new ApiError(res.status, 'biz_error', `business-server ${res.status}`);
   return res.json() as Promise<T>;
+}
+
+// Money-moving operator actions (retry, refund, treasury sweep/pause, strategy).
+export async function bizPost<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`/biz${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(res.status, json?.error ?? 'biz_error', json?.error ?? `business-server ${res.status}`);
+  return json as T;
 }
