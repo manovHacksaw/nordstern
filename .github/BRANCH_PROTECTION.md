@@ -14,6 +14,8 @@ Required checks (add each as it lands):
 - **`docker-required`** — Docker build validation aggregation (M2-d); green when all
   changed images build (or none changed). Always runs, so it's deadlock-safe as a
   required check even though the build matrix is path-filtered.
+- **`tests-required`** — money-flow test aggregation (M3); green only when the deposit,
+  withdrawal, and SecretStore suites pass against real Testcontainers infra.
 
 `dependency-audit` (M2-b) and `drizzle-migrations`' drift step (M2-c) are
 **advisory / non-blocking** — do NOT add them as required.

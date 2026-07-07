@@ -58,7 +58,9 @@ async function completeInAp(txId: string, usdcAmount: string, inrAmount: string)
   });
 }
 
-async function processWithdrawal(tx: Record<string, any>): Promise<void> {
+// Exported for money-flow tests (R6 M3). Behaviorally unchanged — this is the
+// at-most-once payout unit the poller drives per pending withdrawal.
+export async function processWithdrawal(tx: Record<string, any>): Promise<void> {
   const usdcAmount = tx.amount_expected?.amount ?? '0';
   const q = await rate.quote();
   const inrAmount = (Number(usdcAmount) * Number(q.inrPerUsdc)).toFixed(2);

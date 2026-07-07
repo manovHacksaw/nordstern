@@ -1,0 +1,65 @@
+name: Tests
+
+# Money-flow tests (R6 M3). Independent workflow — does not touch ci.yml. Runs the
+# highest-confidence suites (deposit release, withdrawal payout, SecretStore) against
+# REAL infrastructure (Testcontainers Postgres + LocalStack) on every PR, so a change
+# to payment or secret logic fails CI before it can reach production.
+#
+# Runs on every PR (no path filter): the whole point is that ANY change re-proves the
+# money invariants. Reuses the M2 composite setup action.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Ephemeral CI runners are torn down after the job; skip the Testcontainers reaper
+  # to avoid its occasional flakiness on GitHub-hosted Docker.
+  TESTCONTAINERS_RYUK_DISABLED: 'true'
+
+jobs:
+  money-flow:
+    name: money-flow
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace:
+          - anchor-template/business-server   # deposit release + withdrawal payout (real Postgres)
+          - platform/api                       # SecretStore (real LocalStack)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup + install
+        uses: ./.github/actions/setup
+        with:
+          workspace: ${{ matrix.workspace }}
+
+      - name: Run money-flow tests
+        working-directory: ${{ matrix.workspace }}
+        run: npm test
+
+  # Single required check for branch protection (both suites must pass).
+  tests-required:
+    name: tests-required
+    if: always()
+    needs: money-flow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate on test result
+        run: |
+          r="${{ needs.money-flow.result }}"
+          echo "money-flow result: ${r}"
+          if [ "${r}" != "success" ]; then
+            echo "::error::Money-flow tests failed — payment/secret logic regression"
+            exit 1
+          fi
+          echo "Money-flow tests passed"

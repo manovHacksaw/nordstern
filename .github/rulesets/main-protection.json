@@ -30,7 +30,8 @@
           { "context": "ci-required" },
           { "context": "secret-scan" },
           { "context": "hygiene" },
-          { "context": "docker-required" }
+          { "context": "docker-required" },
+          { "context": "tests-required" }
         ]
       }
     }
