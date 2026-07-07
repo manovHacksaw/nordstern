@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ArrowLeftRight, Landmark, Users, ShieldAlert, ScrollText,
-  SlidersHorizontal, KeyRound, Webhook, FileBarChart, UsersRound, Settings,
+  SlidersHorizontal, KeyRound, Webhook, FileBarChart, UsersRound, Settings, Radio,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -14,6 +14,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'Operations',
     items: [
       { href: '/overview', label: 'Overview', icon: LayoutDashboard },
+      { href: '/activity', label: 'Activity', icon: Radio },
       { href: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
       { href: '/customers', label: 'Customers', icon: Users },
       { href: '/treasury', label: 'Treasury', icon: Landmark },

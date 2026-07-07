@@ -112,6 +112,49 @@ adminRouter.get('/summary', async (_req, res) => {
 // server yet — they are omitted rather than fabricated (see kyc_verifications gap in
 // docs/project/OPERATOR_CONSOLE_AUDIT.md). Per-account KYC status is joined from the
 // real kyc_verifications table when a linkage exists.
+// Unified activity feed — merges EXISTING real sources (transactions, audit log, KYC
+// verifications, webhook deliveries) into one time-sorted stream. Invents no data; every
+// item is a real row. Used by the operator console's live feed.
+adminRouter.get('/activity', async (_req, res) => {
+  try {
+    const [txRecords, auditRows, kycRows, whRows] = await Promise.all([
+      listTransactions({ sep: '24', order: 'desc' }).catch(() => []),
+      pool.query('SELECT action, detail, actor, created_at FROM nordstern.audit_logs ORDER BY seq DESC LIMIT 40').then(r => r.rows).catch(() => []),
+      pool.query('SELECT vendor_data, status, updated_at FROM nordstern.kyc_verifications ORDER BY updated_at DESC LIMIT 40').then(r => r.rows).catch(() => []),
+      pool.query('SELECT event, status, created_at FROM nordstern.webhook_deliveries ORDER BY created_at DESC LIMIT 40').then(r => r.rows).catch(() => []),
+    ]);
+
+    type Item = { type: string; title: string; detail: string | null; amountIn: string | null; amountOut: string | null; status: string; actor: string | null; at: number };
+    const items: Item[] = [];
+
+    for (const t of txRecords.map(normalize)) {
+      items.push({
+        type: t.kind === 'deposit' ? 'deposit' : 'withdrawal',
+        title: t.kind === 'deposit' ? 'Deposit' : 'Withdrawal',
+        detail: null,
+        amountIn: t.amountIn, amountOut: t.amountOut,
+        status: t.status,
+        actor: null,
+        at: new Date(t.updatedAt ?? t.startedAt ?? Date.now()).getTime(),
+      });
+    }
+    for (const a of auditRows) {
+      items.push({ type: 'audit', title: a.action, detail: a.detail, amountIn: null, amountOut: null, status: 'info', actor: a.actor, at: new Date(a.created_at).getTime() });
+    }
+    for (const k of kycRows) {
+      items.push({ type: 'kyc', title: 'KYC', detail: null, amountIn: null, amountOut: null, status: k.status, actor: null, at: new Date(k.updated_at).getTime() });
+    }
+    for (const w of whRows) {
+      items.push({ type: 'webhook', title: 'Webhook', detail: w.event, amountIn: null, amountOut: null, status: String(w.status), actor: null, at: new Date(w.created_at).getTime() });
+    }
+
+    items.sort((a, b) => b.at - a.at);
+    res.json({ activity: items.slice(0, 60) });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 adminRouter.get('/users', async (_req, res) => {
   try {
     const records = await listTransactions({ sep: '24', order: 'desc' });
