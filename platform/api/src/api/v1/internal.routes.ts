@@ -51,3 +51,10 @@ internalRouter.post('/customers/kyc',
     res.json({ ok: true, customerId: id, status });
   }),
 );
+
+// A customer's linked wallet addresses. Lets the anchor business-server scope "my
+// transactions" to the authenticated customer without holding the wallet list itself.
+internalRouter.get('/customers/:id/wallets', ah(async (req, res) => {
+  const wallets = await customerWalletsRepo.listForCustomer(req.params.id as string);
+  res.json({ addresses: wallets.map((w) => w.address) });
+}));

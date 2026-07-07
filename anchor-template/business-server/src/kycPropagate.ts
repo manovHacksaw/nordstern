@@ -18,22 +18,26 @@ function mapStatus(raw: string | undefined): PlatformKyc {
   return 'pending';
 }
 
-// The DIDIT webhook body carries the vendor reference (the Stellar account we KYC'd) and a
-// status. The central customer is resolved by the linked wallet address on the platform side.
+// The DIDIT webhook body carries the vendor reference and a status. The reference is either
+// a customerId (customer-app KYC flow) or a Stellar account (legacy SEP-24 webview flow); the
+// central profile is resolved by whichever it is.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function propagateKycToPlatform(body: Record<string, any>): Promise<void> {
   if (!NORDSTERN_API_URL || !SERVICE_SECRET) return; // not wired (standalone dev) — skip quietly
-  const account = body?.vendor_data ?? body?.session?.vendor_data;
+  const ref = body?.vendor_data ?? body?.session?.vendor_data;
   const status = mapStatus(body?.status ?? body?.session?.status ?? body?.decision?.status);
-  if (!account) return;
+  if (!ref) return;
+  const payload = UUID_RE.test(ref) ? { customerId: ref, status } : { walletAddress: ref, status };
   try {
     const res = await fetch(`${NORDSTERN_API_URL}/api/v1/internal/customers/kyc`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-service-secret': SERVICE_SECRET },
-      body: JSON.stringify({ walletAddress: account, status }),
+      body: JSON.stringify(payload),
     });
     // 404 = that account isn't linked to any central customer (e.g. a wallet-only user); fine.
     if (!res.ok && res.status !== 404) {
-      console.warn(`[kyc-propagate] platform returned ${res.status} for ${account}`);
+      console.warn(`[kyc-propagate] platform returned ${res.status} for ${ref}`);
     }
   } catch (err) {
     console.warn('[kyc-propagate] platform unreachable:', err instanceof Error ? err.message : err);

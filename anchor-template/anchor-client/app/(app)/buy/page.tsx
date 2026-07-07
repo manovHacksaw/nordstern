@@ -87,7 +87,7 @@ export default function BuyPage() {
           <CardBody className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-[var(--color-warning)]" />
             <p className="flex-1 text-sm text-ink">Verify your identity first — it only takes a minute.</p>
-            <Button size="sm" variant="outline" onClick={() => router.push('/profile')}>Verify</Button>
+            <Button size="sm" variant="outline" onClick={() => router.push('/verify')}>Verify</Button>
           </CardBody>
         </Card>
       )}

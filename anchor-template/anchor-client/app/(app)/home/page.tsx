@@ -30,7 +30,7 @@ export default function HomePage() {
       </div>
 
       {/* KYC status — the gate to buying/selling */}
-      <Link href="/profile" className="block">
+      <Link href={verified ? '/profile' : '/verify'} className="block">
         <Card className={kyc.cta ? 'border-[var(--color-warning)]/40 bg-[var(--color-warning-bg)]/40' : ''}>
           <CardBody className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-full bg-surface">

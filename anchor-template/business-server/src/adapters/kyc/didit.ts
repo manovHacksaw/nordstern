@@ -174,7 +174,7 @@ export async function getStatus(account: string): Promise<KycStatus> {
 // Create (or reuse) a DIDIT session for an account. Reuses a still-open PROCESSING
 // session URL so repeat clicks / reloads don't mint new sessions. Throws on API
 // failure (e.g. 400 "not enough credits", 403 bad key) — the caller surfaces it.
-export async function createSession(account: string, transactionId?: string): Promise<SessionResult> {
+export async function createSession(account: string, transactionId?: string, callbackOverride?: string): Promise<SessionResult> {
   const existing = await pool.query(
     'SELECT status, didit_session_url FROM nordstern.kyc_verifications WHERE vendor_data = $1',
     [account],
@@ -186,8 +186,11 @@ export async function createSession(account: string, transactionId?: string): Pr
 
   if (!DIDIT_API_KEY) throw new Error('DIDIT_API_KEY not configured');
 
-  const callback = `${PUBLIC_BASE_URL}/sep24/interactive`
-    + (transactionId ? `?transaction_id=${encodeURIComponent(transactionId)}` : '');
+  // Customer-app flow passes its own return URL; the SEP-24 webview flow returns to
+  // the interactive page. Either way DIDIT redirects the user back after verifying.
+  const callback = callbackOverride
+    ?? (`${PUBLIC_BASE_URL}/sep24/interactive`
+      + (transactionId ? `?transaction_id=${encodeURIComponent(transactionId)}` : ''));
 
   const res = await fetch(`${DIDIT_BASE}/v3/session/`, {
     method: 'POST',

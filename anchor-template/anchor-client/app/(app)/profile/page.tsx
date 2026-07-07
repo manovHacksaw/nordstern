@@ -73,7 +73,9 @@ export default function ProfilePage() {
       <Card><CardBody className="flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-full bg-surface"><ShieldCheck className="h-5 w-5 text-brand-deep" /></div>
         <div className="flex-1"><p className="font-medium text-ink">Identity verification</p><p className="text-xs text-muted">Powered by DIDIT — completed once, reused everywhere.</p></div>
-        <Badge tone={kycTone(customer?.kycStatus ?? 'unverified')}>{kycLabel(customer?.kycStatus ?? 'unverified')}</Badge>
+        {customer?.kycStatus === 'approved'
+          ? <Badge tone="success">Verified</Badge>
+          : <Button size="sm" variant="outline" onClick={() => router.push('/verify')}>{customer?.kycStatus === 'pending' ? 'In review' : 'Verify'}</Button>}
       </CardBody></Card>
 
       {/* Linked wallets */}

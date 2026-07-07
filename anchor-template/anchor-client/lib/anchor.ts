@@ -36,10 +36,40 @@ export interface CustomerTx {
   createdAt: string | null;
   completedAt: string | null;
   reference: string | null;   // customer-facing reference
+  assetCode?: string;
   // Technical (collapsed under "Advanced details" in the UI):
   rawStatus: string;
   stellarId: string | null;
   destination: string | null;
+}
+
+// ── Customer-scoped, session-authenticated (no wallet signing needed) ────────────
+// History + a single transaction for THIS anchor, scoped to the signed-in customer's
+// linked wallets by the business-server (ns_customer cookie flows through /biz).
+export async function myTransactions(): Promise<CustomerTx[]> {
+  const r = await fetch('/biz/customer/transactions', { credentials: 'include' });
+  if (!r.ok) throw new Error('Could not load your activity');
+  const body = (await r.json()) as { transactions: CustomerTx[] };
+  return body.transactions;
+}
+
+export async function myTransaction(id: string): Promise<CustomerTx | null> {
+  const r = await fetch(`/biz/customer/transactions/${id}`, { credentials: 'include' });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('Could not load this transaction');
+  return r.json();
+}
+
+// Start identity verification (DIDIT), tied to the customer identity server-side. Returns
+// the hosted verification URL. The client never sets its own status.
+export async function startKyc(returnUrl: string): Promise<{ url: string }> {
+  const r = await fetch('/biz/customer/kyc/start', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ returnUrl }),
+  });
+  if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.error ?? 'Could not start verification'); }
+  return r.json();
 }
 
 // Map the SEP-24 status vocabulary to friendly customer phases. Only real statuses.

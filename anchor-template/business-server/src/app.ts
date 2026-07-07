@@ -3,6 +3,7 @@ import { callbacksRouter } from './callbacks.js';
 import { sep24Router } from './sep24.js';
 import { adminRouter } from './admin.js';
 import { requireOperator } from './adminAuth.js';
+import { customerApiRouter } from './customerApi.js';
 import { webhooksRouter } from './webhooks.js';
 import { walletRouter } from './walletApi.js';
 import { ASSET_CODE, TREASURY_PUBLIC } from './config.js';
@@ -35,6 +36,9 @@ export function createApp() {
   // (treasury sweep/pause, refund, retry, key management) can't be invoked anonymously —
   // including directly against the public Traefik `api.<slug>` host.
   app.use('/admin', requireOperator, adminRouter);
+
+  // Customer-facing API (ns_customer session): this customer's history + KYC start.
+  app.use('/', customerApiRouter);
 
   // Webhooks
   app.use('/', webhooksRouter);
