@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +36,7 @@ const schema = z.object({
 
 type Form = z.infer<typeof schema>;
 
-export default function RedeemPage() {
+function RedeemForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState('');
@@ -270,5 +270,26 @@ export default function RedeemPage() {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+// useSearchParams() forces a client-side bailout, so the consumer must sit under a
+// Suspense boundary — this lets the page shell prerender while the token-reading form
+// hydrates on the client. (Next.js-recommended pattern; no dynamic/static opt-out.)
+export default function RedeemPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="w-full max-w-lg mx-auto">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 text-brand animate-spin" /> Loading…
+            </div>
+          </CardContent>
+        </Card>
+      }
+    >
+      <RedeemForm />
+    </Suspense>
   );
 }
