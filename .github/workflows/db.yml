@@ -1,18 +1,9 @@
 name: Database
 
-# Schema-management validation (R6 M2-c). Validates the ONE service that already
-# has a migration system — platform/api (Drizzle) — so schema changes stay
-# intentional and drift becomes visible. Does NOT introduce migrations for the
-# raw-SQL services (that is M4). Does not modify ci.yml.
-#
-# Two checks on platform/api:
-#   1. migration consistency (drizzle-kit check)  — BLOCKING; committed migrations
-#      must be internally consistent (journal/snapshots not corrupt/colliding).
-#   2. schema drift (drizzle-kit generate + classify) — ADVISORY/soft; flags when
-#      schema.ts is ahead of the committed migrations. Promoted to blocking once
-#      the pre-existing drift is resolved in M4.
-#
-# Both run fully offline (schema.ts vs committed snapshots) — no database needed.
+# Schema-management validation (R6 M2-c → hardened in M4). Validates platform/api's
+# Drizzle migrations: they must be consistent, they must actually APPLY to a real
+# Postgres, and schema.ts must not drift ahead of them. Raw-SQL services are brought
+# under migrations in later M4 increments. Does not modify ci.yml.
 
 on:
   pull_request:
@@ -36,6 +27,19 @@ jobs:
   drizzle-migrations:
     name: drizzle-migrations
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: pw
+          POSTGRES_DB: nordstern_platform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -49,41 +53,28 @@ jobs:
         working-directory: platform/api
         run: npx drizzle-kit check < /dev/null
 
-      # ADVISORY (soft until M4): detect schema.ts drifting ahead of migrations.
-      # drizzle-kit generate exits 0 even when it bails on an interactive
-      # rename/column conflict, so we classify its OUTPUT rather than its exit code.
-      - name: Schema drift detection (advisory)
+      # BLOCKING: the full chain must actually apply to a fresh database.
+      - name: Migrations apply cleanly
         working-directory: platform/api
-        continue-on-error: true
+        env:
+          DATABASE_URL: postgres://postgres:pw@localhost:5432/nordstern_platform
+        run: npm run db:migrate
+
+      # BLOCKING (M4): schema.ts must not be ahead of the committed migrations.
+      # generate exits 0 even on a conflict, so we classify its output.
+      - name: No schema drift
+        working-directory: platform/api
         run: |
           set +e
           OUT="$(npx drizzle-kit generate < /dev/null 2>&1)"
           echo "$OUT"
-          # Revert anything generate may have written — this job validates, never commits.
+          # Discard anything generate may have written — this job validates, never commits.
           git checkout -- drizzle/ 2>/dev/null || true
           git clean -fdq drizzle/ 2>/dev/null || true
-
           if echo "$OUT" | grep -qiE "No schema changes"; then
-            echo "✅ No schema drift — schema.ts matches the committed migrations." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "✅ No schema drift."
             exit 0
           fi
-
-          {
-            echo "## ⚠️ Schema drift detected — platform/api (advisory, non-blocking until M4)"
-            echo ""
-            echo "\`src/db/schema.ts\` is ahead of the committed Drizzle migrations — a"
-            echo "migration has not been generated for pending schema changes."
-            echo ""
-            echo "**Known pending drift (as of M2-c):**"
-            echo "- \`secret_refs\` table and \`anchors.branding\` column (added in R2 / R3.6) are not yet in any migration file."
-            echo "- The \`applications\` table restructure introduces a rename/column conflict that needs a human decision."
-            echo ""
-            echo "**Resolution is the first task of M4** (versioned migrations) because it"
-            echo "requires rename-vs-drop decisions with data-migration implications. Do not"
-            echo "resolve it here."
-            echo ""
-            echo "_Detected via \`drizzle-kit generate\` (see step log). This check flips to"
-            echo "blocking once the drift is cleared in M4._"
-          } >> "$GITHUB_STEP_SUMMARY"
-          echo "::warning title=Schema drift::platform/api schema.ts is ahead of migrations (advisory; deferred to M4)"
-          exit 0
+          echo "::error title=Schema drift::src/db/schema.ts is ahead of the committed migrations."
+          echo "Run 'npm run db:generate' in platform/api and commit the new drizzle/ files."
+          exit 1

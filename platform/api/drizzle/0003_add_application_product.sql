@@ -1,0 +1,1 @@
+ALTER TABLE "applications" ADD COLUMN "product" jsonb NOT NULL;
