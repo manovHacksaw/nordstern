@@ -181,3 +181,18 @@ services:
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
     networks: [nordstern-net]
+
+  # ── Founder / operator / NordStern-admin web app (platform/console). One app, many
+  #    surfaces; proxies /api → platform-api same-origin (cookies flow). Reachable at
+  #    http://localhost:4001 (prod: app.nordstern.live). M0: deploy + reach it.
+  platform-console:
+    build:
+      context: ./platform/console
+      args: { API_URL: http://platform-api:4000 }
+    restart: unless-stopped
+    depends_on:
+      platform-api: { condition: service_started }
+    ports: ["4001:3000"]
+    environment:
+      API_URL: http://platform-api:4000
+    networks: [nordstern-net]
