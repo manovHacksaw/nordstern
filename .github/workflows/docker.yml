@@ -1,0 +1,91 @@
+name: Docker
+
+# Container build validation (R6 M2-d). Ensures no PR silently breaks a Docker
+# image build. BUILD ONLY — no push, no registry login, no compose, no runtime,
+# no image scanning (scanning is a later milestone). Does not modify ci.yml.
+#
+# The workflow runs on every PR (so the required `docker-required` check always
+# reports), but the actual `docker build` matrix only covers images whose build
+# context changed — via dorny/paths-filter producing a dynamic matrix. Upstream
+# reference images (sep24-reference-ui, anchor-platform) are excluded.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Fast path-filter: which NordStern image contexts changed? Emits a JSON array
+  # of the changed image directories, consumed as the build matrix.
+  changes:
+    name: detect-changes
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Filter key == build context dir. A change to the shared workflow
+          # rebuilds everything (each filter also watches this file).
+          filters: |
+            "platform/api": [ 'platform/api/**', '.github/workflows/docker.yml' ]
+            "anchor-service/business-server": [ 'anchor-service/business-server/**', '.github/workflows/docker.yml' ]
+            "anchor-service/client": [ 'anchor-service/client/**', '.github/workflows/docker.yml' ]
+            "anchor-service/control-plane": [ 'anchor-service/control-plane/**', '.github/workflows/docker.yml' ]
+            "anchor-template/aggregator-service": [ 'anchor-template/aggregator-service/**', '.github/workflows/docker.yml' ]
+            "anchor-template/anchor-client": [ 'anchor-template/anchor-client/**', '.github/workflows/docker.yml' ]
+            "anchor-template/business-server": [ 'anchor-template/business-server/**', '.github/workflows/docker.yml' ]
+            "anchor-template/client": [ 'anchor-template/client/**', '.github/workflows/docker.yml' ]
+            "anchor-template/console": [ 'anchor-template/console/**', '.github/workflows/docker.yml' ]
+
+  # Build (validate) each changed image. push:false + load:false → the image is
+  # produced in BuildKit and discarded; nothing is exported or published.
+  build:
+    name: build
+    needs: changes
+    if: needs.changes.outputs.images != '[]' && needs.changes.outputs.images != ''
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.changes.outputs.images) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.image }} (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image }}
+          push: false
+          load: false
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  # Single required check for branch protection. Always runs (so it never blocks a
+  # PR that touched no image), and is green when builds succeeded OR were skipped.
+  docker-required:
+    name: docker-required
+    if: always()
+    needs: [changes, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate on build result
+        run: |
+          r="${{ needs.build.result }}"
+          echo "build result: ${r} (images: ${{ needs.changes.outputs.images }})"
+          if [ "${r}" = "failure" ] || [ "${r}" = "cancelled" ]; then
+            echo "::error::One or more Docker image builds failed"
+            exit 1
+          fi
+          echo "Docker build validation passed (result=${r})"

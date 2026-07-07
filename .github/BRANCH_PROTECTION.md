@@ -11,8 +11,12 @@ Required checks (add each as it lands):
   workspace passes (`docs-website` is non-blocking and cannot fail it).
 - **`secret-scan`** — gitleaks (M2-b); blocks on a genuine new secret in the PR range.
 - **`hygiene`** — committed-build-artifact guard (M2-b); blocks on tracked generated files.
+- **`docker-required`** — Docker build validation aggregation (M2-d); green when all
+  changed images build (or none changed). Always runs, so it's deadlock-safe as a
+  required check even though the build matrix is path-filtered.
 
-`dependency-audit` (M2-b) is **advisory / non-blocking** — do NOT add it as required.
+`dependency-audit` (M2-b) and `drizzle-migrations`' drift step (M2-c) are
+**advisory / non-blocking** — do NOT add them as required.
 
 ## Option A — GitHub UI
 Settings → Rules → Rulesets → New branch ruleset, target `main`:
