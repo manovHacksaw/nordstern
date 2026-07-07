@@ -14,6 +14,10 @@ Required checks (add each as it lands):
 - **`docker-required`** — Docker build validation aggregation (M2-d); green when all
   changed images build (or none changed). Always runs, so it's deadlock-safe as a
   required check even though the build matrix is path-filtered.
+- **`db-required`** — database migration aggregation (M2-c/M4); green only when every
+  DB-owning service's migrations are consistent, apply to a fresh Postgres, and carry
+  no drift (platform/api Drizzle) / no un-versioned runtime DDL (control-plane). Always
+  runs (deadlock-safe).
 - **`tests-required`** — money-flow test aggregation (M3); green only when the deposit,
   withdrawal, and SecretStore suites pass against real Testcontainers infra.
 - **`dr-drill`** — backup/restore drill (M5); green only when a seeded money database

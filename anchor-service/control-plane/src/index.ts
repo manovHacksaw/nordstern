@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { pool, initDb } from './db.js';
+import { pool } from './db.js';
+import { runMigrations } from './migrate.js';
 import { authRouter } from './auth.js';
 import { anchorsRouter } from './provision.js';
 import { configRouter } from './config.js';
@@ -19,7 +20,8 @@ app.use('/admin',   adminRouter);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-await initDb();
+// Migrate-on-start (R6 M4.1) — replaces runtime initDb() schema creation.
+await runMigrations();
 
 app.listen(PORT, () => {
   console.log(`[control-plane] running on :${PORT}`);

@@ -4,14 +4,22 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": ["refs/heads/main"],
+      "include": [
+        "refs/heads/main"
+      ],
       "exclude": []
     }
   },
   "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" },
-    { "type": "required_linear_history" },
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "required_linear_history"
+    },
     {
       "type": "pull_request",
       "parameters": {
@@ -27,12 +35,27 @@
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          { "context": "ci-required" },
-          { "context": "secret-scan" },
-          { "context": "hygiene" },
-          { "context": "docker-required" },
-          { "context": "tests-required" },
-          { "context": "dr-drill" }
+          {
+            "context": "ci-required"
+          },
+          {
+            "context": "secret-scan"
+          },
+          {
+            "context": "hygiene"
+          },
+          {
+            "context": "docker-required"
+          },
+          {
+            "context": "tests-required"
+          },
+          {
+            "context": "dr-drill"
+          },
+          {
+            "context": "db-required"
+          }
         ]
       }
     }

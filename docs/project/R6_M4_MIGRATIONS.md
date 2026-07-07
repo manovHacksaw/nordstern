@@ -39,14 +39,23 @@ platform/api PR. So from now on any `schema.ts` change without a matching migrat
 
 Order and rationale unchanged from the M2-c roadmap. Each is its own reviewable PR:
 
-### M4.1 — control-plane (`controldb`) — next
-- Introduce **node-pg-migrate** (fits raw `pg`; no new ORM).
-- Baseline `0000` from the *live* schema (`pg_dump --schema-only`), capturing the
-  `CREATE TABLE`s + all the accreted `ALTER ADD COLUMN`s as one non-destructive baseline.
-- Replace `initDb()` inline DDL with a migrate-on-start step; delete the inline DDL.
-- Add a CI drift/apply check (mirror db.yml).
-- Deployment: control-plane is provisioning's backbone → migrate first.
-- Rollback: baseline is additive; each later migration ships a `down`.
+### M4.1 — control-plane (`controldb`) ✅ (done)
+- Introduced **node-pg-migrate** (raw `pg`; no new ORM).
+- **Baseline** (`migrations/1719800000000_baseline.cjs`) = the exact `initDb()` DDL kept
+  **fully idempotent** (`IF NOT EXISTS`), so existing control-plane DBs adopt migrations
+  as a harmless no-op and fresh DBs are created. `initDb()` runtime DDL removed;
+  `src/migrate.ts` runs **migrate-on-start** from `index.ts`.
+- Dockerfile now ships `migrations/` into the runtime image.
+- **Verified against real Postgres:** migrations reproduce the `initDb()` schema
+  **byte-for-byte**; re-run is a no-op (idempotent); running against an existing
+  initDb-built DB leaves all tenant/provisioning tables intact (backwards compatible);
+  the built image boots, migrates on start, serves `/health`.
+- **CI (`db.yml` `control-plane-migrations` job):** apply-on-fresh-DB (blocking),
+  idempotency (blocking), and a **no-un-versioned-runtime-DDL guard** (blocking) — the
+  raw-SQL analog of drift detection (all schema changes must be migrations).
+- `db.yml` restructured into per-service jobs + a deadlock-safe **`db-required`**
+  aggregation (also fixes a latent required-check/path-filter deadlock).
+- Rollback: baseline ships a `down`; future migrations additive with `down`s.
 
 ### M4.2 — business-server (per-anchor `nordstern`) — highest value
 - Baseline from a provisioned anchor's live `nordstern` schema.
