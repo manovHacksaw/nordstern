@@ -35,6 +35,24 @@ export const anchorDbName = (slug: string) => `anchordb_${slug.replace(/-/g, '_'
 const rand = () => randomBytes(24).toString('base64');
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+// White-label brand → runtime env, injected into BOTH the customer app and the operator
+// console (they share getBrand). Only present keys are emitted; the frontends fall back
+// to defaults (NordStern purple, generated monogram) for anything missing. Open by design
+// — a new branding key just needs a line here, no schema/redesign.
+function brandEnv(p: StackParams): string[] {
+  const b = p.branding ?? {};
+  const map: Record<string, string | undefined> = {
+    ANCHOR_DISPLAY_NAME: b.displayName || p.name,
+    ANCHOR_ACCENT: b.accent,
+    ANCHOR_LOGO_URL: b.logoUrl,
+    ANCHOR_SUPPORT_EMAIL: b.supportEmail,
+    ANCHOR_WEBSITE_URL: b.websiteUrl,
+    ANCHOR_PRIVACY_URL: b.privacyUrl,
+    ANCHOR_TERMS_URL: b.termsUrl,
+  };
+  return Object.entries(map).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`);
+}
+
 export interface AdapterSelection {
   kyc: string;
   deposit: string;
@@ -45,6 +63,7 @@ export interface AdapterSelection {
 export interface StackParams {
   slug: string;
   name: string;                 // display name for per-anchor console branding
+  branding?: Record<string, string>; // open brand map (accent, logoUrl, support/legal URLs)
   homeDomain: string;
   database: string;
   assetCode: string;
@@ -244,6 +263,7 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
         `ANCHOR_NAME=${p.name}`,
         `ANCHOR_SLUG=${p.slug}`,
         `ASSET_CODE=${p.assetCode}`,
+        ...brandEnv(p),
       ],
       Labels: labels('client', p.slug, p.homeDomain),
       HostConfig: { NetworkMode: NETWORK },
@@ -265,6 +285,7 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
         `ANCHOR_NAME=${p.name}`,
         `ANCHOR_SLUG=${p.slug}`,
         `ASSET_CODE=${p.assetCode}`,
+        ...brandEnv(p),
       ],
       Labels: labels('console', p.slug, p.homeDomain),
       HostConfig: { NetworkMode: NETWORK },

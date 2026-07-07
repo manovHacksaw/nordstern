@@ -17,6 +17,38 @@ export interface RedemptionCredentials {
   cashfree?: Credentials;
 }
 
+// White-label brand identity a business sets at redemption. OPEN shape (jsonb) so we
+// can grow it (secondary accent, theme, fonts, hero, copy, emails) without a migration.
+export interface Branding {
+  displayName?: string;
+  accent?: string;      // hex #RRGGBB
+  logoUrl?: string;
+  supportEmail?: string;
+  websiteUrl?: string;
+  privacyUrl?: string;
+  termsUrl?: string;
+}
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const isHttpUrl = (v: string) => /^https?:\/\//i.test(v);
+
+// Keep only known, well-formed values — never persist junk. Invalid accent/URLs are
+// dropped so render-time defaults (NordStern purple, monogram) kick in. Additive: an
+// unknown future key can be whitelisted here without touching storage.
+function sanitizeBranding(input: Branding | undefined): Record<string, string> {
+  const b = input ?? {};
+  const out: Record<string, string> = {};
+  const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+  if (str(b.displayName)) out.displayName = str(b.displayName).slice(0, 120);
+  if (HEX.test(str(b.accent))) out.accent = str(b.accent);
+  if (isHttpUrl(str(b.logoUrl))) out.logoUrl = str(b.logoUrl);
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(str(b.supportEmail))) out.supportEmail = str(b.supportEmail);
+  if (isHttpUrl(str(b.websiteUrl))) out.websiteUrl = str(b.websiteUrl);
+  if (isHttpUrl(str(b.privacyUrl))) out.privacyUrl = str(b.privacyUrl);
+  if (isHttpUrl(str(b.termsUrl))) out.termsUrl = str(b.termsUrl);
+  return out;
+}
+
 // Map the application's launch mode + supplied credentials to concrete adapters.
 // Real rails only turn on when their credentials are actually present; identity is
 // platform-owned (didit) for production, mock in test (until the Identity Service).
@@ -49,8 +81,10 @@ export const anchorInvitationService = {
     fullName: string;
     password: string;
     credentials?: RedemptionCredentials;
+    branding?: Branding;
   }) {
     const invitation = await this.verify(input.rawToken);
+    const branding = sanitizeBranding(input.branding);
 
     // Load the vetted application to learn the chosen launch mode + product config.
     const application = invitation.applicationId
@@ -129,7 +163,8 @@ export const anchorInvitationService = {
         name: businessName,
         slug,
         status: 'draft',
-        network: 'testnet'
+        network: 'testnet',
+        branding,
       }).returning();
 
       // 7. Create Provisioning Job
@@ -147,6 +182,7 @@ export const anchorInvitationService = {
           environment: mode === 'production' ? 'production' : 'sandbox',
           mode,
           adapters,
+          branding,
         }
       }).returning();
 
@@ -240,6 +276,7 @@ export const anchorInvitationService = {
               name: payload.slug,
               displayName: payload.orgName, // business name → per-anchor branding
               adapters: payload.adapters ?? { kyc: 'mock', deposit: 'mock', payout: 'mock', fee: 'mock' },
+              branding: payload.branding ?? {},
             });
         const base = { cpAnchorId: handle.cpAnchorId, slug: handle.slug, homeDomain: handle.homeDomain };
         await setJob({ result: { ...base, stage: 'Provisioning started' } });

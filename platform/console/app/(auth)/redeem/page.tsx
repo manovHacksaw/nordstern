@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2, Loader2, ShieldCheck, Clock } from 'lucide-react';
+import { CheckCircle2, Loader2, ShieldCheck, Clock, Palette } from 'lucide-react';
 
 const schema = z.object({
   token: z.string().min(1, 'Token is required'),
@@ -20,6 +20,13 @@ const schema = z.object({
     .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, 'Only lowercase letters, numbers, and hyphens'),
   fullName: z.string().min(2, 'Name is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  // Brand identity — powers the customer app + operator console. All optional; sensible
+  // defaults (NordStern purple + monogram) apply when omitted.
+  displayName: z.string().optional(),
+  accent: z.string().regex(/^#([0-9a-fA-F]{6})$/, 'Use a hex color like #2563EB').optional().or(z.literal('')),
+  logoUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
+  supportEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  websiteUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
   // Optional PSP credentials — go straight to the secret store, never shown again.
   razorpayKeyId: z.string().optional(),
   razorpayKeySecret: z.string().optional(),
@@ -38,10 +45,11 @@ export default function RedeemPage() {
   const [gated, setGated] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<Form>({
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: { token: searchParams.get('token') || '', subdomain: '', fullName: '', password: '' },
   });
+  const accentValue = watch('accent');
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -70,10 +78,17 @@ export default function RedeemPage() {
     if (v.cashfreeAppId && v.cashfreeSecretKey) {
       credentials.cashfree = { CASHFREE_APP_ID: v.cashfreeAppId, CASHFREE_SECRET_KEY: v.cashfreeSecretKey };
     }
+    const branding: Record<string, string> = {};
+    if (v.displayName) branding.displayName = v.displayName;
+    if (v.accent) branding.accent = v.accent;
+    if (v.logoUrl) branding.logoUrl = v.logoUrl;
+    if (v.supportEmail) branding.supportEmail = v.supportEmail;
+    if (v.websiteUrl) branding.websiteUrl = v.websiteUrl;
     try {
       const res = await api.post('/anchor-invitations/redeem', {
         token: v.token, subdomain: v.subdomain, fullName: v.fullName, password: v.password,
         ...(Object.keys(credentials).length ? { credentials } : {}),
+        ...(Object.keys(branding).length ? { branding } : {}),
       }) as any;
 
       if (res.provisioning === 'gated') { setGated(true); return; }
@@ -177,6 +192,46 @@ export default function RedeemPage() {
             <Label htmlFor="password">Operator Password</Label>
             <Input id="password" type="password" {...register('password')} />
             {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+          </div>
+
+          {/* Brand identity — applied to the customer app + operator console. Optional. */}
+          <div className="space-y-4 rounded-lg border border-line bg-surface p-4">
+            <div className="flex items-start gap-2">
+              <Palette className="h-4 w-4 text-brand mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Brand your anchor (optional).</span> Make it feel like
+                your product. Leave blank to use a generated monogram and the default accent.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Display name</Label>
+                <Input placeholder="e.g. MizuPay" {...register('displayName')} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Brand color</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={accentValue || '#ab9ff2'} onChange={(e) => setValue('accent', e.target.value)} className="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-line bg-canvas" />
+                  <Input placeholder="#2563EB" {...register('accent')} className="font-mono" />
+                </div>
+                {errors.accent && <p className="text-xs text-destructive">{errors.accent.message}</p>}
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs">Logo URL</Label>
+                <Input placeholder="https://…/logo.png" {...register('logoUrl')} />
+                {errors.logoUrl && <p className="text-xs text-destructive">{errors.logoUrl.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Support email</Label>
+                <Input placeholder="support@mizupay.io" {...register('supportEmail')} />
+                {errors.supportEmail && <p className="text-xs text-destructive">{errors.supportEmail.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Website</Label>
+                <Input placeholder="https://mizupay.io" {...register('websiteUrl')} />
+                {errors.websiteUrl && <p className="text-xs text-destructive">{errors.websiteUrl.message}</p>}
+              </div>
+            </div>
           </div>
 
           {/* Optional PSP credentials — encrypted in the secret store, never displayed again */}

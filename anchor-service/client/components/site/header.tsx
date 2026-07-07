@@ -3,6 +3,7 @@
 import { useBrand } from '@/components/brand-context';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { BrandLogo } from '@/components/ui/brand-logo';
 import { Wallet, Loader2 } from 'lucide-react';
 
 // Sticky branded header: monogram + business name, network badge, and wallet state
@@ -11,14 +12,13 @@ export function Header({
   address, connecting, onConnect, isMainnet,
 }: { address: string | null; connecting: boolean; onConnect: () => void; isMainnet: boolean }) {
   const brand = useBrand();
-  const initial = brand.name.charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-canvas/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-5 sm:px-8">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-sm font-bold text-ink">{initial}</div>
-          <span className="text-[15px] font-semibold tracking-tight text-ink">{brand.name}</span>
+          <BrandLogo size={36} />
+          <span className="text-[15px] font-semibold tracking-tight text-ink">{brand.displayName}</span>
         </div>
         {!isMainnet && <Badge variant="brand" className="hidden sm:inline-flex">Testnet</Badge>}
         <span className="flex-1" />

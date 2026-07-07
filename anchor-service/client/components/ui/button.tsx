@@ -8,7 +8,7 @@ type Size = 'sm' | 'md' | 'lg';
 // `brand` uses the per-anchor accent (--color-brand) so CTAs re-tint white-label.
 const VARIANT: Record<Variant, string> = {
   primary: 'bg-ink text-white hover:bg-ink/90',
-  brand: 'bg-brand text-ink hover:bg-brand-300',
+  brand: 'bg-brand text-[var(--color-brand-ink)] hover:opacity-90',
   secondary: 'bg-surface text-ink hover:bg-surface-2',
   ghost: 'border border-line bg-transparent text-ink hover:bg-surface',
   white: 'bg-white text-ink hover:bg-white/90',

@@ -7,9 +7,21 @@ import { useAnchor } from '@/components/anchor-context';
 import { api } from '@/lib/api';
 
 export function ConsoleShell({ children }: { children: React.ReactNode }) {
-  const { name, assetCode } = useAnchor();
+  const { name, assetCode, logoUrl } = useAnchor();
   const router = useRouter();
   const initial = (name || 'A').charAt(0).toUpperCase();
+
+  // Logo image when configured; else a monogram on the accent (readable text via
+  // --color-brand-ink). Never blank.
+  const Mark = ({ size }: { size: number }) =>
+    logoUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={logoUrl} alt={`${name} logo`} className="rounded-lg object-contain" style={{ width: size, height: size }} />
+    ) : (
+      <div className="flex items-center justify-center rounded-lg bg-brand font-bold text-[var(--color-brand-ink)]" style={{ width: size, height: size, fontSize: size * 0.42 }}>
+        {initial}
+      </div>
+    );
 
   async function logout() {
     await api.post('/auth/logout').catch(() => {});
@@ -20,7 +32,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-canvas p-4 lg:flex">
         <div className="mb-8 flex items-center gap-3 px-2 pt-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">{initial}</div>
+          <Mark size={36} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-ink">{name}</p>
             <p className="text-xs text-subtle">Operator Console</p>
@@ -44,7 +56,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b border-line px-6">
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-brand text-xs font-bold text-white">{initial}</div>
+            <Mark size={28} />
             <span className="text-sm font-semibold text-ink">{name}</span>
           </div>
           <div className="ml-auto text-xs text-subtle">

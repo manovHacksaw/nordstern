@@ -13,6 +13,7 @@ export interface AnchorCtx {
   slug: string;
   assetCode: string;
   name: string;
+  logoUrl: string | null;
   orgId: string | null;
   anchorId: string | null;
   status: string | null;
@@ -32,8 +33,8 @@ interface Resolved {
 }
 
 export function AnchorProvider({
-  slug, assetCode, envName, children,
-}: { slug: string; assetCode: string; envName: string; children: React.ReactNode }) {
+  slug, assetCode, envName, logoUrl = null, children,
+}: { slug: string; assetCode: string; envName: string; logoUrl?: string | null; children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -54,6 +55,7 @@ export function AnchorProvider({
     slug,
     assetCode,
     name: data?.name ?? envName,
+    logoUrl,
     orgId: data?.organizationId ?? null,
     anchorId: data?.anchorId ?? null,
     status: data?.status ?? null,

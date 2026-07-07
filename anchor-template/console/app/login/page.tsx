@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-surface p-6">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand text-lg font-bold text-white">N</div>
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand text-lg font-bold text-[var(--color-brand-ink)]">N</div>
           <h1 className="text-lg font-semibold text-ink">Operator Console</h1>
           <p className="text-sm text-subtle">Sign in to manage your anchor</p>
         </div>

@@ -64,6 +64,9 @@ export async function initDb() {
     ALTER TABLE tenants ADD COLUMN IF NOT EXISTS country                 VARCHAR(50);
     ALTER TABLE tenants ADD COLUMN IF NOT EXISTS fiu_registration_status VARCHAR(50);
     ALTER TABLE tenants ADD COLUMN IF NOT EXISTS support_email           VARCHAR(255);
+    -- White-label brand identity (open jsonb — accent, logoUrl, displayName, support/
+    -- website/legal URLs, and any future keys). Injected into the anchor's frontends.
+    ALTER TABLE tenants ADD COLUMN IF NOT EXISTS branding                JSONB DEFAULT '{}'::jsonb;
   `);
 
   // ── Encrypted secret vault (replaces plaintext tenant_keypairs.secret_key) ──

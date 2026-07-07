@@ -37,15 +37,16 @@ async function setStatus(id: string, status: string, detail = ''): Promise<void>
 
 // ── POST /anchors — create an anchor record (owner-scoped) ─────────────────────
 anchorsRouter.post('/', async (req: AuthedRequest, res: Response) => {
-  const { 
-    name, 
+  const {
+    name,
     adapters,
     legal_entity_name,
     company_type,
     use_case,
     country,
     fiu_registration_status,
-    support_email
+    support_email,
+    branding
   } = req.body as any;
   if (!name) { res.status(400).json({ error: 'name is required' }); return; }
 
@@ -59,13 +60,14 @@ anchorsRouter.post('/', async (req: AuthedRequest, res: Response) => {
     const { rows: [anchor] } = await pool.query(
       `INSERT INTO tenants (
          name, slug, owner_user_id, home_domain, stack_status, status,
-         legal_entity_name, company_type, use_case, country, fiu_registration_status, support_email
+         legal_entity_name, company_type, use_case, country, fiu_registration_status, support_email, branding
        )
-       VALUES ($1, $2, $3, $4, 'pending', 'pending', $5, $6, $7, $8, $9, $10) RETURNING *`,
+       VALUES ($1, $2, $3, $4, 'pending', 'pending', $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
       [
         name, slug, req.userId, `${slug}.${DOMAIN_SUFFIX}`,
-        legal_entity_name || null, company_type || null, use_case || null, country || null, 
-        fiu_registration_status || null, support_email || null
+        legal_entity_name || null, company_type || null, use_case || null, country || null,
+        fiu_registration_status || null, support_email || null,
+        JSON.stringify(branding && typeof branding === 'object' ? branding : {}),
       ],
     );
     await pool.query(`INSERT INTO tenant_config (tenant_id) VALUES ($1) ON CONFLICT DO NOTHING`, [anchor.id]);
@@ -132,9 +134,11 @@ anchorsRouter.post('/:id/provision', async (req: AuthedRequest, res: Response) =
 });
 
 async function runProvision(anchor: any): Promise<void> {
-  const { id, slug, name, home_domain, legal_entity_name } = anchor;
+  const { id, slug, name, home_domain, legal_entity_name, branding } = anchor;
   // Display/brand name for the provisioned surfaces; falls back to the slug-safe name.
   const displayName = legal_entity_name || name;
+  // branding is a jsonb column — pg returns it already parsed. Guard for safety.
+  const brand: Record<string, string> = branding && typeof branding === 'object' ? branding : {};
 
   await setStatus(id, 'provisioning', 'Generating keypairs');
   const kps = generateKeypairs();
@@ -185,6 +189,7 @@ async function runProvision(anchor: any): Promise<void> {
   const { apId, bizId, clientId, consoleId } = await createAnchorStack({
     slug,
     name: displayName,
+    branding: brand,
     homeDomain: home_domain,
     database,
     assetCode,

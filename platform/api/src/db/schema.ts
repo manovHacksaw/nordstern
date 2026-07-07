@@ -153,6 +153,11 @@ export const anchors = pgTable('anchors', {
   slug: varchar('slug', { length: 100 }).notNull(),
   status: anchorStatus('status').default('draft').notNull(),
   network: network('network').default('testnet').notNull(),
+  // White-label brand identity — an OPEN jsonb so we can add secondary accent, theme,
+  // fonts, hero image, marketing copy, or email branding later WITHOUT a schema change.
+  // Known keys today: { displayName, accent(hex), logoUrl, supportEmail, websiteUrl,
+  // privacyUrl, termsUrl }. Missing keys fall back to sensible defaults at render.
+  branding: jsonb('branding').$type<Record<string, string>>().default(sql`'{}'::jsonb`).notNull(),
   ...timestamps,
 }, (t) => [
   uniqueIndex('anchors_org_slug_uq').on(t.organizationId, t.slug),

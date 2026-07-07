@@ -19,6 +19,7 @@ export interface ProvisionSpec {
   name: string;          // slug-safe name (drives the control-plane slug + secret path)
   displayName?: string;  // business name for per-anchor branding (client + console)
   adapters?: { kyc?: string; deposit?: string; payout?: string; fee?: string };
+  branding?: Record<string, string>; // open brand map (accent, logoUrl, support, …)
 }
 
 export interface ProvisionHandle {
@@ -60,8 +61,8 @@ export const provisionerService = {
     const createRes = await fetch(`${CP_URL}/anchors`, {
       method: 'POST', headers: auth,
       // legal_entity_name is the display/brand name; `name` stays slug-safe so the
-      // control-plane slug (and secret path) is stable.
-      body: JSON.stringify({ name: spec.name, legal_entity_name: spec.displayName, adapters: spec.adapters }),
+      // control-plane slug (and secret path) is stable. `branding` is the open brand map.
+      body: JSON.stringify({ name: spec.name, legal_entity_name: spec.displayName, adapters: spec.adapters, branding: spec.branding }),
     });
     if (!createRes.ok) throw new Error(`control-plane create anchor failed (${createRes.status}): ${await createRes.text()}`);
     const anchor = (await createRes.json()) as { id: string; slug: string; home_domain: string };

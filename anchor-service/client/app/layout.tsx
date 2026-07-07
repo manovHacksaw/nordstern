@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
-import { getBrand } from '@/lib/brand';
+import { getBrand, readableOn } from '@/lib/brand';
 import { BrandProvider } from '@/components/brand-context';
 import './globals.css';
 
@@ -23,7 +23,11 @@ export function generateMetadata(): Metadata {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const brand = getBrand();
   // Override the accent app-wide so the whole token system re-tints per anchor.
-  const accentVars = { ['--color-brand' as string]: brand.accent } as React.CSSProperties;
+  // --color-brand-ink is the readable text color for content ON the accent.
+  const accentVars = {
+    ['--color-brand' as string]: brand.accent,
+    ['--color-brand-ink' as string]: readableOn(brand.accent),
+  } as React.CSSProperties;
   return (
     <html lang="en" className={`${inter.variable} ${mono.variable}`} style={accentVars}>
       <body className="min-h-screen antialiased">

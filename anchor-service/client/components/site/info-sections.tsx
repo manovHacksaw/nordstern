@@ -16,7 +16,7 @@ export function InfoSections() {
       <Reveal>
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-ink">Supported assets</h2>
-          <p className="mt-1 text-sm text-muted">Assets you can buy and sell with {brand.name}.</p>
+          <p className="mt-1 text-sm text-muted">Assets you can buy and sell with {brand.displayName}.</p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <Card className="flex items-center gap-4 p-5" interactive>
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-brand-800">
@@ -52,7 +52,7 @@ export function InfoSections() {
           <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-ink">
             <Receipt className="h-5 w-5 text-subtle" /> Fees &amp; limits
           </h2>
-          <p className="mt-1 text-sm text-muted">Transparent, set by {brand.name}. Final fees are shown before you confirm.</p>
+          <p className="mt-1 text-sm text-muted">Transparent, set by {brand.displayName}. Final fees are shown before you confirm.</p>
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             {[
               { k: 'Network', v: 'Stellar', s: 'Fast, low-cost settlement' },
@@ -82,7 +82,7 @@ export function InfoSections() {
             </div>
           </div>
           <a
-            href="mailto:support@nordstern.live"
+            href={`mailto:${brand.supportEmail ?? 'support@nordstern.live'}`}
             className="inline-flex items-center gap-1.5 rounded-pill bg-ink px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink/90"
           >
             Contact support <ArrowUpRight className="h-4 w-4" />

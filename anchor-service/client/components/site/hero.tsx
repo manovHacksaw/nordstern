@@ -32,7 +32,7 @@ export function Hero({
         </Reveal>
         <Reveal delay={0.05}>
           <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight text-ink sm:text-6xl">
-            Buy {brand.assetCode} with {brand.name}
+            Buy {brand.assetCode} with {brand.displayName}
           </h1>
         </Reveal>
         <Reveal delay={0.1}>
