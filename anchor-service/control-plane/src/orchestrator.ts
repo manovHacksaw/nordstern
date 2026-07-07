@@ -24,6 +24,9 @@ const HORIZON_URL        = process.env.HORIZON_URL        ?? 'https://horizon-te
 const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? 'Test SDF Network ; September 2015';
 const DB_USER = process.env.DB_USER ?? 'anchor';
 const DB_PASSWORD = process.env.DB_PASSWORD ?? 'anchor';
+// Same secret platform-api signs operator access tokens with — forwarded into each
+// business-server so its money-admin API can verify the operator session.
+const PLATFORM_JWT_ACCESS_SECRET = process.env.PLATFORM_JWT_ACCESS_SECRET ?? '';
 
 // ── Naming helpers (shared with config-gen / provision) ────────────────────────
 export const apName  = (slug: string) => `anchor-platform-${slug}`;
@@ -217,6 +220,10 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     `PAYOUT_PROVIDER=${p.adapters.payout}`,
     `FEE_PROVIDER=${p.adapters.fee}`,
     'ALLOW_MOCK_KYC=true',
+    // Shared secret the money-admin API uses to verify the operator's platform session
+    // (`ns_access`). Same value platform-api signs with, so a console-authenticated
+    // operator — and only such an operator — can invoke financial operations.
+    `PLATFORM_JWT_ACCESS_SECRET=${PLATFORM_JWT_ACCESS_SECRET}`,
   ];
   if (p.surepass) {
     bizEnv.push(`SUREPASS_BASE_URL=${p.surepass.baseUrl}`, `SUREPASS_TOKEN=${p.surepass.token}`);

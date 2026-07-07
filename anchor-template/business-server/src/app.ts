@@ -2,6 +2,7 @@ import express from 'express';
 import { callbacksRouter } from './callbacks.js';
 import { sep24Router } from './sep24.js';
 import { adminRouter } from './admin.js';
+import { requireOperator } from './adminAuth.js';
 import { webhooksRouter } from './webhooks.js';
 import { walletRouter } from './walletApi.js';
 import { ASSET_CODE, TREASURY_PUBLIC } from './config.js';
@@ -25,8 +26,11 @@ export function createApp() {
   app.use('/sep24', sep24Router);
   app.use('/', walletRouter);
 
-  // Operator dashboard API (read-only, live data).
-  app.use('/admin', adminRouter);
+  // Operator dashboard + money-admin API. Gated by requireOperator: every /admin call
+  // must carry a valid platform operator session (`ns_access`), so financial operations
+  // (treasury sweep/pause, refund, retry, key management) can't be invoked anonymously —
+  // including directly against the public Traefik `api.<slug>` host.
+  app.use('/admin', requireOperator, adminRouter);
 
   // Webhooks
   app.use('/', webhooksRouter);

@@ -8,7 +8,10 @@
 const CP_URL       = process.env.CONTROL_PLANE_URL  ?? 'http://localhost:3002';
 const AGG_URL      = process.env.AGGREGATOR_URL     ?? 'http://localhost:3005';
 const CP_EMAIL     = process.env.CP_SERVICE_EMAIL   ?? 'platform-service@nordstern.internal';
-const CP_PASSWORD  = process.env.CP_SERVICE_PASSWORD ?? 'change-me-service-secret';
+// No default: this password bootstraps the platform→control-plane service operator that
+// can create and provision anchors. A hardcoded fallback would let anyone who reaches the
+// control-plane register that operator with a known password. Required (checked at use).
+const CP_PASSWORD  = process.env.CP_SERVICE_PASSWORD;
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS   = 10 * 60 * 1000; // real provisioning (image pull + testnet) can take minutes
@@ -40,6 +43,9 @@ export interface ProvisionOutcome {
 
 // Bootstrap/reuse a single service operator on the control-plane, return its JWT.
 async function controlPlaneToken(): Promise<string> {
+  if (!CP_PASSWORD) {
+    throw new Error('CP_SERVICE_PASSWORD is not set — refusing to provision with a default credential.');
+  }
   const body = JSON.stringify({ email: CP_EMAIL, password: CP_PASSWORD });
   const headers = { 'Content-Type': 'application/json' };
   let res = await fetch(`${CP_URL}/auth/login`, { method: 'POST', headers, body });

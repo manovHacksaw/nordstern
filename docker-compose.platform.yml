@@ -68,6 +68,10 @@ services:
       DB_USER: anchor
       DB_PASSWORD: anchor
       JWT_SECRET: ${CP_JWT_SECRET:-dev-cp-secret}
+      # Same secret platform-api signs operator sessions with (must match the value
+      # below on platform-api). Forwarded into each business-server so its money-admin
+      # API can verify the operator session (see anchor-template/business-server/adminAuth).
+      PLATFORM_JWT_ACCESS_SECRET: ${PLATFORM_JWT_ACCESS_SECRET:-dev-access-secret-change-me}
       MASTER_KEK: ${MASTER_KEK:?run anchor-service/scripts/setup-base.mjs and export MASTER_KEK}
       DOCKER_NETWORK: nordstern-net
       AP_IMAGE: stellar/anchor-platform:latest
