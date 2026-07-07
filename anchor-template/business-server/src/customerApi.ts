@@ -2,8 +2,9 @@ import { Router } from 'express';
 import type { Request } from 'express';
 import { listTransactions, fetchTransaction } from './platform.js';
 import { createSession } from './adapters/kyc/didit.js';
-import { ASSET_CODE } from './config.js';
+import { ASSET_CODE, PROVIDERS } from './config.js';
 import { requireCustomerSession, fetchCustomerWallets } from './customerSession.js';
+import { propagateKycToPlatform } from './kycPropagate.js';
 
 // ─── Customer-facing API (ns_customer session) ──────────────────────────────────
 // Tenant-isolated to THIS anchor. History is scoped to the authenticated customer's
@@ -96,6 +97,11 @@ customerApiRouter.post('/customer/kyc/start', async (req, res) => {
     // to the app; validated to an http(s) URL to avoid open redirects.
     const raw = String((req.body ?? {}).returnUrl ?? '');
     const returnUrl = /^https?:\/\//.test(raw) ? raw : undefined;
+    if (PROVIDERS.kyc === 'mock') {
+      await propagateKycToPlatform({ vendor_data: id, status: 'Approved' });
+      res.json({ url: returnUrl ?? '/', status: 'ACCEPTED' });
+      return;
+    }
     const session = await createSession(id, undefined, returnUrl);
     res.json({ url: session.url, status: session.status });
   } catch (err) {

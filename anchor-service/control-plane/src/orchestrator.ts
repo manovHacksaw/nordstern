@@ -135,7 +135,7 @@ function labels(role: 'ap' | 'biz' | 'client' | 'console', slug: string, homeDom
       'nordstern.anchor': slug,
     };
   }
-  // business-server (api.)
+  // business-server (api. and sep./sep24/sep6 paths)
   return {
     'traefik.enable': 'true',
     [`traefik.http.routers.${router}.rule`]: `Host(\`api.${homeDomain}\`)`,
@@ -143,6 +143,10 @@ function labels(role: 'ap' | 'biz' | 'client' | 'console', slug: string, homeDom
     [`traefik.http.routers.${router}.priority`]: '10',
     [`traefik.http.routers.${router}.service`]: router,
     [`traefik.http.services.${router}.loadbalancer.server.port`]: '3000',
+    [`traefik.http.routers.${router}-sep.rule`]: `Host(\`sep.${homeDomain}\`) && (PathPrefix(\`/sep24/\`) || PathPrefix(\`/sep6/\`))`,
+    [`traefik.http.routers.${router}-sep.entrypoints`]: 'web',
+    [`traefik.http.routers.${router}-sep.priority`]: '15',
+    [`traefik.http.routers.${router}-sep.service`]: router,
     'nordstern.anchor': slug,
   };
 }
