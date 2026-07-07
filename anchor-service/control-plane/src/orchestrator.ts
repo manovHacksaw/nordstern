@@ -225,6 +225,10 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     // (`ns_access`). Same value platform-api signs with, so a console-authenticated
     // operator — and only such an operator — can invoke financial operations.
     `PLATFORM_JWT_ACCESS_SECRET=${PLATFORM_JWT_ACCESS_SECRET}`,
+    // NordStern platform-api base (:4000) so the money-admin API can org-scope the
+    // operator: it delegates to GET /api/v1/anchors/resolve?slug=<slug>, which confirms
+    // the caller is a member of THIS anchor's organization (not just any platform user).
+    `NORDSTERN_API_URL=${PLATFORM_API_URL}`,
   ];
   if (p.surepass) {
     bizEnv.push(`SUREPASS_BASE_URL=${p.surepass.baseUrl}`, `SUREPASS_TOKEN=${p.surepass.token}`);

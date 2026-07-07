@@ -13,6 +13,14 @@ export const PLATFORM_API_URL = process.env.PLATFORM_API_URL ?? 'http://anchor-p
 // Injected per-anchor by the provisioner; no insecure default — an unset secret makes
 // the /admin API fail closed rather than accept unauthenticated financial operations.
 export const PLATFORM_JWT_ACCESS_SECRET = process.env.PLATFORM_JWT_ACCESS_SECRET ?? '';
+
+// This anchor's slug, and the NordStern platform-api base (:4000). When both are set the
+// money-admin API org-scopes the operator by calling platform-api's /anchors/resolve —
+// confirming the caller operates THIS anchor's org, not just that they're a platform user.
+// When NORDSTERN_API_URL is unset (standalone dev, no platform), it degrades to the local
+// authenticated-operator check only.
+export const ANCHOR_SLUG      = process.env.ANCHOR_SLUG      ?? '';
+export const NORDSTERN_API_URL = process.env.NORDSTERN_API_URL ?? '';
 export const SEP_SERVER_URL   = process.env.SEP_SERVER_URL   ?? PLATFORM_API_URL.replace('8085', '8080');
 
 // Treasury = the account that holds the USDC FLOAT. It is the source of USDC on

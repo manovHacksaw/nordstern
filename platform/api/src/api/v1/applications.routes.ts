@@ -32,8 +32,12 @@ applicationsRouter.get('/',
   })
 );
 
-// 3. Approve application (Admin authenticated - public bypass for dev testing)
+// 3. Approve application — authenticated only. Approving provisions a real, money-moving
+// anchor (keygen, on-chain issuance, container stack), so it must never be anonymous.
+// TODO(N1.1): tighten from "any authenticated user" to a NordStern staff/super-admin role
+// once that role dimension exists (Product 4). Until then requireAuth closes the open hole.
 applicationsRouter.post('/:id/approve',
+  requireAuth,
   ah(async (req, res) => {
     const result = await applicationService.approve(req.params.id as string);
     await recordAudit({

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
-import { PLATFORM_JWT_ACCESS_SECRET } from './config.js';
+import { PLATFORM_JWT_ACCESS_SECRET, NORDSTERN_API_URL, ANCHOR_SLUG } from './config.js';
 
 // ─── Operator authentication for the money-admin API ────────────────────────────
 // The /admin router exposes money-moving operations (treasury sweep/pause, refund,
@@ -60,13 +60,49 @@ function extractToken(req: Request): string | null {
   return null;
 }
 
-export function requireOperator(req: Request, res: Response, next: NextFunction): void {
-  const token = extractToken(req);
-  const claims = token ? verifyPlatformToken(token) : null;
-  if (!claims) {
-    res.status(401).json({ error: 'unauthenticated: operator session required' });
-    return;
+// Confirm the token holder actually operates THIS anchor's org by delegating to
+// platform-api's existing membership check (GET /anchors/resolve?slug=). Reuses the
+// same session cookie; no new endpoint, no platform DB access from the money server.
+// Returns the operator's org role, or null if they don't operate this anchor.
+async function resolveOrgRole(token: string): Promise<string | null> {
+  if (!NORDSTERN_API_URL || !ANCHOR_SLUG) return null; // signal: scoping unavailable
+  try {
+    const res = await fetch(
+      `${NORDSTERN_API_URL}/api/v1/anchors/resolve?slug=${encodeURIComponent(ANCHOR_SLUG)}`,
+      { headers: { Cookie: `ns_access=${token}` } },
+    );
+    if (!res.ok) return null;
+    const body = (await res.json()) as { role?: string };
+    return body.role ?? null;
+  } catch {
+    return null;
   }
-  (req as Request & { operator?: { sub: string } }).operator = claims;
-  next();
+}
+
+export function requireOperator(req: Request, res: Response, next: NextFunction): void {
+  (async () => {
+    const token = extractToken(req);
+    const claims = token ? verifyPlatformToken(token) : null;
+    if (!token || !claims) {
+      res.status(401).json({ error: 'unauthenticated: operator session required' });
+      return;
+    }
+
+    // Org-scope when platform-api is reachable: the caller must operate THIS anchor's org.
+    // Degrades to the authenticated-operator check only when scoping is unconfigured
+    // (standalone dev with no platform), never to anonymous access.
+    if (NORDSTERN_API_URL && ANCHOR_SLUG) {
+      const role = await resolveOrgRole(token);
+      if (!role) {
+        res.status(403).json({ error: 'forbidden: not an operator of this anchor' });
+        return;
+      }
+      (req as Request & { operator?: { sub: string; role: string } }).operator = { sub: claims.sub, role };
+    } else {
+      (req as Request & { operator?: { sub: string } }).operator = claims;
+    }
+    next();
+  })().catch(() => {
+    res.status(401).json({ error: 'unauthenticated' });
+  });
 }
