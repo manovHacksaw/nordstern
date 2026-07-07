@@ -13,7 +13,9 @@ const schema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1),
   ACCESS_TOKEN_TTL: z.coerce.number().default(900),              // seconds (15m)
   REFRESH_TOKEN_TTL: z.coerce.number().default(60 * 60 * 24 * 14), // seconds (14d)
-  COOKIE_DOMAIN: z.string().default('localhost'),
+  // Empty default → host-only cookies (works for the platform console AND per-anchor
+  // consoles on different hosts). Set only for a shared parent domain in prod.
+  COOKIE_DOMAIN: z.string().default(''),
   COOKIE_SECURE: bool.default(false),
 
   // App / email

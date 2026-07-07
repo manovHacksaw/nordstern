@@ -2,11 +2,17 @@ import type { Response } from 'express';
 import { env } from '../config/env.js';
 import { COOKIE_ACCESS, COOKIE_REFRESH } from '../config/constants.js';
 
+// Omit `domain` when COOKIE_DOMAIN is empty → HOST-ONLY cookies. This is what lets a
+// per-anchor operator console at console.<slug>.<suffix> authenticate: it proxies
+// /api/* same-origin to platform-api, and a host-only Set-Cookie binds to whatever
+// origin the browser used (the console host) instead of a fixed `localhost`. A pinned
+// Domain would be rejected cross-host. Set COOKIE_DOMAIN only for a real shared parent
+// domain in production (e.g. `.nordstern.live`).
 const base = {
   httpOnly: true,
   secure: env.COOKIE_SECURE,
   sameSite: 'lax' as const,
-  domain: env.COOKIE_DOMAIN,
+  ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   path: '/',
 };
 

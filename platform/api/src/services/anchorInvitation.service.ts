@@ -70,6 +70,12 @@ export const anchorInvitationService = {
 
     const passwordHash = await hashPassword(input.password);
 
+    // The org IS the business — name it after the vetted legal entity (from the
+    // application), so the operator console and every surface brand as the real
+    // business, not a generated placeholder. Fall back if the profile lacks a name.
+    const profile = (application?.profile ?? {}) as any;
+    const businessName: string = profile.legalEntityName?.trim() || `${input.fullName}'s Organization`;
+
     // Run atomic redemption transaction
     const result = await db.transaction(async (tx) => {
       // 1. Create User
@@ -83,7 +89,7 @@ export const anchorInvitationService = {
 
       // 2. Create Organization
       const [org] = await tx.insert(organizations).values({
-        name: `${input.fullName}'s Organization`,
+        name: businessName,
         slug,
         website: `https://${slug}.nordstern.live`,
         status: 'active'
@@ -120,7 +126,7 @@ export const anchorInvitationService = {
       const [anchor] = await tx.insert(anchors).values({
         organizationId: org.id,
         projectId: sandboxProj.id,
-        name: `${org.name} Anchor`,
+        name: businessName,
         slug,
         status: 'draft',
         network: 'testnet'
