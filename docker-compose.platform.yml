@@ -83,6 +83,24 @@ services:
       - ${ANCHOR_CONFIG_HOST_ROOT}:/anchor-configs
     networks: [nordstern-net]
 
+  # ── SecretStore backend (LocalStack = AWS Secrets Manager, same API) ──────────
+  # PSP/banking credentials live HERE, never in Postgres. The platform-api talks to
+  # it with the same @aws-sdk/client-secrets-manager it uses against real AWS in prod
+  # — only the endpoint differs. See docs decision-log DL-010.
+  secrets:
+    image: localstack/localstack:3
+    restart: unless-stopped
+    environment:
+      SERVICES: secretsmanager
+      DEBUG: "0"
+    ports: ["4566:4566"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [nordstern-net]
+
   # ── Aggregator (routing/quote + registry). Discovers real anchors registered by the platform. ──
   aggregator:
     build: ./anchor-template/aggregator-service
@@ -115,6 +133,7 @@ services:
       platform-migrate: { condition: service_completed_successfully }
       control-plane: { condition: service_started }
       aggregator: { condition: service_started }
+      secrets: { condition: service_healthy }
     ports: ["4000:4000"]
     environment:
       PORT: 4000
@@ -128,4 +147,12 @@ services:
       AGGREGATOR_URL: http://aggregator:3005
       CP_SERVICE_EMAIL: platform-service@nordstern.internal
       CP_SERVICE_PASSWORD: ${CP_SERVICE_PASSWORD:-dev-service-secret}
+      # SecretStore → LocalStack (prod: drop SECRETS_ENDPOINT, use IAM role via IRSA).
+      SECRETS_BACKEND: aws
+      SECRETS_PREFIX: nordstern
+      SECRETS_ENV: testnet
+      AWS_REGION: us-east-1
+      SECRETS_ENDPOINT: http://secrets:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
     networks: [nordstern-net]

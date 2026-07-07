@@ -23,6 +23,21 @@ const schema = z.object({
 
   // Vault (tenant_secrets) — 32-byte base64
   SECRETS_KEK: z.string().optional(),
+
+  // ── SecretStore (PSP/banking credentials — NEVER stored in the DB) ──────────
+  // One AWS Secrets Manager secret per anchor at `${SECRETS_PREFIX}/${SECRETS_ENV}/anchor/${slug}`
+  // — the exact convention the prod Terraform + External Secrets Operator already use.
+  // Locally we point the SAME AWS SDK at LocalStack via SECRETS_ENDPOINT, so there is
+  // one code path for dev and prod (only the endpoint + creds differ).
+  SECRETS_BACKEND: z.enum(['aws', 'memory']).default('aws'),
+  SECRETS_PREFIX: z.string().default('nordstern'),
+  SECRETS_ENV: z.string().default('testnet'),
+  AWS_REGION: z.string().default('us-east-1'),
+  // Set to LocalStack (http://localhost:4566) in dev; leave unset in prod to use real AWS.
+  SECRETS_ENDPOINT: z.string().optional(),
+  // LocalStack accepts any non-empty creds; real AWS uses the IAM role / ambient chain.
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);

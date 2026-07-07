@@ -160,6 +160,29 @@ export const anchors = pgTable('anchors', {
   index('anchors_project_idx').on(t.projectId),
 ]);
 
+// ── Secret references (PSP/banking credentials) ──────────────────────────────
+// Metadata ONLY — never a credential value. The values live in the SecretStore
+// (AWS Secrets Manager / LocalStack). One row per (anchor, provider); all rows for
+// an anchor share the per-anchor `secret_path` (`nordstern/{env}/anchor/{slug}`),
+// matching the prod Terraform + External Secrets Operator convention. `keyNames`
+// is the non-secret list of which env keys are set — it powers the masked operator
+// UI without ever reading a value. See decision-log DL-010.
+export const secretRefs = pgTable('secret_refs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  anchorId: uuid('anchor_id').references(() => anchors.id, { onDelete: 'cascade' }),
+  slug: varchar('slug', { length: 100 }).notNull(),
+  provider: varchar('provider', { length: 40 }).notNull(),          // razorpay|cashfree|didit|treasury
+  secretProvider: varchar('secret_provider', { length: 20 }).notNull(), // aws|memory
+  secretPath: varchar('secret_path', { length: 255 }).notNull(),
+  keyNames: jsonb('key_names').$type<string[]>().default(sql`'[]'::jsonb`).notNull(),
+  lastRotatedAt: timestamp('last_rotated_at', { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  uniqueIndex('secret_refs_slug_provider_uq').on(t.slug, t.provider),
+  index('secret_refs_org_idx').on(t.organizationId),
+]);
+
 // ── Credentials & secrets ────────────────────────────────────────────────────
 export const apiKeys = pgTable('api_keys', {
   id: uuid('id').primaryKey().defaultRandom(),
