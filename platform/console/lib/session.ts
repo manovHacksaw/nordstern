@@ -12,7 +12,7 @@ export interface OrgSummary {
 }
 
 export interface Me {
-  user: { id: string; email: string; fullName: string; emailVerifiedAt: string | null };
+  user: { id: string; email: string; fullName: string | null; emailVerifiedAt: string | null };
   organizations: OrgSummary[];
 }
 
