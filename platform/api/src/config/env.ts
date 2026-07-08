@@ -15,6 +15,14 @@ const schema = z.object({
   REFRESH_TOKEN_TTL: z.coerce.number().default(60 * 60 * 24 * 14), // seconds (14d)
   CUSTOMER_TOKEN_TTL: z.coerce.number().default(60 * 60 * 24 * 30), // seconds (30d) — email-OTP session
   SERVICE_SECRET: z.string().optional(), // shared secret for backend→platform calls (KYC propagation)
+
+  // ── NordStern INTERNAL admin (demo password gate) ────────────────────────────
+  // A hardcoded username/password that gates the internal application-review panel.
+  // Deliberately trivial for the demo; the real replacement is the super-admin ROLE
+  // dimension (Product 4 / founder-onboarding M4). Override via env in any shared env.
+  ADMIN_USERNAME: z.string().default('admin'),
+  ADMIN_PASSWORD: z.string().default('admin'),
+  ADMIN_TOKEN_TTL: z.coerce.number().default(60 * 60 * 12), // seconds (12h)
   // Empty default → host-only cookies (works for the platform console AND per-anchor
   // consoles on different hosts). Set only for a shared parent domain in prod.
   COOKIE_DOMAIN: z.string().default(''),

@@ -27,3 +27,19 @@ export function verifyCustomerToken(token: string): CustomerClaims {
   if (claims.typ !== 'customer') throw new Error('not a customer token');
   return claims;
 }
+
+// ── NordStern internal admin session (demo password gate) ─────────────────────
+// A `typ: 'admin'` claim keeps this fully separate from operator and customer
+// tokens even though it shares the signing secret — no realm can ever be accepted
+// as another. Replaced by a real super-admin role later (Product 4).
+export interface AdminClaims { sub: 'admin'; typ: 'admin'; username: string }
+
+export function signAdminToken(username: string): string {
+  return jwt.sign({ sub: 'admin', typ: 'admin', username }, env.JWT_ACCESS_SECRET, { expiresIn: env.ADMIN_TOKEN_TTL });
+}
+
+export function verifyAdminToken(token: string): AdminClaims {
+  const claims = jwt.verify(token, env.JWT_ACCESS_SECRET) as AdminClaims;
+  if (claims.typ !== 'admin') throw new Error('not an admin token');
+  return claims;
+}

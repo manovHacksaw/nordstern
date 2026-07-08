@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import { env } from '../config/env.js';
-import { COOKIE_ACCESS, COOKIE_REFRESH, COOKIE_CUSTOMER } from '../config/constants.js';
+import { COOKIE_ACCESS, COOKIE_REFRESH, COOKIE_CUSTOMER, COOKIE_ADMIN } from '../config/constants.js';
 
 // Omit `domain` when COOKIE_DOMAIN is empty → HOST-ONLY cookies. This is what lets a
 // per-anchor operator console at console.<slug>.<suffix> authenticate: it proxies
@@ -32,4 +32,12 @@ export function setCustomerCookie(res: Response, token: string) {
 }
 export function clearCustomerCookie(res: Response) {
   res.clearCookie(COOKIE_CUSTOMER, base);
+}
+
+// NordStern internal admin session — a single host-only httpOnly cookie (demo gate).
+export function setAdminCookie(res: Response, token: string) {
+  res.cookie(COOKIE_ADMIN, token, { ...base, maxAge: env.ADMIN_TOKEN_TTL * 1000 });
+}
+export function clearAdminCookie(res: Response) {
+  res.clearCookie(COOKIE_ADMIN, base);
 }

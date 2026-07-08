@@ -7,9 +7,11 @@ import { credentialsRouter } from './credentials.routes.js';
 import { anchorsRouter } from './anchors.routes.js';
 import { customerRouter } from './customer.routes.js';
 import { internalRouter } from './internal.routes.js';
+import { adminRouter } from './admin.routes.js';
 
 export const v1Router = Router();
 v1Router.use('/auth', authRouter);
+v1Router.use('/admin', adminRouter);
 v1Router.use('/customer', customerRouter);
 v1Router.use('/internal', internalRouter);
 v1Router.use('/organizations', organizationsRouter);
