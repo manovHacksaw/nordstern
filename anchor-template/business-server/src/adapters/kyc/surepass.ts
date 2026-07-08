@@ -1,4 +1,4 @@
-import { KycProvider, CustomerQuery, CustomerResult, KycStatus } from './KycProvider.js';
+import { KycProvider, CustomerQuery, CustomerResult, KycStatus, KycSessionResult } from './KycProvider.js';
 
 // ─── Surepass KYC (sandbox) ────────────────────────────────────────────────────
 // Real Indian identity verification (PAN) behind the KycProvider seam. Selected
@@ -73,5 +73,16 @@ export class SurepassKycProvider implements KycProvider {
 
   async deleteCustomer(id: string): Promise<void> {
     this.store.delete(id);
+  }
+
+  async getStatus(subject: string): Promise<KycStatus> {
+    return this.store.get(subject)?.status ?? 'NEEDS_INFO';
+  }
+
+  // Surepass is a form-based PAN flow, not a hosted redirect — the SEP-24 webview
+  // collects the PAN via putCustomer. The "session" just returns to the interactive page.
+  async startSession(subject: string, transactionId?: string, returnUrl?: string): Promise<KycSessionResult> {
+    const url = returnUrl ?? `/sep24/interactive${transactionId ? `?transaction_id=${encodeURIComponent(transactionId)}` : ''}`;
+    return { url, status: await this.getStatus(subject) };
   }
 }

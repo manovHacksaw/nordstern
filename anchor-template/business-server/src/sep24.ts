@@ -4,7 +4,7 @@ import { fetchTransaction, patchTransaction } from './platform.js';
 import { generateMemo, hasUsdcTrustline } from './stellar.js';
 import { executeRelease } from './releases.js';
 import { rate, deposit } from './adapters/index.js';
-import { getStatus, createSession } from './adapters/kyc/didit.js';
+import { kyc } from './adapters/index.js';
 import { verifyCheckout } from './adapters/deposit/razorpay.js';
 import { pool } from './db.js';
 
@@ -315,7 +315,7 @@ export async function releaseDeposit(transactionId: string): Promise<ReleaseOutc
 
   // KYC is a money-affecting precondition — enforce server-side on every path.
   const account = resolveAccount(tx);
-  if ((await getStatus(account).catch(() => 'NEEDS_INFO')) !== 'ACCEPTED') {
+  if ((await kyc.getStatus(account).catch(() => 'NEEDS_INFO')) !== 'ACCEPTED') {
     throw new Error('identity verification required');
   }
 
@@ -435,7 +435,7 @@ sep24Router.get('/interactive', async (req, res) => {
   // is ACCEPTED and skips straight through; anyone else gets the DIDIT flow.
   // Fail CLOSED: if the status can't be read, show the gate (never the money screen).
   const account = resolveAccount(tx);
-  const kycStatus = await getStatus(account).catch(() => 'NEEDS_INFO');
+  const kycStatus = await kyc.getStatus(account).catch(() => 'NEEDS_INFO');
   if (kycStatus !== 'ACCEPTED') {
     res.type('html').send(kycGatePage(transaction_id, kind));
     return;
@@ -584,7 +584,7 @@ sep24Router.post('/interactive/complete', async (req, res) => {
   // never trust the client form. Covers deposit (USDC release) and withdrawal
   // (the pending_user_transfer_start transition the poller later acts on).
   const account = resolveAccount(tx);
-  if ((await getStatus(account).catch(() => 'NEEDS_INFO')) !== 'ACCEPTED') {
+  if ((await kyc.getStatus(account).catch(() => 'NEEDS_INFO')) !== 'ACCEPTED') {
     res.status(403).type('html').send(page('Verification required', `
       <div class="center">
         <div class="ring err"><svg viewBox="0 0 24 24" fill="none" stroke="#ff5a5a" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></div>
@@ -724,7 +724,7 @@ sep24Router.post('/kyc/session', async (req, res) => {
     const tx = await fetchTransaction(transaction_id);
     const account = resolveAccount(tx);
     if (!account) { res.status(400).json({ error: 'No account on transaction' }); return; }
-    const session = await createSession(account, transaction_id);
+    const session = await kyc.startSession(account, transaction_id);
     res.json({ url: session.url, session_token: session.sessionToken, status: session.status });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -742,7 +742,7 @@ sep24Router.get('/kyc/status', async (req, res) => {
   if (!transaction_id) { res.status(400).json({ error: 'Missing transaction_id' }); return; }
   try {
     const tx = await fetchTransaction(transaction_id);
-    const status = await getStatus(resolveAccount(tx));
+    const status = await kyc.getStatus(resolveAccount(tx));
     res.json({ status });
   } catch (err) {
     console.error('[kyc/status] error:', err instanceof Error ? err.message : err);

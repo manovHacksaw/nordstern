@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request } from 'express';
 import { listTransactions, fetchTransaction } from './platform.js';
-import { createSession } from './adapters/kyc/didit.js';
+import { kyc } from './adapters/index.js';
 import { ASSET_CODE, PROVIDERS } from './config.js';
 import { requireCustomerSession, fetchCustomerWallets } from './customerSession.js';
 import { propagateKycToPlatform } from './kycPropagate.js';
@@ -102,7 +102,7 @@ customerApiRouter.post('/customer/kyc/start', async (req, res) => {
       res.json({ url: returnUrl ?? '/', status: 'ACCEPTED' });
       return;
     }
-    const session = await createSession(id, undefined, returnUrl);
+    const session = await kyc.startSession(id, undefined, returnUrl);
     res.json({ url: session.url, status: session.status });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

@@ -154,6 +154,20 @@ function assetsYaml(a: AnchorConfigInput): string {
         max_amount: 1000000
         methods:
           - WIRE
+  # Off-chain fiat leg. Registering iso4217:INR lets the business-server complete the
+  # AP transaction with amount_in { asset: iso4217:INR } on deposit (and amount_out on
+  # withdraw). Without it the settlement PATCH is rejected ("'iso4217:INR' is not a
+  # supported asset") and the tx never reaches 'completed' despite the on-chain transfer
+  # succeeding. SEP-31 stays disabled — this asset exists only so amounts validate.
+  - id: "iso4217:INR"
+    significant_decimals: 2
+    sep31:
+      enabled: false
+      receive:
+        min_amount: 1
+        max_amount: 1000000
+        methods:
+          - WIRE
 `;
 }
 

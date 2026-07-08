@@ -2,7 +2,7 @@ import { pool } from '../../db.js';
 import {
   DIDIT_API_KEY, DIDIT_WORKFLOW_ID, PUBLIC_BASE_URL, KYC_REVERIFY_TTL_SECONDS,
 } from '../../config.js';
-import { KycProvider, CustomerQuery, CustomerResult, KycStatus } from './KycProvider.js';
+import { KycProvider, CustomerQuery, CustomerResult, KycStatus, KycSessionResult } from './KycProvider.js';
 
 // ─── DIDIT KYC ──────────────────────────────────────────────────────────────────
 // Real identity verification (document OCR + passive liveness + face match) via
@@ -287,5 +287,13 @@ export class DiditKycProvider implements KycProvider {
 
   async deleteCustomer(id: string): Promise<void> {
     await pool.query('DELETE FROM nordstern.kyc_verifications WHERE vendor_data = $1', [id]);
+  }
+
+  // SEP-24 gate + interactive session, delegated to the module-level DIDIT flow.
+  async getStatus(subject: string): Promise<KycStatus> {
+    return getStatus(subject);
+  }
+  async startSession(subject: string, transactionId?: string, returnUrl?: string): Promise<KycSessionResult> {
+    return createSession(subject, transactionId, returnUrl);
   }
 }
