@@ -7,6 +7,8 @@ import { badRequest, conflict } from '../lib/errors.js';
 import { provisionerService } from './provisioner.service.js';
 import { secretStore } from '../lib/secrets/index.js';
 import type { Credentials } from '../lib/secrets/index.js';
+import { env } from '../config/env.js';
+import { sendAnchorLiveEmail } from '../lib/mailer/index.js';
 
 // Credentials an invitee may bring at redemption (post-approval). Optional — Test
 // Mode works entirely on mock rails. Values go straight to the SecretStore; the DB
@@ -296,6 +298,9 @@ export const anchorInvitationService = {
           result: { ...base, assetCode: outcome.assetCode, assetIssuer: outcome.assetIssuer, stage: 'Completed' },
         });
         console.log(`[provisioner] Job ${jobId} → anchor '${outcome.slug}' live at ${outcome.homeDomain}, registered with aggregator`);
+
+        // Tell the founder their anchor is live (fire-and-forget).
+        void sendAnchorLiveEmail(payload.email, payload.orgName ?? '', `${env.CONSOLE_URL}/login`);
 
       } catch (err: any) {
         await setJob({ status: 'failed', error: err.message, finishedAt: new Date() });

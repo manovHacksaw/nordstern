@@ -163,6 +163,12 @@ services:
       # Required by the platform's env schema (zod) — server won't boot without these.
       JWT_ACCESS_SECRET: ${PLATFORM_JWT_ACCESS_SECRET:-dev-access-secret-change-me}
       JWT_REFRESH_SECRET: ${PLATFORM_JWT_REFRESH_SECRET:-dev-refresh-secret-change-me}
+      # Transactional email (OTP + onboarding lifecycle). Unset RESEND_API_KEY → the
+      # console mailer logs emails instead of sending (dev fallback). Secret comes from
+      # the git-ignored root .env, never committed.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-NordStern <onboarding@resend.dev>}
+      CONSOLE_URL: ${CONSOLE_URL:-http://localhost:4001}
       # Integration wiring (this is what connects the three services):
       CONTROL_PLANE_URL: http://control-plane:3002
       AGGREGATOR_URL: http://aggregator:3005

@@ -30,6 +30,8 @@ const schema = z.object({
 
   // App / email
   APP_URL: z.string().default('http://localhost:3000'),
+  // Public base URL of the console — used to build redeem/login links inside emails.
+  CONSOLE_URL: z.string().default('http://localhost:4001'),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('NordStern <onboarding@resend.dev>'),
 

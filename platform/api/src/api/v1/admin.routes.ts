@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { applicationService } from '../../services/application.service.js';
-import { applicationsRepo } from '../../repositories/applications.repo.js';
 import { recordAudit } from '../../services/audit.service.js';
 import { signAdminToken } from '../../lib/jwt.js';
 import { setAdminCookie, clearAdminCookie } from '../../lib/cookies.js';
@@ -9,7 +8,7 @@ import { requireAdmin } from '../../middleware/requireAdmin.js';
 import { validateBody } from '../../middleware/validate.js';
 import { authLimiter } from '../../middleware/rateLimit.js';
 import { ah } from '../../lib/asyncHandler.js';
-import { unauthorized, badRequest } from '../../lib/errors.js';
+import { unauthorized } from '../../lib/errors.js';
 import { env } from '../../config/env.js';
 
 // NordStern INTERNAL admin — the staff surface that reviews & approves anchor
@@ -61,13 +60,11 @@ adminRouter.post('/applications/:id/approve', requireAdmin, ah(async (req, res) 
   res.json({ email: result.email, rawToken: result.rawToken, applicationId: id });
 }));
 
-// Reject an application (no invitation minted).
+// Reject an application (no invitation minted). Service handles validation + the
+// "application update" email; we just audit the actor.
 adminRouter.post('/applications/:id/reject', requireAdmin, ah(async (req, res) => {
   const id = req.params.id as string;
-  const app = await applicationsRepo.findById(id);
-  if (!app) throw badRequest('Application not found');
-  if (app.status === 'approved') throw badRequest('Cannot reject an already-approved application');
-  const updated = await applicationsRepo.updateStatus(id, 'rejected');
+  const updated = await applicationService.reject(id);
   await recordAudit({
     action: 'application.rejected', actorType: 'system', actorUserId: null,
     requestId: String(req.id),
