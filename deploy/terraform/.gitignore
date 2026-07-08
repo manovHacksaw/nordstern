@@ -1,0 +1,12 @@
+# Terraform working files — never commit provider binaries, state, or secrets.
+.terraform/
+*.tfstate
+*.tfstate.*
+tf.plan
+crash.log
+
+# Local variable files (may hold the Resend key). Keep the example.
+*.tfvars
+!*.tfvars.example
+
+# Keep the provider lock file committed (.terraform.lock.hcl) — it pins versions.
