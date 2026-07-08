@@ -31,12 +31,12 @@ const timestamps = {
 };
 
 // ── Identity (global) ────────────────────────────────────────────────────────
+// Operators/founders. Auth is email + OTP only — no passwords. Email is inherently
+// verified on first OTP login, so there is no separate verification/reset flow.
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull(),          // stored lower-cased
-  fullName: varchar('full_name', { length: 255 }).notNull(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
-  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  fullName: varchar('full_name', { length: 255 }),             // set at registration; may be blank pre-name
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   status: userStatus('status').default('active').notNull(),
   ...timestamps,
@@ -58,24 +58,6 @@ export const sessions = pgTable('sessions', {
   uniqueIndex('sessions_refresh_uq').on(t.refreshTokenHash),
   index('sessions_user_idx').on(t.userId),
 ]);
-
-export const emailVerificationTokens = pgTable('email_verification_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: varchar('token_hash', { length: 255 }).notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  consumedAt: timestamp('consumed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [uniqueIndex('evt_token_uq').on(t.tokenHash), index('evt_user_idx').on(t.userId)]);
-
-export const passwordResetTokens = pgTable('password_reset_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: varchar('token_hash', { length: 255 }).notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  consumedAt: timestamp('consumed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [uniqueIndex('prt_token_uq').on(t.tokenHash), index('prt_user_idx').on(t.userId)]);
 
 // ── Tenancy ──────────────────────────────────────────────────────────────────
 export const organizations = pgTable('organizations', {
@@ -153,11 +135,39 @@ export const anchors = pgTable('anchors', {
   slug: varchar('slug', { length: 100 }).notNull(),
   status: anchorStatus('status').default('draft').notNull(),
   network: network('network').default('testnet').notNull(),
+  // White-label brand identity — an OPEN jsonb so we can add secondary accent, theme,
+  // fonts, hero image, marketing copy, or email branding later WITHOUT a schema change.
+  // Known keys today: { displayName, accent(hex), logoUrl, supportEmail, websiteUrl,
+  // privacyUrl, termsUrl }. Missing keys fall back to sensible defaults at render.
+  branding: jsonb('branding').$type<Record<string, string>>().default(sql`'{}'::jsonb`).notNull(),
   ...timestamps,
 }, (t) => [
   uniqueIndex('anchors_org_slug_uq').on(t.organizationId, t.slug),
   index('anchors_org_idx').on(t.organizationId),
   index('anchors_project_idx').on(t.projectId),
+]);
+
+// ── Secret references (PSP/banking credentials) ──────────────────────────────
+// Metadata ONLY — never a credential value. The values live in the SecretStore
+// (AWS Secrets Manager / LocalStack). One row per (anchor, provider); all rows for
+// an anchor share the per-anchor `secret_path` (`nordstern/{env}/anchor/{slug}`),
+// matching the prod Terraform + External Secrets Operator convention. `keyNames`
+// is the non-secret list of which env keys are set — it powers the masked operator
+// UI without ever reading a value. See decision-log DL-010.
+export const secretRefs = pgTable('secret_refs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  anchorId: uuid('anchor_id').references(() => anchors.id, { onDelete: 'cascade' }),
+  slug: varchar('slug', { length: 100 }).notNull(),
+  provider: varchar('provider', { length: 40 }).notNull(),          // razorpay|cashfree|didit|treasury
+  secretProvider: varchar('secret_provider', { length: 20 }).notNull(), // aws|memory
+  secretPath: varchar('secret_path', { length: 255 }).notNull(),
+  keyNames: jsonb('key_names').$type<string[]>().default(sql`'[]'::jsonb`).notNull(),
+  lastRotatedAt: timestamp('last_rotated_at', { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  uniqueIndex('secret_refs_slug_provider_uq').on(t.slug, t.provider),
+  index('secret_refs_org_idx').on(t.organizationId),
 ]);
 
 // ── Credentials & secrets ────────────────────────────────────────────────────
@@ -314,4 +324,87 @@ export const provisioningJobsRelations = relations(provisioningJobs, ({ one }) =
   organization: one(organizations, { fields: [provisioningJobs.organizationId], references: [organizations.id] }),
   project: one(projects, { fields: [provisioningJobs.projectId], references: [projects.id] }),
   anchor: one(anchors, { fields: [provisioningJobs.anchorId], references: [anchors.id] }),
+}));
+
+// ── Applications (onboarding wizard submission data) ─────────────────────────
+// `profile` = business identity (name, contact, email, country, fiat, markets,
+// optional registration). `product` = launch mode (test|production), rails, limits,
+// fees. No Stellar internals and no BYO-KYC vendor — NordStern owns both. Secret
+// payment-provider credentials are captured later, at invitation redemption.
+export const applications = pgTable('applications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  profile: jsonb('profile').notNull(),
+  product: jsonb('product').notNull(),
+  status: varchar('status', { length: 30 }).default('applied').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+});
+
+// ── One-Time Cryptographic Invitations ───────────────────────────────────────
+export const anchorInvitations = pgTable('anchor_invitations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  applicationId: uuid('application_id').references(() => applications.id, { onDelete: 'cascade' }),
+  email: varchar('email', { length: 255 }).notNull(),
+  tokenHash: varchar('token_hash', { length: 64 }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+}, (t) => [
+  uniqueIndex('anchor_invites_email_uq').on(t.email),
+  uniqueIndex('anchor_invites_token_uq').on(t.tokenHash),
+]);
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// Customer identity (end-users of anchors) — CENTRAL & distinct from operator `users`.
+// A customer's primary identity is their EMAIL; auth is email + OTP only (no passwords).
+// Wallets are secondary attachments (0..N). KYC (DIDIT) is stored here so it can be
+// reused across anchors ("verify once"). The account owns profile/KYC/wallets/prefs —
+// never the wallet itself. No custody assumption: the wallet layer is swappable.
+// ════════════════════════════════════════════════════════════════════════════
+export const customerKycStatus = pgEnum('customer_kyc_status', ['unverified', 'pending', 'approved', 'declined']);
+
+export const customers = pgTable('customers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: varchar('email', { length: 255 }).notNull(),            // stored lower-cased
+  fullName: varchar('full_name', { length: 255 }),
+  kycStatus: customerKycStatus('kyc_status').default('unverified').notNull(),
+  diditSessionId: varchar('didit_session_id', { length: 128 }),
+  diditVerifiedAt: timestamp('didit_verified_at', { withTimezone: true }),
+  preferences: jsonb('preferences').$type<Record<string, unknown>>().default({}).notNull(),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  ...timestamps,
+}, (t) => [uniqueIndex('customers_email_uq').on(t.email)]);
+
+// Shared email-OTP challenge for BOTH audiences. `audience` scopes a code to an identity
+// domain so an operator code can never sign a customer in (or vice versa) — authentication
+// is unified, authorization stays separate. Only the hash is stored.
+export const otpAudience = pgEnum('otp_audience', ['customer', 'operator']);
+export const otps = pgTable('otps', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: varchar('email', { length: 255 }).notNull(),
+  audience: otpAudience('audience').notNull(),
+  codeHash: varchar('code_hash', { length: 64 }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  consumedAt: timestamp('consumed_at', { withTimezone: true }),
+  attempts: integer('attempts').default(0).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index('otps_email_audience_idx').on(t.email, t.audience)]);
+
+// A Stellar wallet linked to a customer account (secondary identity, 0..N per customer).
+export const customerWallets = pgTable('customer_wallets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  customerId: uuid('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
+  address: varchar('address', { length: 64 }).notNull(),         // Stellar public key (G...)
+  label: varchar('label', { length: 100 }),
+  network: network('network').default('testnet').notNull(),
+  ...timestamps,
+}, (t) => [uniqueIndex('customer_wallets_uq').on(t.customerId, t.address)]);
+
+export const customersRelations = relations(customers, ({ many }) => ({
+  wallets: many(customerWallets),
+}));
+export const customerWalletsRelations = relations(customerWallets, ({ one }) => ({
+  customer: one(customers, { fields: [customerWallets.customerId], references: [customers.id] }),
 }));

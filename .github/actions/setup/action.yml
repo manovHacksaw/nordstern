@@ -1,0 +1,34 @@
+name: 'Setup workspace'
+description: >-
+  Set up Node.js and install a single npm project. This repo has no npm
+  workspaces and no root package.json — every project installs independently,
+  so this action is parameterized by `workspace` and cached per-lockfile.
+  Reused by every CI workflow so setup logic never drifts (R6 M2).
+
+inputs:
+  workspace:
+    description: 'Path to the project to install (its package-lock.json is the cache key).'
+    required: true
+  node-version:
+    description: 'Node.js version. Standardized on 22 LTS (R6 M2).'
+    required: false
+    default: '22'
+  install-flags:
+    description: 'Extra flags for `npm ci` (e.g. --legacy-peer-deps for projects with peer conflicts).'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.workspace }}/package-lock.json
+
+    - name: Install (npm ci)
+      shell: bash
+      working-directory: ${{ inputs.workspace }}
+      run: npm ci ${{ inputs.install-flags }}

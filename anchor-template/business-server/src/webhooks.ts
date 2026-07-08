@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { fetchTransaction, patchTransaction } from './platform.js';
 import { assetId, DIDIT_WEBHOOK_SECRET, RAZORPAY_WEBHOOK_SECRET } from './config.js';
 import { applyWebhook } from './adapters/kyc/didit.js';
+import { propagateKycToPlatform } from './kycPropagate.js';
 import { markPaidByOrder } from './adapters/deposit/razorpay.js';
 import { releaseDeposit } from './sep24.js';
 import { pool } from './db.js';
@@ -62,12 +63,13 @@ webhooksRouter.post(['/webhooks/didit', '/'], async (req, res) => {
   // 4. Apply the decision (light DB work — 2 queries, well within the 5s budget),
   //    then ack. On failure return 500 so DIDIT retries (~1m, then ~4m) instead of
   //    silently dropping the decision.
-  //    HARDENING: the dedupe-insert and the decision upsert inside applyWebhook are
-  //    not yet in a single DB transaction, so a crash between them could drop a
-  //    decision on retry. Polling + re-verify masks this today; wrap in a tx when
-  //    the store is hardened for production.
+  //    HARDENING: the dedupe-insert and the decision-upsert are wrapped in a single,
+  //    atomic DB transaction inside applyWebhook, ensuring crash consistency.
   try {
     await applyWebhook(req.body);
+    // Propagate the decision to the central customer profile (verify-once across anchors).
+    // Best-effort and non-blocking on the ack — the anchor already stored the truth.
+    await propagateKycToPlatform(req.body);
     res.status(200).send('ok');
   } catch (err) {
     console.error('[didit-webhook] apply error:', err instanceof Error ? err.message : err);

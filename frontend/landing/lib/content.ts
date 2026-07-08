@@ -141,7 +141,7 @@ export const HERO = {
   eyebrow: { label: "Read: why SEP-24 shifts the burden to the anchor", href: "#" },
   title: "Become a Stellar anchor without building the stack.",
   lead: "Nordstern runs the SEP servers, KYC, payment rails, treasury, and operator console behind a Stellar on/off-ramp. Bring your license, bank, and liquidity — launch on testnet, then go live when you're ready.",
-  primary: { label: "Talk to us", href: "#cta" },
+  primary: { label: "Talk to us", href: "http://localhost:4001/register" },
   secondary: { label: "Explore the platform", href: "#platform" },
 } as const;
 
@@ -358,14 +358,14 @@ export const FAQ = {
 
 export const FINAL_CTA = {
   title: "Launch money solutions for your users. Unlock new revenue for your anchor.",
-  cta: { label: "Talk to us", href: "#" },
+  cta: { label: "Talk to us", href: "http://localhost:4001/register" },
 } as const;
 
 export const FOOTER = {
   cta: {
     title: "Launch your Anchor today",
     body: "Build compliant Stellar anchors with integrated fiat rails, KYC, and on/off ramps.",
-    button: { label: "Talk to us", href: "#cta" },
+    button: { label: "Talk to us", href: "http://localhost:4001/register" },
   },
   status: "Live on Stellar",
   columns: {

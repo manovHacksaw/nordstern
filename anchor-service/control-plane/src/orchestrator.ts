@@ -2,6 +2,7 @@ import Docker from 'dockerode';
 import { randomBytes } from 'crypto';
 import path from 'path';
 import { pool } from './db.js';
+import { readAnchorSecrets } from './secrets.js';
 
 // ─── Orchestrator (DL-006) ─────────────────────────────────────────────────────
 // Spins up an isolated stack per anchor via the Docker Engine API: one Anchor
@@ -14,20 +15,57 @@ const docker = new Docker(); // uses /var/run/docker.sock
 
 const AP_IMAGE   = process.env.AP_IMAGE   ?? 'stellar/anchor-platform:latest';
 const BIZ_IMAGE  = process.env.BIZ_IMAGE  ?? 'nordstern/business-server:dev';
+const CLIENT_IMAGE = process.env.CLIENT_IMAGE ?? 'nordstern/anchor-client:dev';
+const CONSOLE_IMAGE = process.env.CONSOLE_IMAGE ?? 'nordstern/operator-console:dev';
 const NETWORK    = process.env.DOCKER_NETWORK ?? 'anchor-service_default';
+const PLATFORM_API_URL = process.env.PLATFORM_API_URL ?? 'http://platform-api:4000';
 const CONFIG_HOST_ROOT = process.env.ANCHOR_CONFIG_HOST_ROOT ?? '';
 const HORIZON_URL        = process.env.HORIZON_URL        ?? 'https://horizon-testnet.stellar.org';
 const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? 'Test SDF Network ; September 2015';
 const DB_USER = process.env.DB_USER ?? 'anchor';
 const DB_PASSWORD = process.env.DB_PASSWORD ?? 'anchor';
+// Same secret platform-api signs operator access tokens with — forwarded into each
+// business-server so its money-admin API can verify the operator session.
+const PLATFORM_JWT_ACCESS_SECRET = process.env.PLATFORM_JWT_ACCESS_SECRET ?? '';
+// Shared backend↔platform service secret (KYC propagation to the central customer).
+const SERVICE_SECRET = process.env.SERVICE_SECRET ?? '';
+// Traefik entrypoint + TLS for the PUBLIC anchor hosts. Local dev routes plain HTTP on
+// the 'web' entrypoint; prod sets ANCHOR_TRAEFIK_ENTRYPOINT=websecure and
+// ANCHOR_TRAEFIK_CERTRESOLVER=<resolver> so every anchor is served under the
+// *.<suffix> wildcard cert with no per-anchor cert work.
+const PUBLIC_ENTRYPOINT = process.env.ANCHOR_TRAEFIK_ENTRYPOINT ?? 'web';
+const CERT_RESOLVER = process.env.ANCHOR_TRAEFIK_CERTRESOLVER ?? '';
+// Public URL scheme for anchor-facing URLs injected into the business-server
+// (PUBLIC_BASE_URL). http locally; https in prod (matches config-gen's ANCHOR_PUBLIC_SCHEME).
+const PUBLIC_SCHEME = (process.env.ANCHOR_PUBLIC_SCHEME ?? 'http').toLowerCase();
 
 // ── Naming helpers (shared with config-gen / provision) ────────────────────────
 export const apName  = (slug: string) => `anchor-platform-${slug}`;
 export const bizName = (slug: string) => `business-server-${slug}`;
+export const clientName = (slug: string) => `anchor-client-${slug}`;
+export const consoleName = (slug: string) => `operator-console-${slug}`;
 export const anchorDbName = (slug: string) => `anchordb_${slug.replace(/-/g, '_')}`;
 
 const rand = () => randomBytes(24).toString('base64');
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+// White-label brand → runtime env, injected into BOTH the customer app and the operator
+// console (they share getBrand). Only present keys are emitted; the frontends fall back
+// to defaults (NordStern purple, generated monogram) for anything missing. Open by design
+// — a new branding key just needs a line here, no schema/redesign.
+function brandEnv(p: StackParams): string[] {
+  const b = p.branding ?? {};
+  const map: Record<string, string | undefined> = {
+    ANCHOR_DISPLAY_NAME: b.displayName || p.name,
+    ANCHOR_ACCENT: b.accent,
+    ANCHOR_LOGO_URL: b.logoUrl,
+    ANCHOR_SUPPORT_EMAIL: b.supportEmail,
+    ANCHOR_WEBSITE_URL: b.websiteUrl,
+    ANCHOR_PRIVACY_URL: b.privacyUrl,
+    ANCHOR_TERMS_URL: b.termsUrl,
+  };
+  return Object.entries(map).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`);
+}
 
 export interface AdapterSelection {
   kyc: string;
@@ -38,6 +76,8 @@ export interface AdapterSelection {
 
 export interface StackParams {
   slug: string;
+  name: string;                 // display name for per-anchor console branding
+  branding?: Record<string, string>; // open brand map (accent, logoUrl, support/legal URLs)
   homeDomain: string;
   database: string;
   assetCode: string;
@@ -69,30 +109,56 @@ export async function dropAnchorDb(slug: string): Promise<void> {
 }
 
 // ── Container lifecycle ────────────────────────────────────────────────────────
-function labels(role: 'ap' | 'biz', slug: string, homeDomain: string): Record<string, string> {
-  const router = `${role}-${slug}`;
-  if (role === 'ap') {
-    return {
-      'traefik.enable': 'true',
-      [`traefik.http.routers.${router}.rule`]: `Host(\`${homeDomain}\`)`,
-      [`traefik.http.routers.${router}.entrypoints`]: 'web',
-      [`traefik.http.routers.${router}.priority`]: '1',
-      [`traefik.http.routers.${router}.service`]: router,
-      [`traefik.http.services.${router}.loadbalancer.server.port`]: '8080',
-      'nordstern.anchor': slug,
-    };
-  }
-  // business-server: only the interactive webview is exposed publicly; higher
-  // priority so it wins over the AP catch-all for this path prefix.
-  return {
+// Anchor Platform SEP endpoints (SEP-1 toml, SEP-10 auth, SEP-6/12/24/31/38).
+const AP_PATHS = ['/.well-known', '/auth', '/sep6', '/sep10', '/sep12', '/sep24', '/sep31', '/sep38']
+  .map((p) => `PathPrefix(\`${p}\`)`).join(' || ');
+// Surfaces that live UNDER /sep24 but belong to the business-server, not the AP: the
+// SEP-24 interactive webview, its KYC/PSP callbacks, and the more-info page. The
+// business-server router runs at a HIGHER priority so these specific subpaths win; the
+// AP keeps the rest of /sep24. (Path(`/sep24/transaction`) is exact so it never steals
+// the AP's /sep24/transactions.)
+const BIZ_PATHS = [
+  'PathPrefix(`/sep24/interactive`)', 'PathPrefix(`/sep24/kyc`)',
+  'PathPrefix(`/sep24/razorpay`)', 'Path(`/sep24/transaction`)',
+].join(' || ');
+
+// Common Traefik router+service labels for one container, with TLS attached when a cert
+// resolver is configured (prod) so it's served under the *.<suffix> wildcard cert.
+function router(svc: string, rule: string, priority: string, port: string): Record<string, string> {
+  const out: Record<string, string> = {
     'traefik.enable': 'true',
-    [`traefik.http.routers.${router}.rule`]: `Host(\`${homeDomain}\`) && PathPrefix(\`/sep24/interactive\`)`,
-    [`traefik.http.routers.${router}.entrypoints`]: 'web',
-    [`traefik.http.routers.${router}.priority`]: '10',
-    [`traefik.http.routers.${router}.service`]: router,
-    [`traefik.http.services.${router}.loadbalancer.server.port`]: '3000',
-    'nordstern.anchor': slug,
+    [`traefik.http.routers.${svc}.rule`]: rule,
+    [`traefik.http.routers.${svc}.priority`]: priority,
+    [`traefik.http.routers.${svc}.entrypoints`]: PUBLIC_ENTRYPOINT,
+    [`traefik.http.routers.${svc}.service`]: svc,
+    [`traefik.http.services.${svc}.loadbalancer.server.port`]: port,
   };
+  if (CERT_RESOLVER) {
+    out[`traefik.http.routers.${svc}.tls`] = 'true';
+    out[`traefik.http.routers.${svc}.tls.certresolver`] = CERT_RESOLVER;
+  }
+  return out;
+}
+
+// One clean host per anchor: <slug>.<suffix> serves the customer app (catch-all), with the
+// Anchor Platform's SEP endpoints and our SEP-24 webview path-routed on the SAME host. The
+// operator console gets its own single-label host, console-<slug>.<suffix>. Both fall under
+// a single *.<suffix> wildcard. AP↔business-server callbacks are internal (container name),
+// so no api./sep. hosts are needed.
+function labels(role: 'ap' | 'biz' | 'client' | 'console', slug: string, homeDomain: string): Record<string, string> {
+  const svc = `${role}-${slug}`;
+  const tag = { 'nordstern.anchor': slug };
+  switch (role) {
+    case 'client':
+      return { ...router(svc, `Host(\`${homeDomain}\`)`, '1', '3001'), ...tag };
+    case 'console':
+      return { ...router(svc, `Host(\`console-${homeDomain}\`)`, '1', '3001'), ...tag };
+    case 'ap':
+      return { ...router(svc, `Host(\`${homeDomain}\`) && (${AP_PATHS})`, '10', '8080'), ...tag };
+    case 'biz':
+      return { ...router(svc, `Host(\`${homeDomain}\`) && (${BIZ_PATHS})`, '20', '3000'), ...tag };
+  }
+  throw new Error(`unknown role ${role}`); // unreachable — satisfies noImplicitReturns
 }
 
 async function ensureImage(image: string): Promise<void> {
@@ -108,6 +174,15 @@ async function ensureImage(image: string): Promise<void> {
   });
 }
 
+// For OPTIONAL images (customer client, operator console): present locally? We do NOT
+// pull these — they're locally-built dev images. A missing one is not fatal; the anchor
+// core (AP + business-server) still provisions and we skip the optional surface. This
+// keeps a stack launchable before those images exist (the console has no source yet — R3).
+async function imageAvailableLocally(image: string): Promise<boolean> {
+  const imgs = await docker.listImages({ filters: { reference: [image] } });
+  return imgs.length > 0;
+}
+
 async function runContainer(opts: Docker.ContainerCreateOptions): Promise<string> {
   // Remove any stale container with the same name (idempotent re-provision).
   try {
@@ -119,12 +194,17 @@ async function runContainer(opts: Docker.ContainerCreateOptions): Promise<string
   return container.id;
 }
 
-export async function createAnchorStack(p: StackParams): Promise<{ apId: string; bizId: string }> {
+export async function createAnchorStack(p: StackParams): Promise<{ apId: string; bizId: string; clientId: string | null; consoleId: string | null }> {
   if (!CONFIG_HOST_ROOT) throw new Error('ANCHOR_CONFIG_HOST_ROOT not set — cannot bind AP config.');
   const hostConfigDir = path.join(CONFIG_HOST_ROOT, p.slug);
 
   await ensureImage(AP_IMAGE);
   await ensureImage(BIZ_IMAGE);
+  // Optional surfaces — launched only if their images are built locally.
+  const haveClient  = await imageAvailableLocally(CLIENT_IMAGE);
+  const haveConsole = await imageAvailableLocally(CONSOLE_IMAGE);
+  if (!haveClient)  console.warn(`[orchestrator] ${CLIENT_IMAGE} not built — skipping customer client for ${p.slug} (build it to enable the customer URL).`);
+  if (!haveConsole) console.warn(`[orchestrator] ${CONSOLE_IMAGE} not built — skipping operator console for ${p.slug} (R3: no source yet).`);
 
   const apEnv = [
     'STELLAR_ANCHOR_CONFIG=/config/anchor-platform.yaml',
@@ -139,21 +219,56 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
 
   const bizEnv = [
     'PORT=3000',
+    `ANCHOR_SLUG=${p.slug}`,   // tags this anchor's structured logs (logger.ts svc field)
     `PLATFORM_API_URL=http://${apName(p.slug)}:8085`,
+    // The hardened business-server owns a per-anchor `nordstern.*` money schema and
+    // migrates-on-start into THIS anchor's already-created database (createAnchorDb →
+    // anchordb_<slug>). Without this the server falls back to the shared `anchordb`
+    // default and co-mingles every anchor's money tables. p.database == anchorDbName(slug).
+    `DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${p.database}`,
     `ASSET_CODE=${p.assetCode}`,
     `ASSET_ISSUER_PUBLIC=${p.assetIssuer}`,
+    // Treasury = the asset's distribution account (holds the float, sends tokens on
+    // deposit). The business-server reads TREASURY_PUBLIC/TREASURY_SECRET — inject under
+    // THOSE names. Previously mis-named DISTRIBUTION_*, so every release failed with
+    // "treasury has no trustline". Aliases kept for any external reference.
+    `TREASURY_PUBLIC=${p.distributionPublic}`,
+    `TREASURY_SECRET=${p.distributionSecret}`,
     `DISTRIBUTION_PUBLIC=${p.distributionPublic}`,
     `DISTRIBUTION_SECRET=${p.distributionSecret}`,
+    // Public base URL = this anchor's bare host (DIDIT return URLs, PSP webhooks) —
+    // was defaulting to localhost:3000. SEP_SERVER_URL = the AP, container-to-container.
+    `PUBLIC_BASE_URL=${PUBLIC_SCHEME}://${p.homeDomain}`,
+    `SEP_SERVER_URL=http://${apName(p.slug)}:8080`,
     `HORIZON_URL=${HORIZON_URL}`,
     `NETWORK_PASSPHRASE=${NETWORK_PASSPHRASE}`,
     `KYC_PROVIDER=${p.adapters.kyc}`,
     `DEPOSIT_PROVIDER=${p.adapters.deposit}`,
     `PAYOUT_PROVIDER=${p.adapters.payout}`,
     `FEE_PROVIDER=${p.adapters.fee}`,
+    'ALLOW_MOCK_KYC=true',
+    // Shared secret the money-admin API uses to verify the operator's platform session
+    // (`ns_access`). Same value platform-api signs with, so a console-authenticated
+    // operator — and only such an operator — can invoke financial operations.
+    `PLATFORM_JWT_ACCESS_SECRET=${PLATFORM_JWT_ACCESS_SECRET}`,
+    // NordStern platform-api base (:4000) so the money-admin API can org-scope the
+    // operator: it delegates to GET /api/v1/anchors/resolve?slug=<slug>, which confirms
+    // the caller is a member of THIS anchor's organization (not just any platform user).
+    `NORDSTERN_API_URL=${PLATFORM_API_URL}`,
+    // Shared secret to propagate DIDIT KYC decisions into the central customer profile.
+    `SERVICE_SECRET=${SERVICE_SECRET}`,
   ];
   if (p.surepass) {
     bizEnv.push(`SUREPASS_BASE_URL=${p.surepass.baseUrl}`, `SUREPASS_TOKEN=${p.surepass.token}`);
   }
+
+  // Pull this anchor's PSP/banking credentials from the SecretStore and inject them
+  // wholesale (DL-010). In prod this is what External Secrets Operator does via
+  // envFrom; here the provisioner does it directly. Values never touch our DB and
+  // never transit the platform→control-plane HTTP call — the provisioner reads them
+  // straight from the store by the anchor's path. Empty for a mock/testnet anchor.
+  const injected = await readAnchorSecrets(p.slug);
+  for (const [k, v] of Object.entries(injected)) bizEnv.push(`${k}=${v}`);
 
   const apId = await runContainer({
     name: apName(p.slug),
@@ -177,7 +292,54 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     },
   });
 
-  return { apId, bizId };
+  let clientId: string | null = null;
+  if (haveClient) {
+    clientId = await runContainer({
+      name: clientName(p.slug),
+      Image: CLIENT_IMAGE,
+      Env: [
+        'PORT=3001',
+        // Runtime BFF targets (read by the route-handler proxy, not baked).
+        `BIZ_URL=http://${bizName(p.slug)}:3000`,
+        // Customer identity backend (email-OTP auth, profile, wallets) lives centrally.
+        `PLATFORM_API_URL=${PLATFORM_API_URL}`,
+        'CP_URL=http://control-plane:3002',
+        `NETWORK_PASSPHRASE=${NETWORK_PASSPHRASE}`,
+        // Per-anchor branding (runtime — read server-side by getBrand). ANCHOR_ACCENT
+        // + ANCHOR_LOGO_URL are optional overrides; default is the NordStern purple.
+        `ANCHOR_NAME=${p.name}`,
+        `ANCHOR_SLUG=${p.slug}`,
+        `ASSET_CODE=${p.assetCode}`,
+        ...brandEnv(p),
+      ],
+      Labels: labels('client', p.slug, p.homeDomain),
+      HostConfig: { NetworkMode: NETWORK },
+    });
+  }
+
+  let consoleId: string | null = null;
+  if (haveConsole) {
+    consoleId = await runContainer({
+      name: consoleName(p.slug),
+      Image: CONSOLE_IMAGE,
+      Env: [
+        'PORT=3001',
+        // BFF targets: platform-api (auth + R2a credentials) and this anchor's biz-server.
+        `BIZ_URL=http://${bizName(p.slug)}:3000`,
+        `PLATFORM_API_URL=${PLATFORM_API_URL}`,
+        'CP_URL=http://control-plane:3002',
+        // Per-anchor branding (read server-side at request time — one image, N anchors).
+        `ANCHOR_NAME=${p.name}`,
+        `ANCHOR_SLUG=${p.slug}`,
+        `ASSET_CODE=${p.assetCode}`,
+        ...brandEnv(p),
+      ],
+      Labels: labels('console', p.slug, p.homeDomain),
+      HostConfig: { NetworkMode: NETWORK },
+    });
+  }
+
+  return { apId, bizId, clientId, consoleId };
 }
 
 /** Poll until the AP serves its SEP-1 toml and the business-server is healthy. */
@@ -204,4 +366,6 @@ async function removeByName(name: string): Promise<void> {
 export async function removeStack(slug: string): Promise<void> {
   await removeByName(apName(slug));
   await removeByName(bizName(slug));
+  await removeByName(clientName(slug));
+  await removeByName(consoleName(slug));
 }

@@ -1,0 +1,102 @@
+name: CI
+
+# Core quality gate (R6 M2-a): install + build/typecheck for every NordStern-owned
+# workspace, plus non-blocking lint where it exists. Correctness over coverage.
+#
+# Design notes:
+#  - No npm workspaces / no root package.json → one matrix leg per project, each
+#    installed independently and cached by its own lockfile (see ./actions/setup).
+#  - Correctness rule: run `build` if the project has it, else `typecheck`. For our
+#    Express services `build` IS `tsc`; Next apps typecheck during `next build`;
+#    platform/api has no build and uses `typecheck` (it runs on tsx).
+#  - Enforce what EXISTS. Missing scripts (lint/test) are skipped, never faked.
+#  - Excluded (upstream, not ours): anchor-platform/, sep24-reference-ui/.
+#  - Adding a project later = one line in the matrix. New stages (test, e2e,
+#    provisioning, docker-compose smoke, k8s, benchmarks) are new jobs/workflows
+#    that reuse ./actions/setup — no restructuring required.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    # docs-website is non-blocking: its leg may fail without failing the gate.
+    continue-on-error: ${{ matrix.optional == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { workspace: platform/api }
+          - { workspace: platform/console }
+          - { workspace: anchor-service/business-server }
+          - { workspace: anchor-service/control-plane }
+          - { workspace: anchor-service/client }
+          - { workspace: anchor-template/aggregator-service }
+          - { workspace: anchor-template/business-server }
+          - { workspace: anchor-template/anchor-client, install_flags: '--legacy-peer-deps' }
+          - { workspace: anchor-template/client, install_flags: '--legacy-peer-deps' }
+          - { workspace: anchor-template/console }
+          - { workspace: frontend/landing }
+          - { workspace: frontend/web }
+          - { workspace: docs-website, optional: true }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup + install
+        uses: ./.github/actions/setup
+        with:
+          workspace: ${{ matrix.workspace }}
+          install-flags: ${{ matrix.install_flags }}
+
+      - name: Build or typecheck (blocking)
+        working-directory: ${{ matrix.workspace }}
+        run: |
+          has() { node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)"; }
+          if has build; then
+            echo "→ npm run build"
+            npm run build
+          elif has typecheck; then
+            echo "→ npm run typecheck"
+            npm run typecheck
+          else
+            echo "::warning title=No correctness script::${{ matrix.workspace }} has neither build nor typecheck — skipped"
+          fi
+
+      - name: Lint (non-blocking)
+        working-directory: ${{ matrix.workspace }}
+        continue-on-error: true
+        run: |
+          has() { node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)"; }
+          if has lint; then
+            npm run lint
+          else
+            echo "no lint script — skipped (enforce what exists)"
+          fi
+
+  # Single required check for branch protection. Green only if every blocking
+  # matrix leg passed (docs-website, being continue-on-error, cannot fail this).
+  ci-required:
+    name: ci-required
+    if: always()
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate on quality result
+        run: |
+          echo "quality result: ${{ needs.quality.result }}"
+          if [ "${{ needs.quality.result }}" != "success" ]; then
+            echo "::error::CI quality gate failed"
+            exit 1
+          fi
+          echo "CI quality gate passed"

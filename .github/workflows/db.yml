@@ -1,0 +1,180 @@
+name: Database
+
+# Schema-management validation (R6 M2-c → M4). Every DB-owning service's migrations
+# must be consistent, actually APPLY to a fresh Postgres, and stay the single source
+# of schema truth (no un-versioned runtime DDL). Runs on every PR so the required
+# `db-required` check is always present (deadlock-safe). Does not modify ci.yml.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: db-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # platform/api — Drizzle
+  platform-api:
+    name: platform-api-migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env: { POSTGRES_PASSWORD: pw, POSTGRES_DB: nordstern_platform }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with: { workspace: platform/api }
+      - name: Migration consistency (drizzle-kit check)
+        working-directory: platform/api
+        run: npx drizzle-kit check < /dev/null
+      - name: Migrations apply cleanly
+        working-directory: platform/api
+        env:
+          DATABASE_URL: postgres://postgres:pw@localhost:5432/nordstern_platform
+        run: npm run db:migrate
+      - name: No schema drift
+        working-directory: platform/api
+        run: |
+          set +e
+          OUT="$(npx drizzle-kit generate < /dev/null 2>&1)"; echo "$OUT"
+          git checkout -- drizzle/ 2>/dev/null || true; git clean -fdq drizzle/ 2>/dev/null || true
+          echo "$OUT" | grep -qiE "No schema changes" && { echo "✅ no drift"; exit 0; }
+          echo "::error title=Schema drift::run 'npm run db:generate' in platform/api and commit drizzle/"; exit 1
+
+  # anchor-service/control-plane — node-pg-migrate (R6 M4.1)
+  control-plane:
+    name: control-plane-migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env: { POSTGRES_PASSWORD: pw, POSTGRES_DB: controldb }
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_PORT: '5433'
+      DB_NAME: controldb
+      DB_USER: postgres
+      DB_PASSWORD: pw
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with: { workspace: anchor-service/control-plane }
+      - name: Migrations apply cleanly (fresh DB)
+        working-directory: anchor-service/control-plane
+        run: npm run db:migrate
+      - name: Idempotency (re-run is a no-op)
+        working-directory: anchor-service/control-plane
+        run: |
+          OUT="$(npm run db:migrate 2>&1)"; echo "$OUT"
+          echo "$OUT" | grep -qi "No migrations to run" \
+            || { echo "::error::second migrate was not a no-op — migrations are not idempotent"; exit 1; }
+      - name: No un-versioned runtime DDL (drift guard)
+        working-directory: anchor-service/control-plane
+        run: |
+          # All schema changes must go through migrations/, never runtime DDL in src/.
+          HITS="$(grep -rniE 'CREATE TABLE|ALTER TABLE|CREATE INDEX' src/ || true)"
+          if [ -n "$HITS" ]; then
+            echo "::error title=Un-versioned schema change::runtime DDL found in src/ — move it to a migration"
+            echo "$HITS"; exit 1
+          fi
+          echo "✅ no runtime DDL in src/ — migrations are the single source of schema truth"
+
+  # anchor-template/business-server — node-pg-migrate (R6 M4.2, money DB)
+  business-server:
+    name: business-server-migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env: { POSTGRES_PASSWORD: pw, POSTGRES_DB: anchordb }
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:pw@localhost:5434/anchordb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with: { workspace: anchor-template/business-server }
+      - name: Migrations apply cleanly (fresh DB)
+        working-directory: anchor-template/business-server
+        run: npm run db:migrate
+      - name: Idempotency (re-run is a no-op)
+        working-directory: anchor-template/business-server
+        run: |
+          OUT="$(npm run db:migrate 2>&1)"; echo "$OUT"
+          echo "$OUT" | grep -qi "No migrations to run" \
+            || { echo "::error::second migrate was not a no-op — not idempotent"; exit 1; }
+      - name: No un-versioned runtime DDL (drift guard)
+        working-directory: anchor-template/business-server
+        run: |
+          HITS="$(grep -rniE 'CREATE TABLE|ALTER TABLE|CREATE INDEX' src/ || true)"
+          if [ -n "$HITS" ]; then
+            echo "::error title=Un-versioned schema change::runtime DDL found in src/ — move it to a migration"
+            echo "$HITS"; exit 1
+          fi
+          echo "✅ no runtime DDL in src/ — migrations are the single source of schema truth"
+
+  # anchor-template/aggregator-service — node-pg-migrate (R6 M4.3)
+  aggregator:
+    name: aggregator-migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env: { POSTGRES_PASSWORD: pw, POSTGRES_DB: anchordb }
+        ports: ['5435:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:pw@localhost:5435/anchordb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with: { workspace: anchor-template/aggregator-service }
+      - name: Migrations apply cleanly (fresh DB)
+        working-directory: anchor-template/aggregator-service
+        run: npm run db:migrate
+      - name: Idempotency (re-run is a no-op)
+        working-directory: anchor-template/aggregator-service
+        run: |
+          OUT="$(npm run db:migrate 2>&1)"; echo "$OUT"
+          echo "$OUT" | grep -qi "No migrations to run" \
+            || { echo "::error::second migrate was not a no-op — not idempotent"; exit 1; }
+      - name: No un-versioned runtime DDL (drift guard)
+        working-directory: anchor-template/aggregator-service
+        run: |
+          HITS="$(grep -rniE 'CREATE TABLE|ALTER TABLE|CREATE INDEX' src/ || true)"
+          if [ -n "$HITS" ]; then
+            echo "::error title=Un-versioned schema change::runtime DDL found in src/ — move it to a migration"
+            echo "$HITS"; exit 1
+          fi
+          echo "✅ no runtime DDL in src/ — migrations are the single source of schema truth"
+
+  # Single deadlock-safe required check across all DB-owning services.
+  db-required:
+    name: db-required
+    if: always()
+    needs: [platform-api, control-plane, business-server, aggregator]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          r_pa="${{ needs.platform-api.result }}"; r_cp="${{ needs.control-plane.result }}"
+          r_bs="${{ needs.business-server.result }}"; r_ag="${{ needs.aggregator.result }}"
+          echo "platform-api=$r_pa control-plane=$r_cp business-server=$r_bs aggregator=$r_ag"
+          if [ "$r_pa" != "success" ] || [ "$r_cp" != "success" ] || [ "$r_bs" != "success" ] || [ "$r_ag" != "success" ]; then
+            echo "::error::a database migration check failed"; exit 1
+          fi
+          echo "All database migration checks passed"

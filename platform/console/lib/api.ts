@@ -12,8 +12,9 @@ async function request<T>(method: string, path: string, body?: unknown, retry = 
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 
-  // Transparent one-shot refresh on expired access token.
-  if (res.status === 401 && retry && !path.startsWith('/auth/')) {
+  // Transparent one-shot refresh on expired access token. Skip the admin realm — it
+  // has its own session (ns_admin) and no operator refresh endpoint applies to it.
+  if (res.status === 401 && retry && !path.startsWith('/auth/') && !path.startsWith('/admin/')) {
     const r = await fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' });
     if (r.ok) return request<T>(method, path, body, false);
   }
