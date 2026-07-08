@@ -55,4 +55,24 @@ const schema = z.object({
 });
 
 export const env = schema.parse(process.env);
+
+// ── Fail-closed in production ────────────────────────────────────────────────
+// A hosted deployment must NEVER run with the dev-default secrets baked into the
+// compose file: those defaults are public, so they would allow JWT forgery across
+// every realm and an admin/admin login. Refuse to boot — loudly — rather than run
+// forgeable. (Local/testnet dev uses NODE_ENV=development and is unaffected.)
+if (env.NODE_ENV === 'production') {
+  const weak: string[] = [];
+  if (/dev-access-secret/.test(env.JWT_ACCESS_SECRET) || env.JWT_ACCESS_SECRET.length < 24) weak.push('JWT_ACCESS_SECRET');
+  if (/dev-refresh-secret/.test(env.JWT_REFRESH_SECRET) || env.JWT_REFRESH_SECRET.length < 24) weak.push('JWT_REFRESH_SECRET');
+  if (!env.SERVICE_SECRET || /dev-service/.test(env.SERVICE_SECRET)) weak.push('SERVICE_SECRET');
+  if (env.ADMIN_USERNAME === 'admin' || env.ADMIN_PASSWORD === 'admin' || env.ADMIN_PASSWORD.length < 8) weak.push('ADMIN_USERNAME/ADMIN_PASSWORD');
+  if (weak.length) {
+    throw new Error(
+      `Refusing to start: NODE_ENV=production with weak or default secrets — ${weak.join(', ')}. ` +
+      'Set strong, unique values (see the deployment checklist).',
+    );
+  }
+}
+
 export type Env = z.infer<typeof schema>;

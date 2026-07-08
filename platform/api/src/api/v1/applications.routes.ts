@@ -1,15 +1,18 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { applicationService } from '../../services/application.service.js';
-import { recordAudit } from '../../services/audit.service.js';
 import { validateBody } from '../../middleware/validate.js';
+import { applicationLimiter } from '../../middleware/rateLimit.js';
 import { ah } from '../../lib/asyncHandler.js';
-import { requireAuth } from '../../middleware/requireAuth.js';
 
 export const applicationsRouter = Router();
 
-// 1. Submit application (Public)
+// Submit an application (PUBLIC — the founder /register wizard). Rate-limited to blunt
+// spam. Listing + approval/rejection live on the ADMIN router (/admin/applications),
+// gated by the internal admin realm (requireAdmin) — they are NOT exposed here, so no
+// merely-authenticated user can list or approve applications.
 applicationsRouter.post('/',
+  applicationLimiter,
   validateBody(z.object({
     companyProfile: z.any(),
     product: z.any()
@@ -20,33 +23,5 @@ applicationsRouter.post('/',
       product: req.body.product
     });
     res.status(201).json(app);
-  })
-);
-
-// 2. List applications (Admin authenticated)
-applicationsRouter.get('/',
-  requireAuth,
-  ah(async (_req, res) => {
-    const list = await applicationService.list();
-    res.json(list);
-  })
-);
-
-// 3. Approve application — authenticated only. Approving provisions a real, money-moving
-// anchor (keygen, on-chain issuance, container stack), so it must never be anonymous.
-// TODO(N1.1): tighten from "any authenticated user" to a NordStern staff/super-admin role
-// once that role dimension exists (Product 4). Until then requireAuth closes the open hole.
-applicationsRouter.post('/:id/approve',
-  requireAuth,
-  ah(async (req, res) => {
-    const result = await applicationService.approve(req.params.id as string);
-    await recordAudit({
-      action: 'application.approved',
-      actorType: 'user',
-      actorUserId: req.user?.id || null,
-      requestId: String(req.id),
-      metadata: { applicationId: req.params.id, email: result.email }
-    });
-    res.json(result);
   })
 );
