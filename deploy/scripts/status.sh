@@ -10,7 +10,7 @@ RDS_ID="${NAME}-pg"
 echo "▸ Region: $REGION   Project: $NAME"
 
 EC2="$(aws ec2 describe-instances --region "$REGION" \
-  --filters "Name=tag:Name,Values=${NAME}" \
+  --filters "Name=tag:Name,Values=${NAME}-host" \
   --query 'Reservations[].Instances[].[InstanceId,State.Name,InstanceType]' --output text 2>/dev/null || true)"
 echo "── EC2 ──"; [ -n "$EC2" ] && echo "$EC2" || echo "  (none)"
 

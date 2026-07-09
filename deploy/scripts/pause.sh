@@ -17,9 +17,10 @@ RDS_ID="${NAME}-pg"
 
 echo "▸ Region: $REGION   Project: $NAME"
 
-# EC2: find the instance by the project Name tag.
+# EC2: find the instance by the project Name tag. Terraform tags it "${NAME}-host"
+# (RDS is "${NAME}-pg", the EIP "${NAME}-eip") — so the tag is the prefix + "-host", not bare.
 INSTANCE_ID="$(aws ec2 describe-instances --region "$REGION" \
-  --filters "Name=tag:Name,Values=${NAME}" "Name=instance-state-name,Values=running,pending,stopping" \
+  --filters "Name=tag:Name,Values=${NAME}-host" "Name=instance-state-name,Values=running,pending,stopping" \
   --query 'Reservations[].Instances[].InstanceId' --output text)"
 
 if [ -n "$INSTANCE_ID" ]; then

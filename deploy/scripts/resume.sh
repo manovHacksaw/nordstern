@@ -24,8 +24,9 @@ else
 fi
 
 # Start the EC2 box (its user-data + Docker restart policies bring the stack back).
+# Terraform tags the instance "${NAME}-host" (RDS "${NAME}-pg", EIP "${NAME}-eip").
 INSTANCE_ID="$(aws ec2 describe-instances --region "$REGION" \
-  --filters "Name=tag:Name,Values=${NAME}" "Name=instance-state-name,Values=stopped,stopping" \
+  --filters "Name=tag:Name,Values=${NAME}-host" "Name=instance-state-name,Values=stopped,stopping" \
   --query 'Reservations[].Instances[].InstanceId' --output text)"
 if [ -n "$INSTANCE_ID" ]; then
   echo "▸ Starting EC2 $INSTANCE_ID …"
