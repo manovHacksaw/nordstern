@@ -33,7 +33,7 @@ export default function OverviewPage() {
           <h2 className="text-2xl font-bold tracking-tight">Your anchors</h2>
           <p className="text-muted-foreground">Welcome back, {firstName}. Manage the anchors you’ve launched.</p>
         </div>
-        <Link href="/register">
+        <Link href="/">
           <Button><Plus className="mr-1.5 h-4 w-4" /> Launch an anchor</Button>
         </Link>
       </div>
@@ -52,7 +52,7 @@ export default function OverviewPage() {
               <p className="font-semibold">No anchors yet</p>
               <p className="text-sm text-muted-foreground">Apply to launch your first anchor — we’ll review and get you live.</p>
             </div>
-            <Link href="/register"><Button variant="outline"><Plus className="mr-1.5 h-4 w-4" /> Start an application</Button></Link>
+            <Link href="/"><Button variant="outline"><Plus className="mr-1.5 h-4 w-4" /> Start an application</Button></Link>
           </CardContent>
         </Card>
       ) : (
