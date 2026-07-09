@@ -288,6 +288,9 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     HostConfig: {
       NetworkMode: NETWORK,
       Binds: [`${hostConfigDir}:/config:ro`],
+      // Auto-resume after a host reboot / EC2 stop-start (cost control: the box can be
+      // stopped when idle and every anchor comes back with Docker on boot — no re-provision).
+      RestartPolicy: { Name: 'unless-stopped' },
     },
   });
 
@@ -298,6 +301,7 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     Labels: labels('biz', p.slug, p.homeDomain),
     HostConfig: {
       NetworkMode: NETWORK,
+      RestartPolicy: { Name: 'unless-stopped' },
     },
   });
 
@@ -322,7 +326,7 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
         ...brandEnv(p),
       ],
       Labels: labels('client', p.slug, p.homeDomain),
-      HostConfig: { NetworkMode: NETWORK },
+      HostConfig: { NetworkMode: NETWORK, RestartPolicy: { Name: 'unless-stopped' } },
     });
   }
 
@@ -344,7 +348,7 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
         ...brandEnv(p),
       ],
       Labels: labels('console', p.slug, p.homeDomain),
-      HostConfig: { NetworkMode: NETWORK },
+      HostConfig: { NetworkMode: NETWORK, RestartPolicy: { Name: 'unless-stopped' } },
     });
   }
 
