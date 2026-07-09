@@ -21,6 +21,15 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 }
 
+// Slugs an anchor may never use — each anchor is served at `<slug>.<domain>` (and
+// `console-<slug>.…`), so a slug matching a platform host would hijack it. Defense-in-depth:
+// platform-api already rejects these at redeem; this guards the control-plane's own entry.
+// Keep in sync with platform/api/src/lib/slug.ts RESERVED_SLUGS.
+const RESERVED_SLUGS = new Set([
+  'admin', 'register', 'console', 'api', 'sep', 'www', 'app', 'auth', 'docs',
+  'mail', 'status', 'dashboard', 'anchors', 'aggregator', 'platform', 'nordstern',
+]);
+
 async function ownedAnchor(id: string, userId: string) {
   const { rows: [a] } = await pool.query(
     `SELECT * FROM tenants WHERE id = $1 AND owner_user_id = $2`, [id, userId],
@@ -52,6 +61,7 @@ anchorsRouter.post('/', async (req: AuthedRequest, res: Response) => {
 
   let slug = slugify(name);
   if (!slug) { res.status(400).json({ error: 'name must contain letters or digits' }); return; }
+  if (RESERVED_SLUGS.has(slug)) { res.status(400).json({ error: `slug "${slug}" is reserved` }); return; }
   // Ensure slug uniqueness.
   const { rows: clash } = await pool.query(`SELECT 1 FROM tenants WHERE slug = $1`, [slug]);
   if (clash.length) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
@@ -74,7 +84,9 @@ anchorsRouter.post('/', async (req: AuthedRequest, res: Response) => {
     await pool.query(
       `INSERT INTO anchor_adapters (tenant_id, kyc_provider, deposit_provider, payout_provider, fee_provider)
        VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
-      [anchor.id, adapters?.kyc ?? 'mock', adapters?.deposit ?? 'mock', adapters?.payout ?? 'mock', adapters?.fee ?? 'mock'],
+      // KYC defaults to REAL (didit) — universal across every NordStern anchor. Other
+      // seams stay mock-first until their per-anchor credentials are supplied.
+      [anchor.id, adapters?.kyc ?? 'didit', adapters?.deposit ?? 'mock', adapters?.payout ?? 'mock', adapters?.fee ?? 'mock'],
     );
     res.json(anchor);
   } catch (err: any) {
@@ -201,7 +213,7 @@ async function runProvision(anchor: any): Promise<void> {
     distributionSecret: kps.distribution.secret(),
     signingSecret: kps.signing.secret(),
     adapters: {
-      kyc: adapters?.kyc_provider ?? 'mock',
+      kyc: adapters?.kyc_provider ?? 'didit',   // universal real KYC (DIDIT) by default
       deposit: adapters?.deposit_provider ?? 'mock',
       payout: adapters?.payout_provider ?? 'mock',
       fee: adapters?.fee_provider ?? 'mock',

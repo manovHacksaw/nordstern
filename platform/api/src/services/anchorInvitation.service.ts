@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { db } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { anchorInvitations, organizations, organizationSettings, users, memberships, projects, anchors, provisioningJobs, applications, secretRefs } from '../db/schema.js';
-import { uniqueSlug } from '../lib/slug.js';
+import { uniqueSlug, isReservedSlug } from '../lib/slug.js';
 import { badRequest, conflict } from '../lib/errors.js';
 import { provisionerService } from './provisioner.service.js';
 import { secretStore } from '../lib/secrets/index.js';
@@ -95,8 +95,12 @@ export const anchorInvitationService = {
     const creds = input.credentials ?? {};
     const adapters = resolveAdapters(mode, creds);
 
-    // Check slug collision
+    // Normalise + validate the chosen subdomain.
     const slug = input.subdomain.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!slug) throw badRequest('Subdomain must contain letters or digits');
+    // Reserved: an anchor is served at <slug>.nordstern.live (and console-<slug>.…), so a
+    // slug matching a platform host (admin/register/api/…) would hijack it.
+    if (isReservedSlug(slug)) throw badRequest(`Subdomain "${slug}" is reserved — please choose another`);
     const slugClash = await db.query.organizations.findFirst({
       where: eq(organizations.slug, slug)
     });
