@@ -1,5 +1,5 @@
 # VPC with public subnets (the EC2 Docker host + Elastic IP) and private subnets
-# (RDS — never publicly reachable). No NAT gateway: RDS needs no outbound internet,
+# (RDS - never publicly reachable). No NAT gateway: RDS needs no outbound internet,
 # and the pilot avoids the standing NAT cost. Egress for the EC2 host is via the IGW.
 
 data "aws_availability_zones" "available" {
@@ -72,7 +72,7 @@ resource "aws_vpc_security_group_ingress_rule" "web_http" {
 resource "aws_vpc_security_group_ingress_rule" "web_https" {
   for_each          = toset(var.allowed_web_cidrs)
   security_group_id = aws_security_group.ec2.id
-  description       = "HTTPS — console, customer apps, SEP endpoints"
+  description       = "HTTPS - console, customer apps, SEP endpoints"
   cidr_ipv4         = each.value
   from_port         = 443
   to_port           = 443
