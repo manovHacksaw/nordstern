@@ -6,10 +6,11 @@ import path from 'node:path';
 const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 
 const config: NextConfig = {
+  // Standalone (+ workspace-root tracing) is for the local Docker image. On Vercel both
+  // must be OFF: the custom tracing root relocates `.next`, which breaks Vercel's post-build
+  // output detection (ENOENT .next/package.json). Vercel handles the monorepo itself.
   output: process.env.VERCEL ? undefined : 'standalone',
-  // Trace files from the workspace root so the standalone bundle includes the shared
-  // packages (@nordstern/shared-ui, @nordstern/shared-auth).
-  outputFileTracingRoot: path.join(__dirname, '..'),
+  outputFileTracingRoot: process.env.VERCEL ? undefined : path.join(__dirname, '..'),
   transpilePackages: ['@nordstern/shared-ui', '@nordstern/shared-auth'],
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${API_URL}/api/:path*` }];
