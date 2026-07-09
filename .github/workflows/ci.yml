@@ -10,7 +10,7 @@ name: CI
 #    Express services `build` IS `tsc`; Next apps typecheck during `next build`;
 #    platform/api has no build and uses `typecheck` (it runs on tsx).
 #  - Enforce what EXISTS. Missing scripts (lint/test) are skipped, never faked.
-#  - Excluded (upstream, not ours): anchor-platform/, sep24-reference-ui/.
+#  - The upstream reference clones (anchor-platform/, sep24-reference-ui/) were removed.
 #  - Adding a project later = one line in the matrix. New stages (test, e2e,
 #    provisioning, docker-compose smoke, k8s, benchmarks) are new jobs/workflows
 #    that reuse ./actions/setup — no restructuring required.
@@ -44,7 +44,6 @@ jobs:
           - { workspace: anchor-template/anchor-client, install_flags: '--legacy-peer-deps' }
           - { workspace: anchor-template/console }
           - { workspace: frontend/landing }
-          - { workspace: frontend/web }
           - { workspace: docs-website, optional: true }
     steps:
       - uses: actions/checkout@v4

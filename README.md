@@ -173,17 +173,14 @@ build; work inside the relevant subproject.
 | [`scripts/`](scripts/) | Operational scripts — `backup.sh`, `restore.sh`, `dr-drill.sh`. | ✅ canonical |
 | [`docs/project/`](docs/project/) | **Authored, maintained context** — architecture, roadmap, readiness, audits, ADRs. | ✅ canonical |
 | [`anchor-template/infra/`](anchor-template/infra/) | EKS / Helm `anchor-stack` / ArgoCD bootstrap — **authored, not wired to the runtime.** | 🟡 future target |
-| [`frontend/web/`](frontend/web/) | "Keel" operator console **prototype** — synthetic (faker) data, high visual fidelity. | 🟡 prototype |
 | `anchor-service/control-plane/` + `scripts/` | The **canonical provisioner** + base setup. (The old standalone `anchor-service/{business-server,client}` + `docker-compose.yml` were removed 2026-07-09 — see `docs/project/LEGACY_CODE_AUDIT.md`.) | ✅ canonical |
-| [`anchor-platform/`](anchor-platform/) | **Upstream Stellar Anchor Platform source** (Java/Kotlin, Gradle). | 📖 reference only |
-| [`sep24-reference-ui/`](sep24-reference-ui/) | Stellar's official SEP-24 reference wallet UI. | 📖 reference only |
 | [`docs-website/`](docs-website/) | Fumadocs documentation site. | 📖 aux |
 | [`docs/`](docs/) (non-`project`) | Saved Stellar docs (Admin_Guide, SEP_GUIDE, API_References) + `independent_research/`. | 📖 reference |
 
-> **Two Anchor Platforms, kept distinct:** `anchor-platform/` is upstream *source* for
-> study. The MVP runs the published `stellar/anchor-platform:latest` image, configured
-> by `anchor-template/config/`. To change anchor behavior, edit the config and the
-> business server — never `anchor-platform/`. See [`AGENTS.md`](AGENTS.md) §8.
+> **Anchor Platform:** the MVP runs the published `stellar/anchor-platform:latest` image,
+> configured per-anchor by the provisioner. To change anchor behavior, edit the config
+> templates + `config-gen.ts` and the business server. See [`AGENTS.md`](AGENTS.md) §8.
+> (The upstream AP source clone + SEP-24 reference wallet were removed 2026-07-09.)
 
 ---
 
@@ -646,7 +643,7 @@ Grounded in the code and
 | Control Plane / Provisioner | ✅ | End-to-end provisioning; Docker-socket privilege flagged for prod. |
 | Business Server (money runtime) | ✅ | Idempotent release, treasury guard, at-most-once payout, fail-closed KYC. |
 | Customer App (`anchor-client`) | ✅ | OTP, KYC, buy/sell (SEP-24), history, receipts. |
-| Operator Console (`anchor-template/console`) | 🟡 | Functional; visual convergence with the Keel prototype pending. |
+| Operator Console (`anchor-template/console`) | 🟡 | Functional operator console (14 modules), real data. |
 | Aggregator | 🟡 | Registry + health/routing/quote engine; advanced telemetry routing is Roadmap. |
 | SecretStore (Secrets Manager) | ✅ | Values never in DB; LocalStack ↔ AWS parity; rotation API. |
 | KYC | 🟡 | Mock default; `didit` / `surepass` adapters implemented, not production-verified. |
@@ -672,7 +669,7 @@ Only genuinely unfinished work. Detail:
   enforced DB-at-rest + TLS-in-transit, dependency scanning, `logoUrl` allowlisting.
 - **Stack consolidation** — the legacy standalone `anchor-service/*` stack and the
   `anchor-template/client` prototype were removed (2026-07-09); the `frontend/web` "Keel"
-  prototype remains under review.
+  prototype, and the upstream reference clones (anchor-platform, sep24-reference-ui) were all removed.
 - **Native payment rails** — real UPI Intent/QR collection (Razorpay) and live Cashfree
   Payouts behind the existing adapter interfaces, with webhook signature verification
   and backend re-verification.
@@ -734,8 +731,8 @@ Only genuinely unfinished work. Detail:
 
 ## Repository philosophy
 
-The repository looks large because it deliberately keeps **canonical**, **template**,
-**prototype**, **legacy**, and **reference** code side by side, each labelled:
+After the 2026-07-09 consolidation, the repository keeps a single canonical architecture —
+no parallel stacks, no duplicate implementations, no obsolete execution paths:
 
 - **Canonical** (`platform/*`, `anchor-service/control-plane`,
   `anchor-template/{business-server,aggregator-service,anchor-client,console,config}`,
@@ -743,20 +740,17 @@ The repository looks large because it deliberately keeps **canonical**, **templa
 - **Templates** (`anchor-template/*`) are cloned *per anchor* at provision time — the
   business-server image, customer app, and operator console are the same code serving
   N branded tenants.
-- **Prototype** (`frontend/web` "Keel") is a high-fidelity, synthetic-data UI for
-  investor/partner review; it is never wired to live keys and the functional UIs are never
-  downgraded to its mock data. (Under review for removal — Phase 3.)
-- **Removed 2026-07-09** — the legacy standalone anchor stack (`anchor-service/{business-server,
-  client}` + its `docker-compose*.yml`) and the `anchor-template/client` prototype, superseded
-  by `anchor-template/*`. Only the canonical provisioner (`anchor-service/control-plane`) +
-  setup scripts remain. See `docs/project/LEGACY_CODE_AUDIT.md`.
-- **Reference** (`anchor-platform/`, `sep24-reference-ui/`, saved Stellar docs) is
-  upstream material to learn the correct contract — read, never built, never edited to
-  change behavior.
+- **Brand + landing** (`frontend/landing` + `frontend/` design system) — the marketing
+  site and brand assets; not part of anchor operations.
+- **Mobile** (`mobile/nordpay`) — an in-progress native wallet prototype.
+- **Removed 2026-07-09** (`docs/project/LEGACY_CODE_AUDIT.md`): the legacy standalone
+  anchor-service stack (`{business-server,client}` + its `docker-compose*.yml`), the
+  `anchor-template/client` + `frontend/web` "Keel" prototypes, and the upstream reference
+  clones (`anchor-platform/`, `sep24-reference-ui/`) — the latter live on GitHub upstream;
+  the MVP runs the `stellar/anchor-platform` Docker image, not that source.
 
 The rule is that the *distinction is always explicit*: if two things look like the same
-component, one is labelled here and in `docs/project/` as the canonical one. Drift
-between them is tracked as tech debt, not hidden.
+component, one is labelled here and in `docs/project/` as the canonical one.
 
 ---
 

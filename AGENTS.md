@@ -114,9 +114,7 @@ decisions that are still open:
   issuer account, distributed from a distribution account. Stand-in for a real
   INR-backed asset (DL-004).
 - **Anchor Platform version:** the config in `anchor-service/config/` targets AP
-  **v4.4.0** and runs via the official `stellar/anchor-platform:latest` Docker
-  image. The upstream *source* in `anchor-platform/` is for study/reference, not
-  the runtime.
+  **v4.4.0** and runs via the official `stellar/anchor-platform:latest` Docker image.
 - **Business server language:** **TypeScript / Node.js + Express**, using
   `@stellar/stellar-sdk` for Stellar ops. There is no official TS Anchor SDK, so
   the Platform callback API is implemented by hand as a plain HTTP contract
@@ -245,7 +243,7 @@ are created **dynamically** by the control-plane during provisioning — not by 
 
 ### Running the console/landing (`frontend/`)
 
-Next.js apps under `frontend/web` and `frontend/landing` (see their own
+The Next.js `frontend/landing` marketing app (see its own
 `package.json` / `AGENTS.md`). These are **prototypes with synthetic data** —
 running them does not touch the anchor backend.
 
@@ -278,27 +276,20 @@ just config:
 
 ## 8. How to work with the Stellar Anchor Platform install
 
-There are **two** copies of the Anchor Platform in this repo — don't confuse them:
+The MVP runs the **`stellar/anchor-platform:latest` Docker image**, launched **per anchor
+by the control-plane provisioner** (dockerode) with `-s -p -o` (SEP server, Platform API,
+Observer). Its configuration is generated per-anchor by the provisioner
+(`control-plane/src/config-gen.ts`); the templates live in **`anchor-service/config/`**:
+- `anchor-platform.yaml` — SEP toggles, network, callback/Platform API URLs, DB, assets.
+  (Note: SEP-6/31/38 are enabled only because the AP requires them alongside SEP-24; SEP-24
+  is the one active flow.)
+- `stellar.toml` — SEP-1 service-discovery file wallets fetch.
+- `assets.yaml` — the asset definition (deposit/withdraw limits/methods).
 
-1. **`anchor-platform/`** — the **upstream source clone** (Java/Kotlin, Gradle),
-   including `quick-run/` (its own docker-compose using Soroban RPC + Kafka events
-   + a reference server, and SEP-45 contract auth). **This is reference/study
-   material.** Read it to understand AP internals, config schema, and SEP
-   behavior. The MVP does **not** build or run from here.
-2. **The Docker image the MVP actually runs** — `stellar/anchor-platform:latest`,
-   launched **per anchor by the control-plane provisioner** (dockerode) with `-s -p -o`
-   (SEP server, Platform API, Observer). Its configuration is generated per-anchor by the
-   provisioner (`control-plane/src/config-gen.ts`); the templates in **`anchor-service/config/`**:
-   - `anchor-platform.yaml` — SEP toggles, network, callback/Platform API URLs,
-     DB, assets. (Note: SEP-6/31/38 are enabled only because the AP requires them
-     alongside SEP-24; SEP-24 is the one active flow.)
-   - `stellar.toml` — SEP-1 service-discovery file wallets fetch.
-   - `assets.yaml` — the `ANCH` asset definition (deposit/withdraw limits/methods).
-   - `*.mainnet.*` variants exist but are not the working path.
-
-Rule of thumb: **to change how the anchor behaves, edit `anchor-service/config/` and
-the business server — not `anchor-platform/`.** Use `anchor-platform/` and
-`sep24-reference-ui/` only to learn the correct contract.
+Rule of thumb: **to change how the anchor behaves, edit `anchor-service/config/` templates +
+`config-gen.ts` and the business server.** (The upstream AP source clone `anchor-platform/`
+and `sep24-reference-ui/` were removed 2026-07-09 — they're on GitHub upstream if you need to
+study AP internals or the SEP-24 reference wallet.)
 
 ---
 

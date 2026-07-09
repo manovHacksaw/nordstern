@@ -7,7 +7,7 @@ name: Docker
 # The workflow runs on every PR (so the required `docker-required` check always
 # reports), but the actual `docker build` matrix only covers images whose build
 # context changed — via dorny/paths-filter producing a dynamic matrix. Upstream
-# reference images (sep24-reference-ui, anchor-platform) are excluded.
+# the upstream reference clones (sep24-reference-ui, anchor-platform) were removed.
 
 on:
   pull_request:

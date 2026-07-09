@@ -102,7 +102,7 @@ jobs:
             anchor-service/control-plane \
             anchor-template/aggregator-service anchor-template/business-server \
             anchor-template/anchor-client anchor-template/console \
-            frontend/landing frontend/web docs-website"
+            frontend/landing docs-website"
           {
             echo "## Dependency audit (advisory — non-blocking)"
             echo ""
