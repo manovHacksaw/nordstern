@@ -24,6 +24,10 @@ const HORIZON_URL        = process.env.HORIZON_URL        ?? 'https://horizon-te
 const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? 'Test SDF Network ; September 2015';
 const DB_USER = process.env.DB_USER ?? 'anchor';
 const DB_PASSWORD = process.env.DB_PASSWORD ?? 'anchor';
+// RDS rejects unencrypted connections (pg_hba "no encryption"). In prod the control-plane
+// runs with PGSSLMODE=no-verify; propagate it into each business-server's DATABASE_URL so its
+// pg pool + migrate step connect over TLS. Unset locally (plain postgres container) → plaintext.
+const DB_SSL_SUFFIX = process.env.PGSSLMODE ? `?sslmode=${process.env.PGSSLMODE}` : '';
 // Same secret platform-api signs operator access tokens with — forwarded into each
 // business-server so its money-admin API can verify the operator session.
 const PLATFORM_JWT_ACCESS_SECRET = process.env.PLATFORM_JWT_ACCESS_SECRET ?? '';
@@ -225,7 +229,7 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     // migrates-on-start into THIS anchor's already-created database (createAnchorDb →
     // anchordb_<slug>). Without this the server falls back to the shared `anchordb`
     // default and co-mingles every anchor's money tables. p.database == anchorDbName(slug).
-    `DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${p.database}`,
+    `DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${p.database}${DB_SSL_SUFFIX}`,
     `ASSET_CODE=${p.assetCode}`,
     `ASSET_ISSUER_PUBLIC=${p.assetIssuer}`,
     // Treasury = the asset's distribution account (holds the float, sends tokens on
