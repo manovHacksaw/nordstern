@@ -38,7 +38,6 @@ jobs:
       matrix:
         include:
           - { workspace: platform/api }
-          - { workspace: platform/console }
           - { workspace: anchor-service/business-server }
           - { workspace: anchor-service/control-plane }
           - { workspace: anchor-service/client }
@@ -84,19 +83,43 @@ jobs:
             echo "no lint script — skipped (enforce what exists)"
           fi
 
+  # platform/ is an npm WORKSPACE (founder-console, admin-console, shared-ui, shared-auth)
+  # with a single root lockfile — so the per-project matrix above (one `npm ci` per dir)
+  # doesn't fit. Install the workspace once and typecheck both consoles; that also exercises
+  # the shared-ui/shared-auth source they import (transpilePackages), which have no scripts
+  # of their own. (platform/api stays a standalone project in the matrix above.)
+  platform-consoles:
+    name: platform-consoles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: platform/package-lock.json
+      - name: Install platform workspace
+        working-directory: platform
+        run: npm ci
+      - name: Typecheck founder-console + admin-console
+        working-directory: platform
+        run: |
+          npm run -w @nordstern/founder-console typecheck
+          npm run -w @nordstern/admin-console typecheck
+
   # Single required check for branch protection. Green only if every blocking
   # matrix leg passed (docs-website, being continue-on-error, cannot fail this).
   ci-required:
     name: ci-required
     if: always()
-    needs: quality
+    needs: [quality, platform-consoles]
     runs-on: ubuntu-latest
     steps:
-      - name: Gate on quality result
+      - name: Gate on results
         run: |
-          echo "quality result: ${{ needs.quality.result }}"
-          if [ "${{ needs.quality.result }}" != "success" ]; then
-            echo "::error::CI quality gate failed"
+          echo "quality: ${{ needs.quality.result }} | platform-consoles: ${{ needs.platform-consoles.result }}"
+          if [ "${{ needs.quality.result }}" != "success" ] || [ "${{ needs.platform-consoles.result }}" != "success" ]; then
+            echo "::error::CI gate failed"
             exit 1
           fi
-          echo "CI quality gate passed"
+          echo "CI gate passed"

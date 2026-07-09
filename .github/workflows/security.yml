@@ -98,7 +98,7 @@ jobs:
       - name: npm audit (advisory)
         run: |
           set +e
-          WORKSPACES="platform/api platform/console \
+          WORKSPACES="platform/api platform \
             anchor-service/business-server anchor-service/control-plane anchor-service/client \
             anchor-template/aggregator-service anchor-template/business-server \
             anchor-template/anchor-client anchor-template/client anchor-template/console \
