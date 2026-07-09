@@ -38,13 +38,10 @@ jobs:
       matrix:
         include:
           - { workspace: platform/api }
-          - { workspace: anchor-service/business-server }
           - { workspace: anchor-service/control-plane }
-          - { workspace: anchor-service/client }
           - { workspace: anchor-template/aggregator-service }
           - { workspace: anchor-template/business-server }
           - { workspace: anchor-template/anchor-client, install_flags: '--legacy-peer-deps' }
-          - { workspace: anchor-template/client, install_flags: '--legacy-peer-deps' }
           - { workspace: anchor-template/console }
           - { workspace: frontend/landing }
           - { workspace: frontend/web }

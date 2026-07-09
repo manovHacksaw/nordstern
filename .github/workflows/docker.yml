@@ -38,13 +38,10 @@ jobs:
           # rebuilds everything (each filter also watches this file).
           filters: |
             "platform/api": [ 'platform/api/**', '.github/workflows/docker.yml' ]
-            "anchor-service/business-server": [ 'anchor-service/business-server/**', '.github/workflows/docker.yml' ]
-            "anchor-service/client": [ 'anchor-service/client/**', '.github/workflows/docker.yml' ]
             "anchor-service/control-plane": [ 'anchor-service/control-plane/**', '.github/workflows/docker.yml' ]
             "anchor-template/aggregator-service": [ 'anchor-template/aggregator-service/**', '.github/workflows/docker.yml' ]
             "anchor-template/anchor-client": [ 'anchor-template/anchor-client/**', '.github/workflows/docker.yml' ]
             "anchor-template/business-server": [ 'anchor-template/business-server/**', '.github/workflows/docker.yml' ]
-            "anchor-template/client": [ 'anchor-template/client/**', '.github/workflows/docker.yml' ]
             "anchor-template/console": [ 'anchor-template/console/**', '.github/workflows/docker.yml' ]
 
   # Build (validate) each changed image. push:false + load:false → the image is

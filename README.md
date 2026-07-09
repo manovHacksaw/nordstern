@@ -174,8 +174,7 @@ build; work inside the relevant subproject.
 | [`docs/project/`](docs/project/) | **Authored, maintained context** — architecture, roadmap, readiness, audits, ADRs. | ✅ canonical |
 | [`anchor-template/infra/`](anchor-template/infra/) | EKS / Helm `anchor-stack` / ArgoCD bootstrap — **authored, not wired to the runtime.** | 🟡 future target |
 | [`frontend/web/`](frontend/web/) | "Keel" operator console **prototype** — synthetic (faker) data, high visual fidelity. | 🟡 prototype |
-| [`anchor-service/business-server/`](anchor-service/business-server/), [`anchor-service/client/`](anchor-service/client/) | Original Phase-0 anchor MVP — **superseded** by `anchor-template/*` (control-plane + scripts here remain canonical). | 🟠 legacy |
-| [`anchor-template/client/`](anchor-template/client/) | Earlier customer dashboard prototype (faker/next-auth) — superseded by `anchor-client`. | 🟠 legacy |
+| `anchor-service/control-plane/` + `scripts/` | The **canonical provisioner** + base setup. (The old standalone `anchor-service/{business-server,client}` + `docker-compose.yml` were removed 2026-07-09 — see `docs/project/LEGACY_CODE_AUDIT.md`.) | ✅ canonical |
 | [`anchor-platform/`](anchor-platform/) | **Upstream Stellar Anchor Platform source** (Java/Kotlin, Gradle). | 📖 reference only |
 | [`sep24-reference-ui/`](sep24-reference-ui/) | Stellar's official SEP-24 reference wallet UI. | 📖 reference only |
 | [`docs-website/`](docs-website/) | Fumadocs documentation site. | 📖 aux |
@@ -671,8 +670,9 @@ Only genuinely unfinished work. Detail:
   alerting on treasury float and stuck transactions.
 - **Security hardening** — tuned CSP, anti-CSRF tokens, broad audit-log coverage,
   enforced DB-at-rest + TLS-in-transit, dependency scanning, `logoUrl` allowlisting.
-- **Stack consolidation** — retire the legacy `anchor-service/*` and prototype
-  `anchor-template/client` / `frontend/web` surfaces to remove drift.
+- **Stack consolidation** — the legacy standalone `anchor-service/*` stack and the
+  `anchor-template/client` prototype were removed (2026-07-09); the `frontend/web` "Keel"
+  prototype remains under review.
 - **Native payment rails** — real UPI Intent/QR collection (Razorpay) and live Cashfree
   Payouts behind the existing adapter interfaces, with webhook signature verification
   and backend re-verification.
@@ -743,13 +743,13 @@ The repository looks large because it deliberately keeps **canonical**, **templa
 - **Templates** (`anchor-template/*`) are cloned *per anchor* at provision time — the
   business-server image, customer app, and operator console are the same code serving
   N branded tenants.
-- **Prototypes** (`frontend/web` "Keel", `anchor-template/client`) are high-fidelity,
-  synthetic-data UIs for investor/partner review; they are never wired to live keys and
-  the functional UIs are never downgraded to their mock data.
-- **Legacy** (`anchor-service/business-server`, `anchor-service/client`) is the original
-  Phase-0 anchor MVP that proved the SEP-24 loop; it is superseded by `anchor-template/*`
-  but kept until consolidation, with the still-canonical provisioner and scripts living
-  alongside it.
+- **Prototype** (`frontend/web` "Keel") is a high-fidelity, synthetic-data UI for
+  investor/partner review; it is never wired to live keys and the functional UIs are never
+  downgraded to its mock data. (Under review for removal — Phase 3.)
+- **Removed 2026-07-09** — the legacy standalone anchor stack (`anchor-service/{business-server,
+  client}` + its `docker-compose*.yml`) and the `anchor-template/client` prototype, superseded
+  by `anchor-template/*`. Only the canonical provisioner (`anchor-service/control-plane`) +
+  setup scripts remain. See `docs/project/LEGACY_CODE_AUDIT.md`.
 - **Reference** (`anchor-platform/`, `sep24-reference-ui/`, saved Stellar docs) is
   upstream material to learn the correct contract — read, never built, never edited to
   change behavior.

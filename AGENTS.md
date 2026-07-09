@@ -210,31 +210,38 @@ Full technical map (services, ports, data flow, seams):
 Subprojects have their own tooling. There is no top-level build. Work inside the
 relevant subproject.
 
-### Running the working anchor stack (`anchor-service/`)
+### Running the platform (the ONE supported way)
+
+There is a single canonical run path — the connected platform stack
+(`docker-compose.platform.yml`). The old standalone `anchor-service/docker-compose.yml`
+stack was retired.
 
 ```bash
 cd anchor-service
-node scripts/setup-testnet.mjs   # one-time: creates keypairs, funds via Friendbot, writes .env.testnet
-./scripts/dev.sh                 # sources .env.testnet, runs `docker compose up --build`
+node scripts/setup-base.mjs   # one-time: writes .env.base (MASTER_KEK + config dir)
+./scripts/dev.sh              # builds the per-anchor images + brings up docker-compose.platform.yml
 ```
 
-Services and ports (see `anchor-service/docker-compose.yml`):
+Services and ports (see `docker-compose.platform.yml`):
 
-| Service          | Port | Role                                                        |
-|------------------|------|-------------------------------------------------------------|
-| `db` (Postgres)  | 5432 | `anchordb` (Anchor Platform) + `controldb` (control plane)  |
-| `anchor-platform`| 8080 | SEP server — wallets/users talk here                        |
-| `anchor-platform`| 8085 | Platform API — the business server talks here               |
-| `business-server`| 3000 | Our callbacks + SEP-24 interactive UI + Stellar ops         |
-| `control-plane`  | 3002 | Tenant auth / keypair provisioning (multi-tenant seed)      |
-| `frontend`       | 3001 | Next.js wallet + operator dashboard                         |
+| Service            | Port      | Role                                                       |
+|--------------------|-----------|------------------------------------------------------------|
+| `db` (Postgres)    | 5432      | platformdb / controldb / aggregatordb / anchordb           |
+| `secrets` (LocalStack) | 4566  | AWS Secrets Manager stand-in (PSP/signing creds)           |
+| `traefik`          | 80 / 8090 | Front door — routes `<slug>.anchors.localhost` + consoles  |
+| `platform-api`     | 4000      | Onboarding: auth, applications, drives provisioning        |
+| `control-plane`    | 3002      | The real provisioner (dockerode, keys, asset, per-anchor DB)|
+| `aggregator`       | 3005      | Registry / quote / routing / health                        |
+| `founder-console`  | 4001      | `register.*` — founder journey                             |
+| `admin-console`    | 4002      | `admin.*` — NordStern internal review                      |
 
-- `.env.testnet` does **not** exist until you run the setup script — that's the
-  first failure new agents hit. `dev.sh` will tell you.
+Per-anchor containers (Anchor Platform, business-server, anchor-client, operator-console)
+are created **dynamically** by the control-plane during provisioning — not by compose.
+
+- `.env.base` does **not** exist until you run `setup-base.mjs` — the first failure new
+  agents hit. `dev.sh` will tell you.
 - Smoke-test flows without a wallet: `node scripts/test-deposit.mjs`,
   `node scripts/test-withdrawal.mjs`.
-- Each service also runs standalone: `cd <service> && npm install && npm run dev`
-  (`tsx watch`). Next.js frontends: `npm run dev`.
 
 ### Running the console/landing (`frontend/`)
 
@@ -279,8 +286,9 @@ There are **two** copies of the Anchor Platform in this repo — don't confuse t
    material.** Read it to understand AP internals, config schema, and SEP
    behavior. The MVP does **not** build or run from here.
 2. **The Docker image the MVP actually runs** — `stellar/anchor-platform:latest`,
-   launched by `anchor-service/docker-compose.yml` with `-s -p -o` (SEP server,
-   Platform API, Observer). Its configuration is **`anchor-service/config/`**:
+   launched **per anchor by the control-plane provisioner** (dockerode) with `-s -p -o`
+   (SEP server, Platform API, Observer). Its configuration is generated per-anchor by the
+   provisioner (`control-plane/src/config-gen.ts`); the templates in **`anchor-service/config/`**:
    - `anchor-platform.yaml` — SEP toggles, network, callback/Platform API URLs,
      DB, assets. (Note: SEP-6/31/38 are enabled only because the AP requires them
      alongside SEP-24; SEP-24 is the one active flow.)
