@@ -7,8 +7,10 @@ export const num = (v: string | number | null | undefined, dp = 2): string =>
 export const inr = (v: string | number | null | undefined): string =>
   v == null || v === '' ? '—' : `₹${num(v)}`;
 
-export const usdc = (v: string | number | null | undefined): string =>
-  v == null || v === '' ? '—' : `${num(v)} USDC`;
+// Format an on-chain amount with the anchor's asset code (e.g. "10.00 DIDITTEST"). The unit
+// is per-anchor, so always pass the code from useAnchor(); do NOT hardcode "USDC".
+export const assetAmt = (v: string | number | null | undefined, code: string): string =>
+  v == null || v === '' ? '—' : `${num(v)} ${code}`;
 
 export const dateTime = (v: string | null | undefined): string =>
   v ? new Date(v).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';

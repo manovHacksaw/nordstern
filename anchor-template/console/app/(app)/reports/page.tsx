@@ -3,10 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import { bizGet } from '@/lib/api';
+import { useAnchor } from '@/components/anchor-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { inr, usdc, num } from '@/lib/format';
+import { inr, assetAmt, num } from '@/lib/format';
 
 interface Summary {
   treasury: { usdc: string | null; xlm: string | null };
@@ -19,6 +20,7 @@ interface Case { status: string; severity: string }
 const isOpen = (s: string) => ['open', 'reviewing', 'flagged', 'pending'].includes(s);
 
 export default function ReportsPage() {
+  const { assetCode } = useAnchor();
   const summary = useQuery({ queryKey: ['summary'], queryFn: () => bizGet<Summary>('/admin/summary') });
   const txns = useQuery({ queryKey: ['transactions'], queryFn: () => bizGet<{ transactions: Tx[] }>('/admin/transactions') });
   const cases = useQuery({ queryKey: ['compliance'], queryFn: () => bizGet<{ cases: Case[] }>('/admin/compliance/cases') });
@@ -47,8 +49,8 @@ export default function ReportsPage() {
 
       <Section title="Volume">
         <Row label="INR collected (on-ramp)" value={inr(s?.volume.inrCollected)} loading={loading} />
-        <Row label="USDC delivered" value={usdc(s?.volume.usdcDeposited)} loading={loading} />
-        <Row label="USDC received (off-ramp)" value={usdc(s?.volume.usdcWithdrawn)} loading={loading} />
+        <Row label={`${assetCode} delivered`} value={assetAmt(s?.volume.usdcDeposited, assetCode)} loading={loading} />
+        <Row label={`${assetCode} received (off-ramp)`} value={assetAmt(s?.volume.usdcWithdrawn, assetCode)} loading={loading} />
         <Row label="INR paid out" value={inr(s?.volume.inrPaidOut)} loading={loading} />
       </Section>
 
@@ -61,7 +63,7 @@ export default function ReportsPage() {
       </Section>
 
       <Section title="Treasury (current float)">
-        <Row label="USDC balance" value={usdc(s?.treasury.usdc)} loading={loading} />
+        <Row label={`${assetCode} balance`} value={assetAmt(s?.treasury.usdc, assetCode)} loading={loading} />
         <Row label="XLM balance" value={num(s?.treasury.xlm)} loading={loading} />
         <p className="pt-1 text-xs text-subtle">Historical treasury movement isn&apos;t stored yet — only the current float is shown.</p>
       </Section>
