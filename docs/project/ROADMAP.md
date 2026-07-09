@@ -37,7 +37,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ not started.
 ## Phase 2 — Operator Platform (Highest Priority)
 *Goal: Turn the admin console into a complete, secure administration plane for anchor operators.*
 
-- ⬜ **Keel UI Convergence**: Migrate the premium dashboard layouts, bento screens, and styles from the `frontend/web/` prototypes.
+- ✅ **Stack consolidation** (2026-07-09): retired the legacy standalone anchor-service stack + the `frontend/web` "Keel" & `anchor-template/client` prototypes + upstream reference clones. One canonical architecture.
 - ⬜ **Authentication & RBAC**: Integrate NextAuth/Auth.js with JWT rotation, session management, and operator role enforcement.
 - ⬜ **Strategy Engine**: Implement config-driven rule validations for fee cards, velocity limits, minimum/maximum limits, and operating hours.
 - ⬜ **KYC & Case Management Queue**: Interface for compliance officers to manually review, approve, or reject KYC files.

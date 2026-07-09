@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wallet, Coins, ShieldAlert, ArrowUpToLine, Loader2 } from 'lucide-react';
 import { bizGet, bizPost, ApiError } from '@/lib/api';
+import { useAnchor } from '@/components/anchor-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ interface Summary { treasury: { address: string; usdc: string | null; xlm: strin
 interface Strategy { emergencyStop?: boolean; [k: string]: unknown }
 
 export default function TreasuryPage() {
+  const { assetCode } = useAnchor();
   const qc = useQueryClient();
   const [note, setNote] = useState<{ tone: 'success' | 'danger'; msg: string } | null>(null);
 
@@ -38,7 +40,7 @@ export default function TreasuryPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-ink">Treasury</h1>
-        <p className="text-sm text-subtle">Your USDC float and the emergency controls that govern money movement.</p>
+        <p className="text-sm text-subtle">Your {assetCode} float and the emergency controls that govern money movement.</p>
       </div>
 
       {note && (
@@ -46,7 +48,7 @@ export default function TreasuryPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Stat label="USDC float" value={<>{num(summary.data?.treasury.usdc)} <span className="text-sm font-medium text-subtle">USDC</span></>} sub="available for on-ramp payouts" icon={Wallet} loading={busy} />
+        <Stat label={`${assetCode} float`} value={<>{num(summary.data?.treasury.usdc)} <span className="text-sm font-medium text-subtle">{assetCode}</span></>} sub="available for on-ramp payouts" icon={Wallet} loading={busy} />
         <Stat label="XLM (network fees)" value={num(summary.data?.treasury.xlm)} sub="keeps the anchor transacting" icon={Coins} loading={busy} />
       </div>
 

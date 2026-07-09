@@ -11,6 +11,24 @@
 
 ---
 
+## ✅ Fixed in the follow-up pass (2026-07-09, commits `22f6ad3`…`e05a216`)
+
+- **#5 Founder overview = real "my anchors" portfolio** (was mock operator dashboard). New
+  platform-api `GET /anchors`; sidebar trimmed to founder concerns. (`22f6ad3`)
+- **#15 Asset label** — operator console shows the real `ASSET_CODE` (DIDITTEST), not "USDC". (`25bff47`)
+- **#10 Live amount validation** — Buy/Sell validate min/max as the user types (quote returns
+  limits); no more late full-screen "Operational Limits Exceeded". (`959ec4b`)
+- **#7 Explain the wallet confirmation** + **#9 (secondary)** prepare the user before the
+  payment handoff. (`33f2736`)
+- **Admin approve modal → email-first**; dropped "Open redeem page" (persona-bleed); link is a
+  dev/ops fallback. (`e05a216`)
+- **#6 KYC poll-path propagation** — platform mode now propagates a poll-resolved DIDIT decision
+  to the central customer profile (no more "Finishing verification" hang when the webhook can't
+  reach us). (`e05a216`)
+- Earlier this session: **#13 off-ramp hands-free** (`ec658c5`), **B5 reserved slugs** (`39a3858`).
+
+**Remaining open: only the "grandfathered mock-era KYC" DECISION (below) + P2 polish.**
+
 ## ✅ Fixed during the test run (committed `f541071`)
 
 - **Universal DIDIT KYC** — factory defaults every anchor to real DIDIT; mock is an
@@ -23,22 +41,17 @@
 - **#12 Native off-ramp "click to send" + realistic payout.**
   (`business-server/customerApi.ts`, `adapters/payout/mock.ts`, `anchor-client` sell)
 - **#14 Operator Transactions NaN** — flatten AP `{amount,asset}`. (`business-server/admin.ts`)
+- **#13 Off-ramp hands-free** (`ec658c5`) — poller self-detects the on-chain transfer via
+  Horizon (memo+amount+asset) and advances `pending_user_transfer_start → pending_anchor`;
+  no AP-events dependency. Verified live hands-free. Also fixed en route: sell receipt INR
+  amount (was showing asset count with ₹), and a **5-min session reaper** (abandoned
+  sessions → expired, leave "In Progress"). (`poller.ts`, `stellar.ts`, `customerApi.ts`)
+- **B5 Reserved slugs** (`39a3858`) — reject `admin/register/api/console/…` as anchor slugs
+  at both platform-api redeem + control-plane. (`platform/api/lib/slug.ts`, `control-plane/provision.ts`)
 
 ---
 
 ## P0 — functional gaps (do first)
-
-### #13 · Off-ramp never auto-transitions → poller never pays out
-The AP config has `events: enabled: false` (no Kafka/SQS). The `HorizonPaymentObserver`
-**detects** the incoming payment (verified in logs: from=wallet, to=treasury, correct
-memo+amount) but never patches the tx `pending_user_transfer_start → pending_anchor`, so
-the business-server poller (acts only on `pending_anchor`) never pays. Both test sells
-had to be **manually nudged**. Off-ramp is NOT hands-free.
-**Fix (recommended):** make the poller do its own detection — each tick, scan
-`pending_user_transfer_start` withdrawals, query Horizon for a matching payment to the
-treasury by memo+amount, patch to `pending_anchor`. Self-contained; no AP-events
-dependency. **Files:** `anchor-template/business-server/src/poller.ts` (+ a Horizon
-payments lookup in `stellar.ts`). *Alt:* enable AP events (needs a queue) — heavier.
 
 ### #6 · DIDIT KYC decision propagates to central profile ONLY via webhook
 `propagateKycToPlatform` is called only from the DIDIT webhook (+ the mock shortcut). The

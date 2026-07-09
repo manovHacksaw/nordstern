@@ -114,9 +114,7 @@ decisions that are still open:
   issuer account, distributed from a distribution account. Stand-in for a real
   INR-backed asset (DL-004).
 - **Anchor Platform version:** the config in `anchor-service/config/` targets AP
-  **v4.4.0** and runs via the official `stellar/anchor-platform:latest` Docker
-  image. The upstream *source* in `anchor-platform/` is for study/reference, not
-  the runtime.
+  **v4.4.0** and runs via the official `stellar/anchor-platform:latest` Docker image.
 - **Business server language:** **TypeScript / Node.js + Express**, using
   `@stellar/stellar-sdk` for Stellar ops. There is no official TS Anchor SDK, so
   the Platform callback API is implemented by hand as a plain HTTP contract
@@ -210,35 +208,42 @@ Full technical map (services, ports, data flow, seams):
 Subprojects have their own tooling. There is no top-level build. Work inside the
 relevant subproject.
 
-### Running the working anchor stack (`anchor-service/`)
+### Running the platform (the ONE supported way)
+
+There is a single canonical run path — the connected platform stack
+(`docker-compose.platform.yml`). The old standalone `anchor-service/docker-compose.yml`
+stack was retired.
 
 ```bash
 cd anchor-service
-node scripts/setup-testnet.mjs   # one-time: creates keypairs, funds via Friendbot, writes .env.testnet
-./scripts/dev.sh                 # sources .env.testnet, runs `docker compose up --build`
+node scripts/setup-base.mjs   # one-time: writes .env.base (MASTER_KEK + config dir)
+./scripts/dev.sh              # builds the per-anchor images + brings up docker-compose.platform.yml
 ```
 
-Services and ports (see `anchor-service/docker-compose.yml`):
+Services and ports (see `docker-compose.platform.yml`):
 
-| Service          | Port | Role                                                        |
-|------------------|------|-------------------------------------------------------------|
-| `db` (Postgres)  | 5432 | `anchordb` (Anchor Platform) + `controldb` (control plane)  |
-| `anchor-platform`| 8080 | SEP server — wallets/users talk here                        |
-| `anchor-platform`| 8085 | Platform API — the business server talks here               |
-| `business-server`| 3000 | Our callbacks + SEP-24 interactive UI + Stellar ops         |
-| `control-plane`  | 3002 | Tenant auth / keypair provisioning (multi-tenant seed)      |
-| `frontend`       | 3001 | Next.js wallet + operator dashboard                         |
+| Service            | Port      | Role                                                       |
+|--------------------|-----------|------------------------------------------------------------|
+| `db` (Postgres)    | 5432      | platformdb / controldb / aggregatordb / anchordb           |
+| `secrets` (LocalStack) | 4566  | AWS Secrets Manager stand-in (PSP/signing creds)           |
+| `traefik`          | 80 / 8090 | Front door — routes `<slug>.anchors.localhost` + consoles  |
+| `platform-api`     | 4000      | Onboarding: auth, applications, drives provisioning        |
+| `control-plane`    | 3002      | The real provisioner (dockerode, keys, asset, per-anchor DB)|
+| `aggregator`       | 3005      | Registry / quote / routing / health                        |
+| `founder-console`  | 4001      | `register.*` — founder journey                             |
+| `admin-console`    | 4002      | `admin.*` — NordStern internal review                      |
 
-- `.env.testnet` does **not** exist until you run the setup script — that's the
-  first failure new agents hit. `dev.sh` will tell you.
+Per-anchor containers (Anchor Platform, business-server, anchor-client, operator-console)
+are created **dynamically** by the control-plane during provisioning — not by compose.
+
+- `.env.base` does **not** exist until you run `setup-base.mjs` — the first failure new
+  agents hit. `dev.sh` will tell you.
 - Smoke-test flows without a wallet: `node scripts/test-deposit.mjs`,
   `node scripts/test-withdrawal.mjs`.
-- Each service also runs standalone: `cd <service> && npm install && npm run dev`
-  (`tsx watch`). Next.js frontends: `npm run dev`.
 
 ### Running the console/landing (`frontend/`)
 
-Next.js apps under `frontend/web` and `frontend/landing` (see their own
+The Next.js `frontend/landing` marketing app (see its own
 `package.json` / `AGENTS.md`). These are **prototypes with synthetic data** —
 running them does not touch the anchor backend.
 
@@ -271,26 +276,20 @@ just config:
 
 ## 8. How to work with the Stellar Anchor Platform install
 
-There are **two** copies of the Anchor Platform in this repo — don't confuse them:
+The MVP runs the **`stellar/anchor-platform:latest` Docker image**, launched **per anchor
+by the control-plane provisioner** (dockerode) with `-s -p -o` (SEP server, Platform API,
+Observer). Its configuration is generated per-anchor by the provisioner
+(`control-plane/src/config-gen.ts`); the templates live in **`anchor-service/config/`**:
+- `anchor-platform.yaml` — SEP toggles, network, callback/Platform API URLs, DB, assets.
+  (Note: SEP-6/31/38 are enabled only because the AP requires them alongside SEP-24; SEP-24
+  is the one active flow.)
+- `stellar.toml` — SEP-1 service-discovery file wallets fetch.
+- `assets.yaml` — the asset definition (deposit/withdraw limits/methods).
 
-1. **`anchor-platform/`** — the **upstream source clone** (Java/Kotlin, Gradle),
-   including `quick-run/` (its own docker-compose using Soroban RPC + Kafka events
-   + a reference server, and SEP-45 contract auth). **This is reference/study
-   material.** Read it to understand AP internals, config schema, and SEP
-   behavior. The MVP does **not** build or run from here.
-2. **The Docker image the MVP actually runs** — `stellar/anchor-platform:latest`,
-   launched by `anchor-service/docker-compose.yml` with `-s -p -o` (SEP server,
-   Platform API, Observer). Its configuration is **`anchor-service/config/`**:
-   - `anchor-platform.yaml` — SEP toggles, network, callback/Platform API URLs,
-     DB, assets. (Note: SEP-6/31/38 are enabled only because the AP requires them
-     alongside SEP-24; SEP-24 is the one active flow.)
-   - `stellar.toml` — SEP-1 service-discovery file wallets fetch.
-   - `assets.yaml` — the `ANCH` asset definition (deposit/withdraw limits/methods).
-   - `*.mainnet.*` variants exist but are not the working path.
-
-Rule of thumb: **to change how the anchor behaves, edit `anchor-service/config/` and
-the business server — not `anchor-platform/`.** Use `anchor-platform/` and
-`sep24-reference-ui/` only to learn the correct contract.
+Rule of thumb: **to change how the anchor behaves, edit `anchor-service/config/` templates +
+`config-gen.ts` and the business server.** (The upstream AP source clone `anchor-platform/`
+and `sep24-reference-ui/` were removed 2026-07-09 — they're on GitHub upstream if you need to
+study AP internals or the SEP-24 reference wallet.)
 
 ---
 

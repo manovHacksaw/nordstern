@@ -1,5 +1,35 @@
 # NordStern Pilot — First Deployment Checklist
 
+> **⚠️ 2026-07-09 UPDATE — read this first; it supersedes the stale steps below.**
+> The product changed since this checklist was written (see `DEPLOY_PREP_REVIEW.md`).
+> The corrections, now handled by **`docker-compose.prod.yml`** + **`.env.prod.example`**:
+>
+> - **Deploy branch:** `main` (PR #3 merged — has the console split, DIDIT, off-ramp, all fixes).
+> - **B2 · Two consoles, not one.** `founder-console` → `register.nordstern.live`,
+>   `admin-console` → `admin.nordstern.live` (both TLS). The prod compose sets the host
+>   routers, `CONSOLE_URL=https://register.nordstern.live`, and
+>   `NEXT_PUBLIC_FOUNDER_URL=https://register.nordstern.live`.
+> - **B3 · DIDIT env is REQUIRED.** KYC is universal DIDIT + fail-closed — set
+>   `DIDIT_API_KEY/WORKFLOW_ID/WEBHOOK_SECRET` in `.env` or provisioned anchors won't boot.
+>   Smoke test expects the **real DIDIT flow**, not mock KYC.
+> - **B4 · Build THREE images** (Phase 2), not one:
+>   ```
+>   docker build -t nordstern/business-server:dev  anchor-template/business-server
+>   docker build -t nordstern/anchor-client:dev     anchor-template/anchor-client
+>   docker build -t nordstern/operator-console:dev  anchor-template/console
+>   ```
+> - **Bring-up (Phase 5) uses BOTH files:**
+>   `docker compose -f docker-compose.platform.yml -f docker-compose.prod.yml --env-file .env up -d --build`
+>   (RDS for all DBs; local Postgres + LocalStack are disabled via profiles; real AWS Secrets
+>   Manager via the instance role; Traefik TLS via Let's Encrypt; no public :5432/:8090.)
+> - **DNS (Phase 6):** wildcard `A * → EIP` covers `register.` / `admin.` / `<slug>.` — plus an
+>   `A @ → EIP`. Reserved slugs (`admin/register/api/console/sep/www`) are now enforced in code.
+> - **Cost control (NEW):** `deploy/scripts/{pause,resume,status}.sh` stop/start EC2 + RDS to
+>   save credits between demos; provisioned anchors auto-resume (RestartPolicy). **Recommended:
+>   apply close to demo day, pause when idle.**
+
+---
+
 Tick top to bottom. Concrete values for THIS pilot are inlined. Full detail lives in
 `README.md § After apply`. Region `ap-south-1`, account `177712846933`, domain
 `nordstern.live` (DNS at Hostinger).

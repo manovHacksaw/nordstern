@@ -98,11 +98,11 @@ jobs:
       - name: npm audit (advisory)
         run: |
           set +e
-          WORKSPACES="platform/api platform/console \
-            anchor-service/business-server anchor-service/control-plane anchor-service/client \
+          WORKSPACES="platform/api platform \
+            anchor-service/control-plane \
             anchor-template/aggregator-service anchor-template/business-server \
-            anchor-template/anchor-client anchor-template/client anchor-template/console \
-            frontend/landing frontend/web docs-website"
+            anchor-template/anchor-client anchor-template/console \
+            frontend/landing docs-website"
           {
             echo "## Dependency audit (advisory — non-blocking)"
             echo ""

@@ -1,36 +1,33 @@
 #!/usr/bin/env bash
-# Start the anchor factory: base stack (db + traefik + control-plane + client).
-# Per-anchor Anchor Platform + business-server containers are created dynamically
-# by the control-plane once an operator provisions an anchor.
-
+# Canonical local dev launcher for the NordStern platform.
+#
+# Builds the per-anchor images the provisioner launches, then brings up the connected
+# platform stack (docker-compose.platform.yml). This is the SINGLE supported way to run
+# NordStern locally — the old standalone anchor-service stack was retired.
+#
+#   node scripts/setup-base.mjs   # one-time: writes .env.base (MASTER_KEK, config dir)
+#   ./scripts/dev.sh              # build images + up the platform
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$SCRIPT_DIR/.."
+ANCHOR_SERVICE="$SCRIPT_DIR/.."
+REPO_ROOT="$ANCHOR_SERVICE/.."
 
-cd "$ROOT"
-
-if [ ! -f .env.base ]; then
-  echo "ERROR: .env.base not found. Run 'node scripts/setup-base.mjs' first."
+if [ ! -f "$ANCHOR_SERVICE/.env.base" ]; then
+  echo "ERROR: anchor-service/.env.base not found. Run 'node scripts/setup-base.mjs' first."
   exit 1
 fi
 
-# Load base env so docker compose can substitute ${MASTER_KEK} etc.
-set -a
-source .env.base
-set +a
+echo "▸ Building the per-anchor images the provisioner launches (from anchor-template/*)…"
+docker build -t nordstern/business-server:dev  "$REPO_ROOT/anchor-template/business-server"
+docker build -t nordstern/anchor-client:dev     "$REPO_ROOT/anchor-template/anchor-client"
+docker build -t nordstern/operator-console:dev  "$REPO_ROOT/anchor-template/console"
 
-# The orchestrator runs per-anchor containers from these images, so make sure
-# they exist locally before provisioning.
-# The hardened business-server (M3 tests + M4 migrations + webhook HMAC + idempotent
-# money release) lives in anchor-template/business-server — that is the money runtime
-# the provisioner must launch. anchor-service/business-server is the older DB-less
-# server and is no longer built (kept for reference only).
-echo "Building business-server image (nordstern/business-server:dev) from anchor-template…"
-docker build -t nordstern/business-server:dev ../anchor-template/business-server
-
-echo "Pulling Anchor Platform image…"
+echo "▸ Pulling the Anchor Platform image…"
 docker pull stellar/anchor-platform:latest
 
-echo "Starting base stack…"
-docker compose up --build "$@"
+echo "▸ Starting the connected platform stack (docker-compose.platform.yml)…"
+docker compose --env-file "$ANCHOR_SERVICE/.env.base" \
+  -f "$REPO_ROOT/docker-compose.platform.yml" up -d --build "$@"
+
+echo "✓ Platform up. Founder: http://register.localhost:4001  Admin: http://admin.localhost:4002"

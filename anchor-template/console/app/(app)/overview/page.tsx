@@ -8,7 +8,7 @@ import { useAnchor } from '@/components/anchor-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Stat } from '@/components/ui/stat';
-import { num, inr, usdc, healthTone } from '@/lib/format';
+import { num, inr, assetAmt, healthTone } from '@/lib/format';
 
 // Real anchor data from this anchor's business-server (/biz/admin/summary). Treasury from
 // Horizon, transaction counts/volume from the Anchor Platform, health checked live.
@@ -23,7 +23,7 @@ interface Summary {
 }
 
 export default function OverviewPage() {
-  const { name, loading } = useAnchor();
+  const { name, assetCode, loading } = useAnchor();
   const { data, isLoading, error } = useQuery({
     queryKey: ['summary'],
     queryFn: () => bizGet<Summary>('/admin/summary'),
@@ -64,7 +64,7 @@ export default function OverviewPage() {
           )}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Treasury (USDC float)" value={<>{num(data?.treasury.usdc)} <span className="text-sm font-medium text-subtle">USDC</span></>} sub={`${num(data?.treasury.xlm)} XLM for fees`} icon={Wallet} loading={busy} />
+            <Stat label={`Treasury (${assetCode} float)`} value={<>{num(data?.treasury.usdc)} <span className="text-sm font-medium text-subtle">{assetCode}</span></>} sub={`${num(data?.treasury.xlm)} XLM for fees`} icon={Wallet} loading={busy} />
             <Stat label="In progress" value={pending} sub={pending ? 'needs monitoring' : 'all settled'} icon={Activity} loading={busy} accent={pending > 0 ? 'danger' : 'default'} />
             <Stat label="Deposits (on-ramp)" value={data?.counts.deposits ?? 0} sub={`${inr(data?.volume.inrCollected)} collected`} icon={ArrowDownToLine} loading={busy} />
             <Stat label="Withdrawals (off-ramp)" value={data?.counts.withdrawals ?? 0} sub={`${inr(data?.volume.inrPaidOut)} paid out`} icon={ArrowUpFromLine} loading={busy} />
@@ -75,7 +75,7 @@ export default function OverviewPage() {
               <CardHeader className="pb-2"><CardTitle className="text-base">On-ramp volume</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <Row label="INR collected" value={inr(data?.volume.inrCollected)} />
-                <Row label="USDC delivered" value={usdc(data?.volume.usdcDeposited)} />
+                <Row label={`${assetCode} delivered`} value={assetAmt(data?.volume.usdcDeposited, assetCode)} />
                 <Row label="Pending deposits" value={inr(data?.fiat.pendingDeposits)} />
                 <Row label="Today's inflow" value={inr(data?.fiat.dailyInflow)} />
               </CardContent>
@@ -83,7 +83,7 @@ export default function OverviewPage() {
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-base">Off-ramp volume</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <Row label="USDC received" value={usdc(data?.volume.usdcWithdrawn)} />
+                <Row label={`${assetCode} received`} value={assetAmt(data?.volume.usdcWithdrawn, assetCode)} />
                 <Row label="INR paid out" value={inr(data?.volume.inrPaidOut)} />
                 <Row label="Completed" value={`${data?.counts.completed ?? 0} / ${data?.counts.total ?? 0}`} />
                 <Row label="Treasury account" value={<span className="font-mono text-xs">{data?.treasury.address ? `${data.treasury.address.slice(0, 6)}…${data.treasury.address.slice(-4)}` : '—'}</span>} />

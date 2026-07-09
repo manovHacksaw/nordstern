@@ -30,6 +30,7 @@ export default function BuyPage() {
   const [step, setStep] = useState<Step>('amount');
   const [amount, setAmount] = useState('');
   const [quote, setQuote] = useState<{ inrAmount: string; inrPerUnit: string } | null>(null);
+  const [limits, setLimits] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [session, setSession] = useState<SettlementSession | null>(null);
@@ -39,6 +40,13 @@ export default function BuyPage() {
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const verified = customer?.kycStatus === 'approved';
+
+  // Load the anchor's min/max once so we can validate as the user types (before any handoff).
+  useEffect(() => {
+    getQuote(1, 'buy')
+      .then((q) => setLimits({ min: q.minAmount ?? null, max: q.maxAmount ?? null }))
+      .catch(() => {});
+  }, []);
 
   // Live quote as the amount changes.
   useEffect(() => {
@@ -51,6 +59,15 @@ export default function BuyPage() {
     }, 250);
     return () => { alive = false; clearTimeout(t); };
   }, [amount]);
+
+  // Validate the amount against the anchor's operational bounds, live.
+  const nAmount = Number(amount);
+  const limitError =
+    limits.min != null && nAmount > 0 && nAmount < limits.min
+      ? `Minimum is ${limits.min} ${brand.assetCode}`
+      : limits.max != null && nAmount > limits.max
+        ? `Maximum is ${limits.max} ${brand.assetCode}`
+        : '';
 
   // Poll transaction status during processing.
   useEffect(() => {
@@ -116,10 +133,14 @@ export default function BuyPage() {
               <span className="text-muted">You pay</span>
               <span className="font-semibold text-ink">{quote ? inr(quote.inrAmount) : '—'}</span>
             </div>
-            {quote && <p className="text-xs text-faint">1 {brand.assetCode} ≈ {inr(quote.inrPerUnit)}</p>}
+            {quote && !limitError && <p className="text-xs text-faint">1 {brand.assetCode} ≈ {inr(quote.inrPerUnit)}</p>}
+            {limitError
+              ? <p className="text-xs font-medium text-[var(--color-danger)]">{limitError}</p>
+              : (limits.min != null && limits.max != null) &&
+                <p className="text-xs text-faint">Between {limits.min} and {limits.max} {brand.assetCode} per transaction</p>}
           </CardBody></Card>
           {error && <Msg tone="error" text={error} />}
-          <Button size="block" disabled={!quote || busy} onClick={() => setStep('confirm')}>Continue <ArrowRight className="h-4 w-4" /></Button>
+          <Button size="block" disabled={!quote || busy || !!limitError} onClick={() => setStep('confirm')}>Continue <ArrowRight className="h-4 w-4" /></Button>
         </>
       )}
 
@@ -130,7 +151,7 @@ export default function BuyPage() {
             <Row label="You pay" value={inr(quote?.inrAmount)} strong />
             <div className="flex items-start gap-2 rounded-xl bg-surface px-3 py-2.5 text-xs text-muted">
               <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>You’ll confirm securely in your wallet to receive your {brand.assetCode}. Then pay with UPI.</span>
+              <span>Your wallet will ask you to approve — this just proves the wallet is yours so we deliver to the right place. It never moves money out of your wallet. Then you pay with UPI.</span>
             </div>
           </CardBody></Card>
           {error && <Msg tone="error" text={error} />}
@@ -146,9 +167,9 @@ export default function BuyPage() {
           <Card><CardBody className="flex flex-col items-center gap-3 py-6 text-center">
             <div className="grid h-12 w-12 place-items-center rounded-full bg-brand/15"><ExternalLink className="h-6 w-6 text-brand-deep" /></div>
             <p className="font-medium text-ink">Complete your payment</p>
-            <p className="max-w-xs text-sm text-muted">Pay {inr(quote?.inrAmount)} securely with UPI to receive {amount} {brand.assetCode}.</p>
+            <p className="max-w-xs text-sm text-muted">A secure payment page opens in a new tab. Pay {inr(quote?.inrAmount)} with UPI or card — you’ll come back here automatically and we’ll deliver {amount} {brand.assetCode} to your wallet.</p>
             <a href={payUrl} target="_blank" rel="noopener noreferrer" className="w-full" onClick={() => setTimeout(() => setStep('processing'), 500)}>
-              <Button size="block">Pay {inr(quote?.inrAmount)}</Button>
+              <Button size="block">Continue to payment · {inr(quote?.inrAmount)}</Button>
             </a>
             <button className="text-sm text-muted hover:text-ink" onClick={() => setStep('processing')}>I’ve paid — track my money</button>
           </CardBody></Card>
