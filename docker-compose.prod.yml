@@ -8,9 +8,15 @@
 # ports. Values marked ${...} come from the git-ignored .env (see .env.prod.example).
 
 services:
-  # Local Postgres is NOT used in prod — RDS is. Park it behind a profile so it doesn't start.
+  # In production, the local db container acts as a lightweight TCP proxy (socat)
+  # forwarding all connections to the real RDS instance. This ensures that the
+  # control-plane and dynamically-provisioned anchors (which are hardcoded to talk
+  # to the "db" host on port 5432) route to RDS automatically without code changes.
   db:
-    profiles: ["localdb-disabled"]
+    image: alpine/socat
+    restart: unless-stopped
+    command: tcp-listen:5432,fork,reuseaddr tcp:${RDS_HOST}:5432
+    ports: []
 
   # LocalStack is dev-only. Prod uses REAL AWS Secrets Manager via the EC2 instance IAM role
   # (see platform-api/control-plane SECRETS_ENDPOINT="" below). Park it so it doesn't start.
@@ -41,7 +47,8 @@ services:
   platform-migrate:
     depends_on: !reset {}
     environment:
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/platformdb
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/platformdb?sslmode=no-verify
+      PGSSLMODE: no-verify
 
   # ── Platform API (prod) → RDS, HTTPS cookies, real domains, real Secrets Manager ──
   platform-api:
@@ -49,7 +56,8 @@ services:
       platform-migrate: { condition: service_completed_successfully }
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/platformdb
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/platformdb?sslmode=no-verify
+      PGSSLMODE: no-verify
       COOKIE_SECURE: "true"
       APP_URL: https://register.nordstern.live
       CONSOLE_URL: https://register.nordstern.live
@@ -74,7 +82,13 @@ services:
   control-plane:
     depends_on: !reset {}
     environment:
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/controldb
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/controldb?sslmode=no-verify
+      DB_HOST: ${RDS_HOST}
+      DB_PORT: 5432
+      DB_NAME: controldb
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PGSSLMODE: no-verify
       ANCHOR_DOMAIN_SUFFIX: nordstern.live
       ANCHOR_PUBLIC_SCHEME: https
       ANCHOR_TRAEFIK_ENTRYPOINT: websecure
@@ -91,7 +105,8 @@ services:
   aggregator:
     depends_on: !reset {}
     environment:
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/aggregatordb
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${RDS_HOST}:5432/aggregatordb?sslmode=no-verify
+      PGSSLMODE: no-verify
     ports: []
 
   # ── Founder console → register.nordstern.live (HTTPS) ──
