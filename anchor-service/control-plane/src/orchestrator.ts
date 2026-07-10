@@ -95,6 +95,9 @@ export interface StackParams {
   signingSecret: string;        // decrypted at inject time
   adapters: AdapterSelection;
   surepass?: { baseUrl: string; token: string };
+  // Fixed INR-per-token price for a custom self-issued token (no market to quote). When set,
+  // the business-server prices with a fixed rate instead of the live CoinGecko feed.
+  assetPriceInr?: string;
 }
 
 // ── Per-anchor database ────────────────────────────────────────────────────────
@@ -259,7 +262,10 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     `KYC_PROVIDER=${p.adapters.kyc}`,
     `DEPOSIT_PROVIDER=${p.adapters.deposit}`,
     `PAYOUT_PROVIDER=${p.adapters.payout}`,
-    `FEE_PROVIDER=${p.adapters.fee}`,
+    // A custom self-issued token has no market — price it with the founder's fixed
+    // INR-per-token rate. USDC (no fixed price) keeps the live CoinGecko feed.
+    `FEE_PROVIDER=${p.assetPriceInr ? 'mock-fixed' : p.adapters.fee}`,
+    ...(p.assetPriceInr ? [`RATE_INR_USD=${p.assetPriceInr}`] : []),
     'ALLOW_MOCK_KYC=true',
     // Shared secret the money-admin API uses to verify the operator's platform session
     // (`ns_access`). Same value platform-api signs with, so a console-authenticated

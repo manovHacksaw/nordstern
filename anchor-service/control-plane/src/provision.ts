@@ -299,6 +299,8 @@ async function runProvision(anchor: any): Promise<void> {
     surepass: adapters?.kyc_provider === 'surepass'
       ? { baseUrl: SUREPASS_BASE_URL, token: SUREPASS_TOKEN }
       : undefined,
+    // Custom self-issued token → price with the founder's fixed INR rate (no market).
+    assetPriceInr: !isExternal ? (brand.assetPriceInr || undefined) : undefined,
   });
   await pool.query(
     `UPDATE tenants SET ap_container_id = $1, biz_container_id = $2 WHERE id = $3`,
