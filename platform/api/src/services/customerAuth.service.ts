@@ -9,12 +9,14 @@ import { badRequest, unauthorized } from '../lib/errors.js';
 // Email-OTP identity: no passwords anywhere. Request → email a one-time code. Verify →
 // find-or-create the customer and issue a session token.
 export const customerAuthService = {
-  async requestOtp(rawEmail: string): Promise<void> {
+  async requestOtp(rawEmail: string, anchorName?: string): Promise<void> {
     const email = rawEmail.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw badRequest('Enter a valid email address');
     const { code, hash } = generateOtp();
     await otpsRepo.create(email, 'customer', hash, new Date(Date.now() + OTP_TTL_MS));
-    await sendOtpEmail(email, code); // ConsoleMailer logs it in dev
+    // Customer audience → the email is themed for the anchor they're signing into (named when
+    // the app tells us). ConsoleMailer logs it in dev.
+    await sendOtpEmail(email, code, { audience: 'customer', anchorName });
   },
 
   async verifyOtp(rawEmail: string, code: string): Promise<{ customer: { id: string; email: string; kycStatus: string; fullName: string | null }; token: string; isNew: boolean }> {

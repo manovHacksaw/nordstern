@@ -22,7 +22,7 @@ export interface Customer { id: string; email: string; fullName: string | null; 
 export interface Wallet { id: string; address: string; label: string | null; network: string; createdAt: string }
 
 export const customer = {
-  requestOtp: (email: string) => req<{ ok: true }>('POST', '/auth/request-otp', { email }),
+  requestOtp: (email: string, anchorName?: string) => req<{ ok: true }>('POST', '/auth/request-otp', { email, anchorName }),
   verifyOtp: (email: string, code: string) => req<{ customer: Customer; isNew: boolean }>('POST', '/auth/verify-otp', { email, code }),
   logout: () => req<{ ok: true }>('POST', '/auth/logout'),
   me: () => req<Customer>('GET', '/me'),
