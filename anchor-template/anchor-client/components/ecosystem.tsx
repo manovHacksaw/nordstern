@@ -14,22 +14,43 @@ import { cn } from '@/lib/cn';
 export const IS_PRODUCTION = process.env.NEXT_PUBLIC_IS_MAINNET === 'true';
 export const ENVIRONMENT = IS_PRODUCTION ? 'Production' : 'Sandbox';
 
-// ── Provider marks ───────────────────────────────────────────────────────────────
+// ── Provider logos (mark + wordmark lockups) ──────────────────────────────────────
+// Real logos, not plain text: NordStern uses its bundled mark; Stellar uses its official
+// logo path; DIDIT uses its brand mark. Used inline as "powered by <logo>" attributions.
 
-// NordStern wordmark. Small, monochrome-friendly, matches the landing/email lockup.
+// NordStern — bundled logo mark + wordmark.
 export function NordSternMark({ className }: { className?: string }) {
   return (
-    <span className={cn('font-semibold tracking-tight text-ink', className)}>
-      Nord<span className="text-brand-deep">Stern</span>
+    <span className={cn('inline-flex items-center gap-1.5 align-middle', className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/nordstern-mark.png" alt="" aria-hidden className="inline-block h-[1.15em] w-[1.15em] rounded-[3px] object-contain" />
+      <span className="font-semibold tracking-tight text-ink">Nord<span className="text-brand-deep">Stern</span></span>
     </span>
   );
 }
 
-// DIDIT wordmark — a small pill, reads as a verified provider stamp.
+// DIDIT — brand mark (rounded check badge) + wordmark.
 export function DiditMark({ className }: { className?: string }) {
   return (
-    <span className={cn('inline-flex items-center rounded-md bg-surface px-1.5 py-0.5 text-[11px] font-bold tracking-wide text-ink', className)}>
-      DIDIT
+    <span className={cn('inline-flex items-center gap-1 align-middle', className)}>
+      <svg viewBox="0 0 24 24" className="h-[1.15em] w-[1.15em]" aria-hidden>
+        <rect width="24" height="24" rx="6" fill="#111111" />
+        <path d="M7 12.4l3 3 7-7.2" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="font-bold tracking-tight text-ink">didit</span>
+    </span>
+  );
+}
+
+// Stellar — official logo mark (two-swoosh rocket) + wordmark.
+export function StellarMark({ className }: { className?: string }) {
+  return (
+    <span className={cn('inline-flex items-center gap-1 align-middle', className)}>
+      <svg viewBox="0 0 236.36 200" className="h-[1em] w-[1.18em]" aria-hidden fill="currentColor">
+        <path d="M203,26.16l-28.46,14.5-137.43,70a82.49,82.49,0,0,1-.7-10.69A81.87,81.87,0,0,1,158.2,28.6l16.29-8.3,2.43-1.24A100,100,0,0,0,18.18,100q0,3.82.29,7.61a18.19,18.19,0,0,1-9.88,17.58L0,129.57V150l25.29-12.89,0,0,8.19-4.18,8.07-4.11v0L186.43,55l16.28-8.29,33.65-17.15V9.14Z" />
+        <path d="M236.36,50,49.78,145,33.5,153.31,0,170.38v20.41l33.27-16.95,28.46-14.5L199.3,89.24A83.45,83.45,0,0,1,200,100,81.87,81.87,0,0,1,78.09,171.36l-1,.53-17.66,9A100,100,0,0,0,218.18,100c0-2.57-.1-5.14-.29-7.68a18.2,18.2,0,0,1,9.87-17.58l8.6-4.38Z" />
+      </svg>
+      <span className="font-semibold tracking-tight text-ink">Stellar</span>
     </span>
   );
 }
