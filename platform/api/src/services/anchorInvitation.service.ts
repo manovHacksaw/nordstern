@@ -66,6 +66,46 @@ function resolveChosenAsset(product: any): { code?: string; name?: string } {
   return { code: raw, name: String(product?.assetName ?? '').trim() || raw };
 }
 
+// Resolve the founder's REDEEM-TIME asset + settlement choice into the concrete asset the
+// anchor provisions with. `external` (USDC) is the default and the only model allowed on
+// mainnet; `self-issued` (a minted custom token) is testnet-only and carries a fixed INR
+// price (there is no market to quote). Only INR settlement is live today. Throws
+// (badRequest) on any disallowed combination so the API is the source of truth, not the UI.
+function resolveRedeemAsset(
+  choice: { model?: 'external' | 'self-issued'; code?: string; name?: string; priceInr?: number } | undefined,
+  legacy: { code?: string; name?: string },
+  settlementCurrency: string | undefined,
+): { code?: string; name?: string; model: 'external' | 'self-issued'; priceInr?: string } {
+  const network = env.STELLAR_NETWORK.toUpperCase() === 'PUBLIC' ? 'mainnet' : 'testnet';
+
+  // Settlement currency — INR only today; everything else is "coming soon".
+  const currency = (settlementCurrency ?? 'INR').toUpperCase();
+  if (currency !== 'INR') {
+    throw badRequest(`${currency} settlement is coming soon — only INR is available today.`);
+  }
+
+  const model: 'external' | 'self-issued' = choice?.model === 'self-issued' ? 'self-issued' : 'external';
+
+  if (model === 'self-issued' && network === 'mainnet') {
+    throw badRequest('Custom self-issued tokens are only available on testnet. Choose USDC to launch on mainnet.');
+  }
+
+  if (model === 'external') {
+    // Circle USDC — the issuer is filled in per-network by the control-plane; live-rate priced.
+    return { code: 'USDC', name: 'USD Coin', model };
+  }
+
+  // Self-issued custom token — needs a code and a fixed INR price.
+  const code = String(choice?.code ?? legacy.code ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 12);
+  if (!code) throw badRequest('A custom token needs an asset code (1–12 letters or digits).');
+  const price = Number(choice?.priceInr);
+  if (!Number.isFinite(price) || price <= 0) {
+    throw badRequest('A custom token needs a fixed price in INR (there is no market to quote it).');
+  }
+  const name = String(choice?.name ?? legacy.name ?? code).trim() || code;
+  return { code, name, model, priceInr: String(price) };
+}
+
 // Map the application's launch mode + supplied credentials to concrete adapters.
 // No-mock-rails rule (2026-07-10): every launched anchor uses REAL identity (DIDIT) and a
 // REAL on-ramp — mock KYC / mock fiat-in are not allowed. `mode` still selects the network
@@ -100,6 +140,11 @@ export const anchorInvitationService = {
     fullName: string;
     credentials?: RedemptionCredentials;
     branding?: Branding;
+    // The founder's asset + settlement choice, made at redeem time (takes precedence over
+    // the application-time asset). `model`: external (distribute Circle USDC) or self-issued
+    // (mint a custom test token — testnet only). Custom tokens carry code/name + a fixed price.
+    asset?: { model?: 'external' | 'self-issued'; code?: string; name?: string; priceInr?: number };
+    settlementCurrency?: string;
   }) {
     const invitation = await this.verify(input.rawToken);
     const branding = sanitizeBranding(input.branding);
@@ -112,7 +157,8 @@ export const anchorInvitationService = {
     const mode: 'test' | 'production' = product.mode === 'production' ? 'production' : 'test';
     // The founder's chosen asset (preset USDC/EURC or a custom code+name). Falls back only if a
     // legacy application predates the asset field. Code is normalised to a valid Stellar code.
-    const asset = resolveChosenAsset(product);
+    const legacyAsset = resolveChosenAsset(product);
+    const asset = resolveRedeemAsset(input.asset, legacyAsset, input.settlementCurrency);
     const creds = input.credentials ?? {};
     // No-mock-rails hard gate (2026-07-10): an anchor may not launch on a mock on-ramp.
     // Require a real fiat-in PSP (Razorpay Key ID + Secret) at redeem. Identity is already
@@ -217,6 +263,8 @@ export const anchorInvitationService = {
           branding,
           assetCode: asset.code,
           assetName: asset.name,
+          assetModel: asset.model,
+          assetPriceInr: asset.priceInr,
         }
       }).returning();
 
@@ -313,6 +361,8 @@ export const anchorInvitationService = {
               branding: payload.branding ?? {},
               assetCode: payload.assetCode, // founder's chosen token (undefined → control-plane derives)
               assetName: payload.assetName,
+              assetModel: payload.assetModel, // per-anchor: external (USDC) vs self-issued (custom)
+              assetPriceInr: payload.assetPriceInr, // fixed price for a custom token (no market)
             });
         const base = { cpAnchorId: handle.cpAnchorId, slug: handle.slug, homeDomain: handle.homeDomain };
         await setJob({ result: { ...base, stage: 'Provisioning started' } });

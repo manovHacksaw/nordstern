@@ -2,7 +2,7 @@ import {
   Keypair, Networks, Horizon, Asset, TransactionBuilder, BASE_FEE, Operation,
 } from '@stellar/stellar-sdk';
 import {
-  IS_EXTERNAL_ASSET, EXTERNAL_ASSET_CODE, EXTERNAL_ASSET_ISSUER, MIN_TREASURY_XLM
+  IS_PUBLIC_NETWORK, EXTERNAL_ASSET_CODE, EXTERNAL_ASSET_ISSUER, MIN_TREASURY_XLM
 } from './assetModel.js';
 
 // ─── Stellar provisioning ──────────────────────────────────────────────────────
@@ -41,8 +41,9 @@ export function assetCodeFromSlug(slug: string): string {
 }
 
 async function fund(kp: Keypair): Promise<void> {
-  if (IS_EXTERNAL_ASSET) {
-    throw new Error('Friendbot funding is forbidden in external-asset mode');
+  // Friendbot exists only on testnet — self-funding must never be attempted on mainnet.
+  if (IS_PUBLIC_NETWORK) {
+    throw new Error('Friendbot funding is forbidden on mainnet (PUBLIC network)');
   }
   const res = await fetch(`${FRIENDBOT_URL}?addr=${kp.publicKey()}`);
   if (!res.ok) throw new Error(`Friendbot failed for ${kp.publicKey()}: ${await res.text()}`);
@@ -54,8 +55,9 @@ async function fund(kp: Keypair): Promise<void> {
  * (provisioning runs once per anchor).
  */
 export async function provisionAssetOnChain(kps: AnchorKeypairs, assetCode: string): Promise<void> {
-  if (IS_EXTERNAL_ASSET) {
-    throw new Error('On-chain asset provisioning is forbidden in external-asset mode');
+  // Self-issuance (Friendbot + mint) is testnet-only — never mint an asset on mainnet.
+  if (IS_PUBLIC_NETWORK) {
+    throw new Error('On-chain asset issuance (mint) is forbidden on mainnet (PUBLIC network)');
   }
   await fund(kps.signing);
   await fund(kps.distribution);
@@ -89,10 +91,9 @@ export async function provisionAssetOnChain(kps: AnchorKeypairs, assetCode: stri
  *  4. USDC balance > 0.
  */
 export async function verifyExternalTreasury(treasuryPublic: string): Promise<void> {
-  if (!IS_EXTERNAL_ASSET) {
-    return;
-  }
-
+  // The caller (provision.ts) decides per-anchor whether this anchor is external and
+  // only calls this in that branch — so we always verify here, never short-circuit on
+  // the global ASSET_MODEL (which may differ from a per-anchor choice).
   try {
     const account = await horizon.loadAccount(treasuryPublic);
 

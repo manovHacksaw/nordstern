@@ -25,8 +25,8 @@ anchorInvitationsRouter.get('/verify', applicationLimiter, ah(async (req, res) =
 // `credentials` (optional) carries the business's PSP keys; they go straight to the
 // SecretStore and are never echoed back.
 anchorInvitationsRouter.post('/redeem', provisionLimiter, ah(async (req, res) => {
-  const { token, subdomain, fullName, credentials, branding } = (req.body ?? {}) as any;
-  const result = await anchorInvitationService.redeem({ rawToken: token, subdomain, fullName, credentials, branding });
+  const { token, subdomain, fullName, credentials, branding, asset, settlementCurrency } = (req.body ?? {}) as any;
+  const result = await anchorInvitationService.redeem({ rawToken: token, subdomain, fullName, credentials, branding, asset, settlementCurrency });
   res.status(201).json(result);
 }));
 

@@ -11,8 +11,8 @@ import {
 } from './orchestrator.js';
 import { Keypair } from '@stellar/stellar-sdk';
 import {
-  IS_EXTERNAL_ASSET, EXTERNAL_ASSET_CODE, EXTERNAL_ASSET_ISSUER,
-  TREASURY_PUBLIC, TREASURY_SECRET, assertExternalAssetConfig,
+  ASSET_MODEL, EXTERNAL_ASSET_CODE, EXTERNAL_ASSET_ISSUER,
+  TREASURY_SECRET, assertExternalAssetConfig,
 } from './assetModel.js';
 
 export const anchorsRouter = Router();
@@ -65,14 +65,23 @@ anchorsRouter.post('/', async (req: AuthedRequest, res: Response) => {
     branding,
     asset_code,
     asset_name,
+    asset_model,
+    asset_price_inr,
   } = req.body as any;
   if (!name) { res.status(400).json({ error: 'name is required' }); return; }
 
   // The founder's chosen asset code (1–12 alphanumerics). Empty → derive from slug later.
   const chosenAssetCode = String(asset_code ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 12) || null;
-  // asset_name has no column; carry it in the open branding map so config-gen can label the asset.
+  // asset_name/model/price have no columns; carry them in the open branding map (same
+  // pattern as assetName) so provisioning can read the per-anchor asset model + price.
   const brandingObj: Record<string, unknown> = branding && typeof branding === 'object' ? { ...branding } : {};
   if (asset_name && typeof asset_name === 'string') brandingObj.assetName = asset_name.trim();
+  if (asset_model === 'external' || asset_model === 'self-issued') brandingObj.assetModel = asset_model;
+  // Fixed INR-per-token price for a custom self-issued token (no market to quote). Keep as a
+  // clean numeric string; ignore junk.
+  if (asset_price_inr != null && Number.isFinite(Number(asset_price_inr)) && Number(asset_price_inr) > 0) {
+    brandingObj.assetPriceInr = String(Number(asset_price_inr));
+  }
 
   let slug = slugify(name);
   if (!slug) { res.status(400).json({ error: 'name must contain letters or digits' }); return; }
@@ -168,14 +177,24 @@ async function runProvision(anchor: any): Promise<void> {
   const brand: Record<string, string> = branding && typeof branding === 'object' ? branding : {};
 
   await setStatus(id, 'provisioning', 'Generating keypairs');
-  
+
+  // Per-anchor asset model (the founder's redeem choice), stored on the tenant's branding
+  // map: 'external' (distribute Circle USDC) or 'self-issued' (mint a custom test token).
+  // Falls back to the control-plane's global ASSET_MODEL default when a legacy/direct-API
+  // anchor didn't specify one — so the existing single-mode stacks are unchanged.
+  const anchorAssetModel =
+    brand.assetModel === 'external' || brand.assetModel === 'self-issued'
+      ? brand.assetModel
+      : ASSET_MODEL;
+  const isExternal = anchorAssetModel === 'external';
+
   let signingKp: Keypair;
   let distributionKp: Keypair;
   let issuerKp: Keypair | null = null;
   let issuerPublic: string;
   let assetCode: string;
 
-  if (IS_EXTERNAL_ASSET) {
+  if (isExternal) {
     assertExternalAssetConfig();
     signingKp = Keypair.random();
     distributionKp = Keypair.fromSecret(TREASURY_SECRET);
@@ -210,7 +229,7 @@ async function runProvision(anchor: any): Promise<void> {
     [id, 'distribution', distributionKp.publicKey(), sealedDistribution.ciphertext, sealedDistribution.iv, sealedDistribution.tag],
   );
 
-  if (!IS_EXTERNAL_ASSET && issuerKp) {
+  if (!isExternal && issuerKp) {
     const sealedIssuer = encryptSecret(issuerKp.secret());
     await pool.query(
       `INSERT INTO anchor_secrets (tenant_id, role, public_key, ciphertext, iv, tag)
@@ -224,7 +243,7 @@ async function runProvision(anchor: any): Promise<void> {
     [assetCode, issuerPublic, id],
   );
 
-  if (IS_EXTERNAL_ASSET) {
+  if (isExternal) {
     await setStatus(id, 'provisioning', 'Verifying external treasury');
     await verifyExternalTreasury(distributionKp.publicKey());
   } else {
