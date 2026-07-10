@@ -5,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@nordstern/shared-auth';
 import { Button, cn } from '@nordstern/shared-ui';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import Image from 'next/image';
 import { navSections } from '@/lib/nav';
 import { Spinner } from '@/components/primitives';
 
@@ -72,12 +73,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-surface">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-line bg-card lg:flex">
         <div className="flex h-16 items-center gap-3 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white shadow-sm">
-            <ShieldCheck className="h-4 w-4" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10 shadow-sm p-1 backdrop-blur-sm">
+            <Image src="/logo.png" alt="NordStern Logo" width={24} height={24} className="" />
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold leading-none text-foreground">NordStern</div>
-            <div className="mt-1 text-xs text-muted-foreground">Internal admin</div>
+            <div className="truncate text-2xl font-semibold sleading-none text-foreground" style={{ fontFamily: 'var(--ff-clear-display)' }}>
+              Nord<span className="text-brand">Stern</span>
+            </div>
           </div>
         </div>
 
@@ -110,8 +112,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="lg:pl-64">
         {/* Mobile header — the sidebar is desktop-only; this keeps sign-out reachable. */}
         <header className="flex h-14 items-center justify-between border-b border-line bg-background px-4 lg:hidden">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <ShieldCheck className="h-4 w-4" />NordStern Admin
+          <div className="flex items-center gap-2.5 text-base font-semibold" style={{ fontFamily: 'var(--ff-clear-display)' }}>
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white/5 ring-1 ring-white/10 shadow-sm p-0.5">
+              <Image src="/logo.png" alt="NordStern Logo" width={18} height={18} className="object-contain drop-shadow-sm" />
+            </div>
+            <div>Nord<span className="text-brand">Stern</span> <span className="text-muted-foreground font-normal text-sm">Admin</span></div>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
         </header>
