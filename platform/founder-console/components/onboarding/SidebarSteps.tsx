@@ -31,11 +31,11 @@ export function SidebarSteps({ currentStep, onStepClick, furthestStep }: Sidebar
 
   return (
     <div className="w-[360px] shrink-0 p-8 lg:p-12 bg-[#eef0fc] border-r border-line hidden lg:flex flex-col h-screen sticky top-0 overflow-y-auto">
-      <div className="mb-16 flex items-center gap-4">
-        <Image src="/full-banner-logo.jpg" alt="NordStern Logo" width={320} height={180} className="w-56 h-auto shrink-0" />
+      <div className="mb-16 flex items-center">
+        <Image src="/full-banner-logo.jpg" alt="NordStern Logo" width={320} height={180} className="w-64 h-auto shrink-0 -ml-8 mix-blend" />
       </div>
 
-      <div className="space-y-12 relative ml-2">
+      <div className="space-y-12 relative">
         {/* Connecting line, with a brand fill that tracks the current step. */}
         <div className="absolute left-[11px] top-4 bottom-8 w-px bg-line -z-10">
           <motion.div
