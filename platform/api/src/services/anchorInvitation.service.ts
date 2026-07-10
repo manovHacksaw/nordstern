@@ -114,12 +114,15 @@ export const anchorInvitationService = {
 
     // Run atomic redemption transaction
     const result = await db.transaction(async (tx) => {
-      // 1. Create User
-      const [user] = await tx.insert(users).values({
-        email: invitation.email.toLowerCase(),
-        fullName: input.fullName,
-        status: 'active'
-      }).returning();
+      // 1. Get or Create User
+      let user = await tx.select().from(users).where(eq(users.email, invitation.email.toLowerCase())).limit(1).then(r => r[0]);
+      if (!user) {
+        [user] = await tx.insert(users).values({
+          email: invitation.email.toLowerCase(),
+          fullName: input.fullName,
+          status: 'active'
+        }).returning();
+      }
 
       // 2. Create Organization
       const [org] = await tx.insert(organizations).values({
