@@ -51,12 +51,14 @@ function sanitizeBranding(input: Branding | undefined): Record<string, string> {
 }
 
 // Map the application's launch mode + supplied credentials to concrete adapters.
-// Real rails only turn on when their credentials are actually present; identity is
-// platform-owned (didit) for production, mock in test (until the Identity Service).
-function resolveAdapters(mode: 'test' | 'production', creds: RedemptionCredentials) {
+// No-mock-rails rule (2026-07-10): every launched anchor uses REAL identity (DIDIT) and a
+// REAL on-ramp — mock KYC / mock fiat-in are not allowed. `mode` still selects the network
+// (test → testnet, production → mainnet); "no mock" means real *sandbox* rails on testnet,
+// not mainnet. The on-ramp requirement is hard-gated in redeem() (must supply Razorpay creds).
+function resolveAdapters(_mode: 'test' | 'production', creds: RedemptionCredentials) {
   return {
-    kyc: mode === 'production' ? 'didit' : 'mock',
-    deposit: creds.razorpay ? 'razorpay' : 'mock',
+    kyc: 'didit',                                     // always real identity — never mock
+    deposit: creds.razorpay ? 'razorpay' : 'mock',    // redeem() refuses launch without razorpay
     payout: creds.cashfree ? 'cashfree' : 'mock',
     fee: 'mock',
   };
@@ -93,6 +95,14 @@ export const anchorInvitationService = {
     const product = (application?.product ?? {}) as any;
     const mode: 'test' | 'production' = product.mode === 'production' ? 'production' : 'test';
     const creds = input.credentials ?? {};
+    // No-mock-rails hard gate (2026-07-10): an anchor may not launch on a mock on-ramp.
+    // Require a real fiat-in PSP (Razorpay Key ID + Secret) at redeem. Identity is already
+    // forced to real DIDIT in resolveAdapters.
+    if (!creds.razorpay?.RAZORPAY_KEY_ID?.trim() || !creds.razorpay?.RAZORPAY_KEY_SECRET?.trim()) {
+      throw badRequest(
+        'A real on-ramp is required to launch: provide your Razorpay Key ID and Secret in the payment section.',
+      );
+    }
     const adapters = resolveAdapters(mode, creds);
 
     // Normalise + validate the chosen subdomain.

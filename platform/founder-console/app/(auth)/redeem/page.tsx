@@ -26,9 +26,10 @@ const schema = z.object({
   logoUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
   supportEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   websiteUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
-  // Optional PSP credentials — go straight to the secret store, never shown again.
-  razorpayKeyId: z.string().optional(),
-  razorpayKeySecret: z.string().optional(),
+  // Razorpay is REQUIRED — anchors launch on a real on-ramp, never mock (no-mock-rails rule).
+  // Keys go straight to the secret store, never shown again.
+  razorpayKeyId: z.string().min(1, 'Required — anchors launch on a real on-ramp'),
+  razorpayKeySecret: z.string().min(1, 'Required — anchors launch on a real on-ramp'),
   cashfreeAppId: z.string().optional(),
   cashfreeSecretKey: z.string().optional(),
 });
@@ -232,9 +233,10 @@ function RedeemForm() {
               <div className="flex items-start gap-2">
                 <ShieldCheck className="h-4 w-4 text-brand mt-0.5 shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Payment credentials (optional).</span> Stored in our
-                  secret store — never in a database, never shown again. Leave blank to launch on mock rails and add
-                  them later from your console.
+                  <span className="font-medium text-foreground">Payment credentials.</span> Stored in our
+                  secret store — never in a database, never shown again. <span className="font-medium text-foreground">Razorpay
+                  is required</span> — anchors launch on a real on-ramp (use test-mode keys for a sandbox anchor).
+                  Cashfree (payouts) is optional.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
