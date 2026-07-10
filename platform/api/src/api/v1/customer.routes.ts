@@ -17,9 +17,9 @@ const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHead
 // ── Auth (no passwords) ──────────────────────────────────────────────────────
 customerRouter.post('/auth/request-otp',
   otpLimiter,
-  validateBody(z.object({ email: z.string().email() })),
+  validateBody(z.object({ email: z.string().email(), anchorName: z.string().max(80).optional() })),
   ah(async (req, res) => {
-    await customerAuthService.requestOtp(req.body.email);
+    await customerAuthService.requestOtp(req.body.email, req.body.anchorName);
     // Always 200 — never reveal whether an account exists.
     res.json({ ok: true });
   }),

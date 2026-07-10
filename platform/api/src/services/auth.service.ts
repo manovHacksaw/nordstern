@@ -37,7 +37,7 @@ export const authService = {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw badRequest('Enter a valid email address');
     const { code, hash } = generateOtp();
     await otpsRepo.create(email, 'operator', hash, new Date(Date.now() + OTP_TTL_MS));
-    try { await sendOtpEmail(email, code); }
+    try { await sendOtpEmail(email, code, { audience: 'operator' }); }
     catch (err) { logger.warn({ err }, 'operator OTP email send failed'); }
   },
 

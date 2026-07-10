@@ -24,7 +24,7 @@ export default function LoginPage() {
   async function sendCode(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError('');
-    try { await api.requestOtp(email.trim()); setStep('code'); }
+    try { await api.requestOtp(email.trim(), brand.name); setStep('code'); }
     catch (err) { setError(err instanceof ApiError ? err.message : 'Could not send code'); }
     finally { setBusy(false); }
   }
