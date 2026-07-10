@@ -76,6 +76,13 @@
   border-color: var(--color-border);
 }
 
+/* Scale the whole console ~10% larger. Applied at the ROOT so the browser recomputes viewport
+   units (vh/vw) against the zoomed viewport — this is the safe place for `zoom` (applying it to a
+   nested flex/min-h-screen container instead makes h-screen overflow and breaks sticky). */
+html {
+  zoom: 1.1;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
