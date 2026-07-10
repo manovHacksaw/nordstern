@@ -1,4 +1,7 @@
 import crypto from 'crypto';
+import { eq } from 'drizzle-orm';
+import { db } from '../db/index.js';
+import { users, anchorInvitations } from '../db/schema.js';
 import { applicationsRepo } from '../repositories/applications.repo.js';
 import { anchorInvitationsRepo } from '../repositories/anchorInvitations.repo.js';
 import { badRequest } from '../lib/errors.js';
@@ -15,6 +18,19 @@ function contactOf(profile: any): { email?: string; name: string } {
 }
 
 export const applicationService = {
+  // Is this email already a founder on the platform? True if it's a registered user OR already
+  // holds an anchor invitation (the sources that make a later approve collide on the unique
+  // invitation email). Used by the /register wizard to warn while typing. Case-insensitive.
+  async emailInUse(email: string): Promise<boolean> {
+    const e = email.trim().toLowerCase();
+    if (!e) return false;
+    const [user, invite] = await Promise.all([
+      db.query.users.findFirst({ where: eq(users.email, e) }),
+      db.query.anchorInvitations.findFirst({ where: eq(anchorInvitations.email, e) }),
+    ]);
+    return Boolean(user || invite);
+  },
+
   async submit(data: { profile: any; product: any }) {
     const app = await applicationsRepo.create(data);
     // Acknowledge receipt (fire-and-forget — never block submission on email).

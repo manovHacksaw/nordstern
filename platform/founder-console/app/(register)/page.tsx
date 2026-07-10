@@ -16,6 +16,8 @@ export default function RegisterWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [furthestStep, setFurthestStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  // Set by BusinessProfile's live check — blocks advancing past step 1 with a taken email.
+  const [emailTaken, setEmailTaken] = useState(false);
 
   const methods = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -43,6 +45,9 @@ export default function RegisterWizard() {
     }
 
     const isValid = await trigger(fieldsToValidate as any);
+
+    // Don't let the founder proceed past step 1 with an email that's already in use.
+    if (currentStep === 1 && emailTaken) return;
 
     if (isValid && currentStep < 3) {
       const nextStep = currentStep + 1;
@@ -129,7 +134,7 @@ export default function RegisterWizard() {
                 
                 {/* Step Content Rendering */}
                 <div className="flex-1">
-                  {currentStep === 1 && <BusinessProfile />}
+                  {currentStep === 1 && <BusinessProfile onEmailTakenChange={setEmailTaken} />}
                   {currentStep === 2 && <ProductRails />}
                   {currentStep === 3 && <ReviewSubmit onEditStep={(step) => setCurrentStep(step)} />}
                 </div>

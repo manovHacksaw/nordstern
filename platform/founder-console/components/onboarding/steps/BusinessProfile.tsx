@@ -1,19 +1,42 @@
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { OnboardingFormValues, isPublicEmail } from '@/lib/validations/onboarding';
 import { Label } from '@nordstern/shared-ui';
 import { Input } from '@nordstern/shared-ui';
 import { cn } from '@nordstern/shared-ui';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, Loader2, CheckCircle2 } from 'lucide-react';
 
 const MARKETS = ['India', 'United States', 'Brazil', 'Nigeria', 'European Union', 'Singapore', 'Mexico'];
 const COUNTRIES = ['India', 'United States', 'United Kingdom', 'Singapore', 'Brazil', 'Nigeria', 'Germany', 'Other'];
 const FIAT = ['INR', 'USD', 'EUR', 'BRL', 'NGN', 'SGD'];
 
-export function BusinessProfile() {
+export function BusinessProfile({ onEmailTakenChange }: { onEmailTakenChange?: (taken: boolean) => void }) {
   const { register, watch, setValue, formState: { errors } } = useFormContext<OnboardingFormValues>();
 
   const selectedMarkets = watch('companyProfile.targetMarkets') || [];
   const businessEmail = watch('companyProfile.businessEmail') || '';
+
+  // Live "is this email already a founder?" check — warn while typing so the founder fixes it
+  // now instead of hitting a collision later at approval. Debounced; only runs on a valid email.
+  const [emailCheck, setEmailCheck] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  useEffect(() => {
+    const email = businessEmail.trim().toLowerCase();
+    if (!/.+@.+\..+/.test(email)) { setEmailCheck('idle'); onEmailTakenChange?.(false); return; }
+    setEmailCheck('checking');
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/v1/applications/email-available?email=${encodeURIComponent(email)}`, { signal: ctrl.signal });
+        const j = await r.json();
+        const taken = j.available === false;
+        setEmailCheck(taken ? 'taken' : 'available');
+        onEmailTakenChange?.(taken);
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') { setEmailCheck('idle'); onEmailTakenChange?.(false); }
+      }
+    }, 450);
+    return () => { clearTimeout(t); ctrl.abort(); };
+  }, [businessEmail, onEmailTakenChange]);
 
   const toggleMarket = (m: string) => {
     if (selectedMarkets.includes(m)) {
@@ -52,7 +75,16 @@ export function BusinessProfile() {
             <Label htmlFor="companyProfile.businessEmail">Email</Label>
             <Input id="companyProfile.businessEmail" type="email" placeholder="you@mizupay.io" {...register('companyProfile.businessEmail')} />
             <p className="text-xs text-subtle">Your invitation and operator sign-in will be tied to this address.</p>
-            {businessEmail && isPublicEmail(businessEmail) && (
+            {emailCheck === 'checking' && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-subtle"><Loader2 className="h-3 w-3 animate-spin" /> Checking availability…</p>
+            )}
+            {emailCheck === 'taken' && (
+              <p className="mt-1 text-xs font-medium text-destructive">This email is already registered as a founder. Use a different email or sign in to your existing console.</p>
+            )}
+            {emailCheck === 'available' && (
+              <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-600"><CheckCircle2 className="h-3 w-3" /> Email is available.</p>
+            )}
+            {emailCheck !== 'taken' && businessEmail && isPublicEmail(businessEmail) && (
               <p className="text-xs text-amber-600 mt-1 font-medium">A corporate email fast-tracks production approval (a personal email is fine for Test Mode).</p>
             )}
             {errors.companyProfile?.businessEmail && <p className="text-xs text-destructive mt-1">{errors.companyProfile.businessEmail.message}</p>}
