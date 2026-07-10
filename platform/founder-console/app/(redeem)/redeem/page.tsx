@@ -8,7 +8,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
 import { api, ApiError } from '@nordstern/shared-auth';
-import { CheckCircle2, Loader2, Clock, ArrowRight, ArrowLeft, CornerDownLeft, Coins, ShieldCheck, Palette } from 'lucide-react';
+import { CheckCircle2, Loader2, Clock, ArrowRight, ArrowLeft, CornerDownLeft, ShieldCheck, Palette, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { FIAT, COMING_SOON_LABEL } from '../../../lib/onboarding/availability';
 
 const schema = z.object({
@@ -60,6 +60,18 @@ function stageToStep(stage: string | null | undefined): number {
   return 0;
 }
 
+// Verify an invitation token up front (before the founder fills anything in): is it genuine,
+// unused, unexpired — and which network will the anchor launch on? Returns the network so the
+// UI can gate the custom-token option, or an actionable error to show instead of the form.
+async function checkToken(token: string): Promise<{ ok: boolean; network?: 'testnet' | 'mainnet'; error?: string }> {
+  try {
+    const r = await api.get(`/anchor-invitations/verify?token=${encodeURIComponent(token)}`) as any;
+    return { ok: true, network: r?.network === 'mainnet' ? 'mainnet' : 'testnet' };
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiError ? e.message : 'This invitation is invalid or has expired.' };
+  }
+}
+
 type Evidence = { assetCode?: string; issuer?: string; webAuth?: string; network?: 'testnet' | 'public' };
 
 async function loadEvidence(domain: string): Promise<Evidence | null> {
@@ -83,12 +95,11 @@ async function loadEvidence(domain: string): Promise<Evidence | null> {
 function Brand({ network }: { network: 'testnet' | 'mainnet' }) {
   return (
     <div className="flex items-center justify-between px-6 py-6 sm:px-10">
-      <div className="flex items-center gap-2">
-        <Image src="/logo.png" alt="NordStern" width={28} height={28} className="h-7 w-7" />
-        <span className="text-lg font-semibold tracking-tight">
-          <span className="text-ink">Nord</span><span className="text-brand">Stern</span>
-        </span>
-      </div>
+      {/* Match the landing lockup: mark (logo-dark.png) + wordmark. */}
+      <span className="inline-flex items-center gap-2">
+        <Image src="/logo-dark.png" alt="NordStern" width={40} height={40} priority className="h-9 w-9 rounded-[10px] object-contain" />
+        <span className="text-lg font-semibold tracking-tight text-ink">NordStern</span>
+      </span>
       <span className="rounded-pill border border-line px-3 py-1 text-xs font-medium capitalize text-subtle">
         {network}
       </span>
@@ -111,6 +122,17 @@ function Q({ index, title, helper, children }: { index: number; title: string; h
   );
 }
 
+// Official USDC mark (Circle blue + white $) — inline SVG, self-contained.
+function UsdcMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+      <circle cx="16" cy="16" r="16" fill="#2775CA" />
+      <path fill="#fff" d="M20.4 18.55c0-2.37-1.42-3.18-4.27-3.52-2.03-.27-2.44-.81-2.44-1.76 0-.95.68-1.56 2.03-1.56 1.22 0 1.9.41 2.23 1.42a.5.5 0 0 0 .48.34h1.08c.27 0 .47-.2.47-.47v-.07a3.36 3.36 0 0 0-3.05-2.7v-1.62c0-.27-.2-.47-.54-.54h-1.02c-.27 0-.47.2-.54.54v1.56c-2.03.27-3.32 1.62-3.32 3.32 0 2.24 1.36 3.12 4.2 3.46 1.9.34 2.5.75 2.5 1.83 0 1.08-.94 1.83-2.23 1.83-1.76 0-2.37-.75-2.57-1.76a.5.5 0 0 0-.48-.4h-1.15c-.27 0-.47.2-.47.47v.07c.27 1.69 1.36 2.9 3.59 3.25v1.63c0 .27.2.47.54.54h1.02c.27 0 .47-.2.54-.54v-1.63c2.03-.34 3.39-1.76 3.39-3.52z"/>
+      <path fill="#fff" d="M12.62 25.5c-5.28-1.9-8-7.79-6.03-13a10.16 10.16 0 0 1 6.03-6.03c.27-.14.4-.34.4-.68v-.94c0-.27-.13-.47-.4-.54-.07 0-.2 0-.34.07A12.05 12.05 0 0 0 4.5 16c0 5.15 3.32 9.68 8.12 11.4.27.13.54 0 .6-.27.07-.07.07-.14.07-.27v-.95c0-.2-.2-.4-.67-.4zm6.83-21.4c-.27-.13-.54 0-.6.27-.07.07-.07.14-.07.27v.95c0 .27.2.47.4.6 5.28 1.9 8 7.79 6.03 13a10.16 10.16 0 0 1-6.03 6.03c-.27.14-.4.34-.4.68v.94c0 .27.13.47.4.54.07 0 .2 0 .34-.07A12.05 12.05 0 0 0 27.5 16c0-5.15-3.39-9.68-8.05-11.4z"/>
+    </svg>
+  );
+}
+
 // Big underline-style input — the typeform signature.
 function BigInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
@@ -123,6 +145,66 @@ function BigInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 
 const FIELD_LABEL = 'mb-1.5 block text-sm font-medium text-subtle';
 const SMALL_INPUT = 'w-full rounded-lg border border-line bg-canvas px-3.5 py-2.5 text-[15px] text-ink outline-none transition-colors placeholder:text-subtle/50 focus:border-brand';
+
+// Logo upload → Vercel Blob (POST /blob-upload). Owns its own upload state; on success it
+// calls onChange with the public Blob URL, which the form stores as `logoUrl`.
+function LogoUpload({ value, onChange }: { value?: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function pick(file: File) {
+    setErr(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/blob-upload', { method: 'POST', body: fd });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.url) throw new Error(j.error || 'Upload failed');
+      onChange(j.url);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <label className={FIELD_LABEL}>Logo</label>
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface">
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt="Logo preview" className="h-full w-full object-contain" />
+          ) : (
+            <ImageIcon className="h-6 w-6 text-subtle/50" />
+          )}
+        </div>
+        <div className="flex-1">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-canvas px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:border-brand">
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {uploading ? 'Uploading…' : value ? 'Replace logo' : 'Upload logo'}
+            <input
+              type="file"
+              accept="image/png,image/svg+xml,image/jpeg,image/webp"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void pick(f); e.currentTarget.value = ''; }}
+            />
+          </label>
+          {value && !uploading && (
+            <button type="button" onClick={() => onChange('')} className="ml-3 text-sm text-subtle underline-offset-2 hover:text-ink hover:underline">
+              Remove
+            </button>
+          )}
+          <p className="mt-1.5 text-xs text-subtle">Square (1:1), SVG or transparent PNG, under 2 MB.</p>
+        </div>
+      </div>
+      {err && <p className="mt-1.5 text-xs text-destructive">{err}</p>}
+    </div>
+  );
+}
 
 function RedeemTypeform() {
   const router = useRouter();
@@ -140,8 +222,20 @@ function RedeemTypeform() {
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('mainnet');
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
+  const [verifyingToken, setVerifyingToken] = useState(false);
 
   const tokenFromUrl = !!searchParams.get('token');
+  // Dev-only preview (?network=…) bypasses token verification so the UI can be designed
+  // locally without a real invitation. Never active in production.
+  const devPreview = process.env.NODE_ENV !== 'production'
+    && (searchParams.get('network') === 'testnet' || searchParams.get('network') === 'mainnet');
+  // Up-front token check. When the token arrives via URL we verify BEFORE showing the form;
+  // 'checking' → spinner, 'invalid' → a dead-end screen, 'valid' → proceed. Manual token
+  // entry (no URL token) is verified at the token step instead, so it starts 'valid'.
+  const [tokenStatus, setTokenStatus] = useState<'checking' | 'valid' | 'invalid'>(
+    tokenFromUrl && !devPreview ? 'checking' : 'valid',
+  );
+  const [tokenErr, setTokenErr] = useState('');
 
   const { register, handleSubmit, setValue, watch, trigger, getValues, formState: { errors, isSubmitting } } = useForm<Form>({
     resolver: zodResolver(schema),
@@ -157,12 +251,23 @@ function RedeemTypeform() {
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) setValue('token', token);
-    if (token) {
-      api.get(`/anchor-invitations/verify?token=${encodeURIComponent(token)}`)
-        .then((r: any) => { if (r?.network === 'testnet' || r?.network === 'mainnet') setNetwork(r.network); })
-        .catch(() => {});
+    // Dev-only display override: ?network=testnet|mainnet lets us design both asset states
+    // (and skip token verification) locally. It only affects what's SHOWN — the backend
+    // re-validates the token AND the network at redeem, so this cannot be abused.
+    if (devPreview) {
+      setNetwork(searchParams.get('network') as 'testnet' | 'mainnet');
+      return;
     }
-  }, [searchParams, setValue]);
+    // Verify the invitation up front: genuine + which network. Invalid → dead-end screen
+    // (rather than letting the founder fill everything in and fail only at Launch).
+    if (token) {
+      setTokenStatus('checking');
+      checkToken(token).then((r) => {
+        if (r.ok) { setTokenStatus('valid'); if (r.network) setNetwork(r.network); }
+        else { setTokenStatus('invalid'); setTokenErr(r.error || 'This invitation is invalid or has expired.'); }
+      });
+    }
+  }, [searchParams, setValue, devPreview]);
 
   useEffect(() => {
     if (network === 'mainnet' && assetModel === 'self-issued') setValue('assetModel', 'external');
@@ -190,6 +295,16 @@ function RedeemTypeform() {
     if (fields.length) {
       const ok = await trigger(fields as any);
       if (!ok) return;
+    }
+    // Manual token entry (no URL token): verify it's genuine BEFORE advancing, so an invalid
+    // token is caught here with immediate feedback — not after the whole flow at Launch.
+    if (id === 'token' && !devPreview) {
+      setError('');
+      setVerifyingToken(true);
+      const r = await checkToken(getValues('token'));
+      setVerifyingToken(false);
+      if (!r.ok) { setError(r.error || 'This invitation is invalid or has expired.'); return; }
+      if (r.network) setNetwork(r.network);
     }
     if (id === 'review') { void handleSubmit(onSubmit)(); return; }
     setDir(1);
@@ -261,6 +376,24 @@ function RedeemTypeform() {
     }
   }
 
+  // ── Up-front token verification gates (URL-token path) ───────────────────────────
+  if (tokenFromUrl && tokenStatus === 'checking') {
+    return (
+      <ScreenShell network={network}>
+        <div className="flex flex-col items-center gap-3 text-subtle">
+          <Loader2 className="h-6 w-6 animate-spin text-brand" />
+          <p className="text-sm">Verifying your invitation…</p>
+        </div>
+      </ScreenShell>
+    );
+  }
+  if (tokenFromUrl && tokenStatus === 'invalid') {
+    return <CenterScreen network={network} icon={<AlertCircle className="h-14 w-14 text-destructive" />}
+      title="This invitation isn't valid"
+      body={tokenErr || 'This invitation is invalid, has expired, or has already been used. Please check the link in your approval email.'}
+      cta={{ label: 'Go to login', onClick: () => router.push('/login') }} />;
+  }
+
   // ── Terminal / async screens (own full-viewport layouts) ─────────────────────────
   if (success) return <SuccessScreen slug={slug} homeDomain={homeDomain} evidence={evidence} network={network} onLogin={() => router.push('/login')} />;
   if (gated) return <CenterScreen network={network} icon={<Clock className="h-14 w-14 text-brand" />} title="Application received — production review"
@@ -317,12 +450,12 @@ function RedeemTypeform() {
             <button
               type="button"
               onClick={() => void advance()}
-              disabled={isSubmitting}
+              disabled={isSubmitting || verifyingToken}
               className="inline-flex items-center gap-2 rounded-pill bg-brand px-6 py-2.5 text-base font-semibold text-ink transition-colors hover:bg-brand-600 disabled:opacity-60"
             >
-              {isSubmitting && isLast ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {id === 'welcome' ? 'Start' : isLast ? 'Launch anchor' : 'OK'}
-              {!isLast && <CheckCircle2 className="h-4 w-4" />}
+              {(isSubmitting && isLast) || verifyingToken ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {verifyingToken ? 'Verifying…' : id === 'welcome' ? 'Start' : isLast ? 'Launch anchor' : 'OK'}
+              {!isLast && !verifyingToken && <CheckCircle2 className="h-4 w-4" />}
             </button>
           </div>
         </div>
@@ -338,12 +471,13 @@ function RedeemTypeform() {
         return (
           <div>
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink sm:text-[2.6rem]">
-              Launch your <span className="text-brand">Stellar anchor</span>.
+              Congratulations — you&apos;re in.
             </h1>
             <p className="mt-4 max-w-md text-lg leading-relaxed text-subtle">
-              A few quick questions and your on/off-ramp goes live — SEP servers, KYC, payments, and an operator console, all wired for you.
+              Your business passed review. Let&apos;s launch your <span className="font-medium text-ink">Stellar anchor</span> — SEP
+              servers, KYC, payments, and an operator console, all wired for you.
             </p>
-            <p className="mt-8 text-sm text-subtle">Takes about 2 minutes.</p>
+            <p className="mt-8 text-sm text-subtle">A few quick questions · about 2 minutes.</p>
           </div>
         );
       case 'token':
@@ -382,7 +516,7 @@ function RedeemTypeform() {
               <button type="button" onClick={() => setValue('assetModel', 'external')}
                 className={`rounded-2xl border p-4 text-left transition ${assetModel === 'external' ? 'border-brand bg-brand-50' : 'border-line hover:border-brand/50'}`}>
                 <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-brand" />
+                  <UsdcMark className="h-5 w-5" />
                   <span className="text-base font-semibold text-ink">USDC</span>
                 </div>
                 <p className="mt-1.5 text-sm text-subtle">Circle USD Coin · live price</p>
@@ -448,8 +582,8 @@ function RedeemTypeform() {
                 <input placeholder="e.g. MizuPay" {...register('displayName')} className={SMALL_INPUT} />
               </div>
               <div className="sm:col-span-2">
-                <label className={FIELD_LABEL}>Logo URL</label>
-                <input placeholder="https://…/logo.png" {...register('logoUrl')} className={SMALL_INPUT} />
+                <input type="hidden" {...register('logoUrl')} />
+                <LogoUpload value={watch('logoUrl')} onChange={(url) => setValue('logoUrl', url, { shouldValidate: true })} />
                 {errors.logoUrl && <p className="mt-1 text-xs text-destructive">{errors.logoUrl.message}</p>}
               </div>
               <div>
