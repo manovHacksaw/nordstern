@@ -104,7 +104,10 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.page-enter { animation: page-enter 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+/* fill-mode is deliberately NOT `forwards`/`both`: a persisting `transform` would make this
+   element the containing block for position:fixed children (breaking drawers/modals inside a
+   page). The final keyframe equals the natural state, so reverting after is seamless. */
+.page-enter { animation: page-enter 0.4s cubic-bezier(0.22,1,0.36,1); }
 
 /* Shimmer sweep for skeleton placeholders (softer than a raw pulse). */
 @keyframes shimmer { 100% { transform: translateX(100%); } }

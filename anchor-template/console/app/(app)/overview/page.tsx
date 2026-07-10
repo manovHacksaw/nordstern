@@ -9,6 +9,7 @@ import { bizGet } from '@/lib/api';
 import { useAnchor } from '@/components/anchor-context';
 import { num, inr, relativeTime } from '@/lib/format';
 import { cn } from '@/lib/cn';
+import { ExplorerLink } from '@/components/explorer-link';
 
 // Real anchor data from this anchor's business-server (/biz/admin/summary). Every number here
 // is derived from actual transactions, the Platform DB, and Horizon — nothing is fabricated.
@@ -144,8 +145,8 @@ export default function OverviewPage() {
             <PanelHead title="Reserve accounts" />
             {data && (
               <>
-                <AcctRow name="Stellar distribution" meta={`${short(data.reserveAccounts.distribution.address)} · issues ${assetCode}`} badge={assetCode} value={num(data.reserveAccounts.distribution.assetBalance)} />
-                <AcctRow name="Issuer account" meta={`${short(data.reserveAccounts.issuer.address)} · asset control`} badge="XLM" value="—" />
+                <AcctRow name="Stellar distribution" address={data.reserveAccounts.distribution.address} note={`issues ${assetCode}`} badge={assetCode} value={num(data.reserveAccounts.distribution.assetBalance)} />
+                <AcctRow name="Issuer account" address={data.reserveAccounts.issuer.address} note="asset control" badge="XLM" value="—" />
               </>
             )}
           </Card>
@@ -258,12 +259,14 @@ function QueueRow({ Icon, tone, label, meta, value, href, style }: { Icon: React
   );
 }
 
-function AcctRow({ name, meta, badge, value }: { name: string; meta: string; badge: string; value: string }) {
+function AcctRow({ name, address, note, badge, value }: { name: string; address: string; note: string; badge: string; value: string }) {
   return (
     <div className="flex items-center gap-3 py-2.5">
       <div className="min-w-0 flex-1">
         <p className={cn('truncate text-[13px] font-medium', INK)}>{name}</p>
-        <p className="truncate font-mono text-[10px] text-subtle">{meta}</p>
+        <p className="truncate font-mono text-[10px] text-subtle">
+          <ExplorerLink kind="account" value={address} icon={false}>{short(address)}</ExplorerLink> · {note}
+        </p>
       </div>
       <span className="rounded-md bg-brand/[0.12] px-1.5 py-0.5 text-[9px] font-bold text-brand-800">{badge}</span>
       <span className={cn('w-28 text-right text-[13px] font-medium tabular-nums', INK)}>{value}</span>
@@ -282,32 +285,53 @@ function HealthRow({ ok, name, status }: { ok: boolean; name: string; status: st
 }
 
 // Soft brand area chart from the REAL 14-day movement series (net = inflow − outflow).
+// The grid/area/line live in a stretched SVG (fine for straight strokes); the end-point dot
+// is a separate HTML element so it stays a PERFECT circle (an SVG circle in a
+// preserveAspectRatio="none" viewBox would squash into an ellipse).
 function FlowChart({ series }: { series: Summary['movementSeries'] }) {
-  const W = 300, H = 88, pad = 6;
+  const W = 300, H = 88, pad = 8;
   const vals = series.map((d) => Number(d.inflow) - Number(d.outflow));
-  const hasData = series.length > 1 && vals.some((v) => v !== 0);
+  const hasData = series.length > 1 && new Set(vals).size > 1; // needs real variation, not a flat line
   const max = Math.max(1, ...vals.map(Math.abs));
-  const pts = (hasData ? vals : series.map(() => 0)).map((v, i) => {
+  const pts = vals.map((v, i) => {
     const x = pad + (i / Math.max(1, series.length - 1)) * (W - pad * 2);
     const y = H - pad - ((v + max) / (2 * max)) * (H - pad * 2);
     return [x, y] as const;
   });
   const line = pts.length ? 'M' + pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L') : `M${pad},${H / 2} L${W - pad},${H / 2}`;
   const last = pts[pts.length - 1] ?? [W - pad, H / 2];
+  // Dot position as a percentage of the box, for the HTML overlay.
+  const dotLeft = `${(last[0] / W) * 100}%`;
+  const dotTop = `${(last[1] / H) * 100}%`;
+
+  if (!hasData) {
+    // Not enough movement to plot — a calm baseline beats an ugly flat lollipop.
+    return (
+      <div className="flex h-28 flex-col items-center justify-center gap-1 rounded-xl bg-surface/40">
+        <div className="h-px w-2/3 bg-line" />
+        <p className="text-[11.5px] text-subtle">Not enough activity to chart yet</p>
+      </div>
+    );
+  }
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-28 w-full" aria-hidden>
-      {[26, 52, 78].map((y) => <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="#1c1b26" strokeOpacity={0.05} />)}
-      <path d={`${line} L${last[0].toFixed(1)},${H} L${pad},${H} Z`} fill="url(#ns-flow)" opacity={0.9} />
-      <path d={line} pathLength={1} fill="none" stroke="var(--color-brand-700)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={1} style={draw(T.chart)} />
-      <circle cx={last[0]} cy={last[1]} r={6} fill="var(--color-brand-700)" opacity={0.14} />
-      <circle cx={last[0]} cy={last[1]} r={3} fill="var(--color-brand-700)" />
-      <defs>
-        <linearGradient id="ns-flow" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--color-brand)" stopOpacity={0.26} />
-          <stop offset="1" stopColor="var(--color-brand)" stopOpacity={0} />
-        </linearGradient>
-      </defs>
-    </svg>
+    <div className="relative h-28 w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full" aria-hidden>
+        {[26, 52, 78].map((y) => <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="#1c1b26" strokeOpacity={0.05} />)}
+        <path d={`${line} L${last[0].toFixed(1)},${H} L${pad},${H} Z`} fill="url(#ns-flow)" opacity={0.9} />
+        <path d={line} pathLength={1} fill="none" stroke="var(--color-brand-700)" strokeWidth={2} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" strokeDasharray={1} style={draw(T.chart)} />
+        <defs>
+          <linearGradient id="ns-flow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="var(--color-brand)" stopOpacity={0.26} />
+            <stop offset="1" stopColor="var(--color-brand)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+      </svg>
+      {/* Perfect-circle end-point marker (HTML, so it can't be squashed by the SVG scaling). */}
+      <span className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2" style={{ left: dotLeft, top: dotTop }}>
+        <span className="block size-3 rounded-full bg-brand-700/20" />
+        <span className="absolute left-1/2 top-1/2 block size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-700" />
+      </span>
+    </div>
   );
 }

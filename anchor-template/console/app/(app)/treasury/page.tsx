@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Stat } from '@/components/ui/stat';
 import { num } from '@/lib/format';
+import { ExplorerLink } from '@/components/explorer-link';
 import { useState } from 'react';
 
 interface Summary { treasury: { address: string; usdc: string | null; xlm: string | null }; asset: { code: string } }
@@ -55,7 +56,7 @@ export default function TreasuryPage() {
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-base">Treasury account</CardTitle></CardHeader>
         <CardContent>
-          <p className="break-all font-mono text-xs text-subtle">{summary.data?.treasury.address ?? '—'}</p>
+          <ExplorerLink kind="account" value={summary.data?.treasury.address} className="break-all font-mono text-xs text-subtle">{summary.data?.treasury.address ?? '—'}</ExplorerLink>
         </CardContent>
       </Card>
 

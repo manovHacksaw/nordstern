@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
 import { num, dateTime, shortId, txStatus, legAmount } from '@/lib/format';
+import { ExplorerLink } from '@/components/explorer-link';
 
 interface Tx {
   id: string;
@@ -149,12 +150,12 @@ function TxDrawer({ tx, onClose }: { tx: Tx; onClose: () => void }) {
 
         <dl className="space-y-2.5 text-sm">
           <Field label="Transaction ID" value={<span className="font-mono text-xs">{tx.id}</span>} />
-          <Field label="Amount in" value={num(tx.amountIn)} />
-          <Field label="Amount out" value={num(tx.amountOut)} />
-          <Field label="Expected" value={num(tx.amountExpected)} />
+          <Field label="Amount in" value={legAmount(tx.kind, 'in', tx.amountIn)} />
+          <Field label="Amount out" value={legAmount(tx.kind, 'out', tx.amountOut)} />
+          <Field label="Expected" value={legAmount(tx.kind, tx.kind === 'deposit' ? 'out' : 'in', tx.amountExpected)} />
           <Field label="Memo" value={<span className="font-mono text-xs">{tx.memo ?? '—'}</span>} />
-          <Field label="Destination" value={<span className="font-mono text-xs">{shortId(tx.destination, 8)}</span>} />
-          <Field label="Stellar tx" value={<span className="font-mono text-xs">{shortId(tx.stellarTx, 8)}</span>} />
+          <Field label="Destination" value={<ExplorerLink kind="account" value={tx.destination} className="font-mono text-xs">{shortId(tx.destination, 8)}</ExplorerLink>} />
+          <Field label="Stellar tx" value={<ExplorerLink kind="tx" value={tx.stellarTx} className="font-mono text-xs">{shortId(tx.stellarTx, 8)}</ExplorerLink>} />
           <Field label="Started" value={dateTime(tx.startedAt)} />
           <Field label="Completed" value={dateTime(tx.completedAt)} />
         </dl>

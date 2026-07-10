@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
 import { num, dateTime, shortId } from '@/lib/format';
+import { ExplorerLink } from '@/components/explorer-link';
 
 // Real, transaction-derived customers (see backend /users). We show only what we truly
 // know; contact identity, tiers and account-freeze have no backend and are not faked.
@@ -50,7 +51,7 @@ export default function CustomersPage() {
                 <TBody>
                   {rows.map((u) => (
                     <TR key={u.id} className="cursor-pointer hover:bg-surface" onClick={() => setSelected(u)}>
-                      <TD className="pl-4 font-mono text-xs">{shortId(u.account, 8)}</TD>
+                      <TD className="pl-4"><ExplorerLink kind="account" value={u.account} className="font-mono text-xs">{shortId(u.account, 8)}</ExplorerLink></TD>
                       <TD><Badge tone={kycTone(u.kycStatus)}>{u.kycStatus ?? 'unknown'}</Badge></TD>
                       <TD>{u.txCount}</TD>
                       <TD>{num(u.completedVolume)}</TD>
@@ -81,7 +82,7 @@ function CustomerDrawer({ c, onClose }: { c: Customer; onClose: () => void }) {
           <button onClick={onClose} className="rounded-md p-1 text-subtle hover:bg-surface"><X className="h-5 w-5" /></button>
         </div>
 
-        <p className="break-all font-mono text-xs text-subtle">{c.account}</p>
+        <ExplorerLink kind="account" value={c.account} className="break-all font-mono text-xs text-subtle">{c.account}</ExplorerLink>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Metric label="KYC status" value={<Badge tone={kycTone(c.kycStatus)}>{c.kycStatus ?? 'unknown'}</Badge>} />

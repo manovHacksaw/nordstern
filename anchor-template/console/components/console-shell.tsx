@@ -43,7 +43,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       {/* Collapsible dark rail */}
       <aside
         className={cn(
-          'sticky top-0 hidden h-screen shrink-0 flex-col justify-between bg-noir py-5 transition-[width] duration-200 ease-out lg:flex',
+          'sticky top-0 z-30 hidden h-screen shrink-0 flex-col justify-between bg-noir py-5 transition-[width] duration-200 ease-out lg:flex',
           expanded ? 'w-[228px] px-4' : 'w-[68px] items-center',
         )}
       >
