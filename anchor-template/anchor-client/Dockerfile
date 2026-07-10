@@ -1,6 +1,12 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Stellar Wallets Kit transitively pulls hardware-wallet deps (Ledger/Trezor -> `usb`),
+# whose install compiles native bindings. Give the BUILDER the toolchain to build them.
+# We never import those wallet modules, so Next's standalone tracing drops `usb` from the
+# runtime image — the runner stage below stays slim.
+RUN apk add --no-cache python3 make g++ linux-headers eudev-dev
+
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 
