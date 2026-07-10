@@ -114,7 +114,9 @@ export async function dropAnchorDb(slug: string): Promise<void> {
 
 // ── Container lifecycle ────────────────────────────────────────────────────────
 // Anchor Platform SEP endpoints (SEP-1 toml, SEP-10 auth, SEP-6/12/24/31/38).
-const AP_PATHS = ['/.well-known', '/auth', '/sep6', '/sep10', '/sep12', '/sep24', '/sep31', '/sep38']
+// /sep45 = SEP-45 contract-account web auth (passkey smart wallets). Must route to the AP,
+// else Traefik falls through to the anchor-client (Next.js) and /sep45/auth 404s.
+const AP_PATHS = ['/.well-known', '/auth', '/sep6', '/sep10', '/sep12', '/sep24', '/sep31', '/sep38', '/sep45']
   .map((p) => `PathPrefix(\`${p}\`)`).join(' || ');
 // Surfaces that live UNDER /sep24 but belong to the business-server, not the AP: the
 // SEP-24 interactive webview, its KYC/PSP callbacks, and the more-info page. The
@@ -214,6 +216,10 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     'STELLAR_ANCHOR_CONFIG=/config/anchor-platform.yaml',
     `SECRET_SEP10_SIGNING_SEED=${p.signingSecret}`,
     `SECRET_SEP10_JWT_SECRET=${rand()}`,
+    // SEP-45 (contract-account / passkey web auth) JWT signing key. The AP requires this
+    // whenever sep45 is enabled in the generated config (config-gen gates that on
+    // SEP45_WEB_AUTH_CONTRACT_ID). Harmless when SEP-45 is off.
+    `SECRET_SEP45_JWT_SECRET=${rand()}`,
     `SECRET_DATA_USERNAME=${DB_USER}`,
     `SECRET_DATA_PASSWORD=${DB_PASSWORD}`,
     `SECRET_SEP24_INTERACTIVE_URL_JWT_SECRET=${rand()}`,

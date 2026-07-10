@@ -84,6 +84,12 @@ services:
       ANCHOR_DOMAIN_SUFFIX: anchors.127.0.0.1.sslip.io
       HORIZON_URL: https://horizon-testnet.stellar.org
       NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+      # SEP-45 (contract-account / passkey smart-wallet web auth). Empty by default → every
+      # anchor provisions SEP-10-only, unchanged. Set to the deployed stellar/sep45-reference
+      # `web_auth` contract id (see nordstern-passkey-smart-wallets) to enable passkey wallets
+      # network-wide; SOROBAN_RPC_URL is the RPC the AP simulates SEP-45 challenges against.
+      SEP45_WEB_AUTH_CONTRACT_ID: ${SEP45_WEB_AUTH_CONTRACT_ID:-}
+      SOROBAN_RPC_URL: ${SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
       # Universal DIDIT KYC — one NordStern-level account injected into EVERY provisioned
       # anchor's business-server (see orchestrator.ts). Values come from the git-ignored
       # anchor-service/.env.base (loaded via --env-file); never committed, never per-anchor.

@@ -20,6 +20,14 @@ const NETWORK_PASSPHRASE  = process.env.NETWORK_PASSPHRASE  ?? 'Test SDF Network
 // dev is plain http; prod sets ANCHOR_PUBLIC_SCHEME=https so wallets get valid TLS URLs
 // (real wallets reject non-HTTPS SEP endpoints).
 const PUBLIC_SCHEME       = (process.env.ANCHOR_PUBLIC_SCHEME ?? 'http').toLowerCase();
+// SEP-45 (contract-account / passkey smart-wallet web auth). Enabled per-anchor ONLY when a
+// web-auth verifier contract id is provided (SEP45_WEB_AUTH_CONTRACT_ID — the canonical
+// stellar/sep45-reference `web_auth` contract, deployed to the active network). Empty → SEP-45
+// stays off and anchors provision SEP-10-only, exactly as before. When on, the AP also needs a
+// Soroban RPC url to simulate the challenge (classic SEP-24/observer stay on horizon).
+const SEP45_CONTRACT_ID   = process.env.SEP45_WEB_AUTH_CONTRACT_ID ?? '';
+const SOROBAN_RPC_URL     = process.env.SOROBAN_RPC_URL ?? 'https://soroban-testnet.stellar.org';
+const SEP45_ENABLED       = SEP45_CONTRACT_ID.length > 0;
 
 export interface AnchorConfigInput {
   slug: string;
@@ -38,8 +46,15 @@ version: 1
 
 stellar_network:
   network: ${NETWORK}
-  horizon_url: ${HORIZON_URL}
-  type: horizon
+  horizon_url: ${HORIZON_URL}${SEP45_ENABLED ? `
+  # SEP-45's Sep45Service casts the ledger to StellarRpc — with type: horizon the AP dies at
+  # startup: "class ...ledger.Horizon cannot be cast to class ...ledger.StellarRpc"
+  # (SepBeans.sep45Service, AP 4.5.0). So when SEP-45 is on the WHOLE AP — including the SEP-24
+  # payment observer — runs against Soroban RPC. The AP's own reference config runs SEP-24 in
+  # rpc mode, so observation still works; horizon_url is left for any horizon-only lookups.
+  type: rpc
+  rpc_url: ${SOROBAN_RPC_URL}` : `
+  type: horizon`}
 
 callback_api:
   base_url: http://business-server-${a.slug}:3000
@@ -64,7 +79,18 @@ sep10:
   enabled: true
   home_domains:
     - ${a.homeDomain}
-
+${SEP45_ENABLED ? `
+# SEP-45 web auth for contract accounts (passkey smart wallets). Coexists with SEP-10 —
+# wallets pick whichever matches their account type (G/M → SEP-10, C → SEP-45).
+sep45:
+  enabled: true
+  web_auth_domain: ${a.homeDomain}
+  web_auth_contract_id: ${SEP45_CONTRACT_ID}
+  home_domains:
+    - ${a.homeDomain}
+  auth_timeout: 900
+  jwt_timeout: 86400
+` : ''}
 sep12:
   enabled: true
 
@@ -115,7 +141,9 @@ assets:
 function stellarToml(a: AnchorConfigInput): string {
   return `NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE}"
 TRANSFER_SERVER_SEP0024="${PUBLIC_SCHEME}://${a.homeDomain}/sep24"
-WEB_AUTH_ENDPOINT="${PUBLIC_SCHEME}://${a.homeDomain}/auth"
+WEB_AUTH_ENDPOINT="${PUBLIC_SCHEME}://${a.homeDomain}/auth"${SEP45_ENABLED ? `
+WEB_AUTH_FOR_CONTRACTS_ENDPOINT="${PUBLIC_SCHEME}://${a.homeDomain}/sep45/auth"
+WEB_AUTH_CONTRACT_ID="${SEP45_CONTRACT_ID}"` : ''}
 SIGNING_KEY="${a.signingPublic}"
 
 [DOCUMENTATION]
