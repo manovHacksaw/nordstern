@@ -23,7 +23,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: 'Compliance',
     items: [
-      { href: '/compliance', label: 'Cases', icon: ShieldAlert },
+      { href: '/compliance', label: 'Compliance cases', icon: ShieldAlert },
       { href: '/audit', label: 'Audit log', icon: ScrollText },
     ],
   },
@@ -46,31 +46,44 @@ const GROUPS: { title: string; items: Item[] }[] = [
   },
 ];
 
-export function Nav() {
+// Dark rail nav. Collapsed = icon-only with hover tooltips; expanded = grouped labels.
+export function Nav({ expanded }: { expanded: boolean }) {
   const pathname = usePathname();
   return (
-    <nav className="space-y-5">
-      {GROUPS.map((g) => (
-        <div key={g.title}>
-          <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-subtle/70">{g.title}</p>
-          <div className="space-y-0.5">
-            {g.items.map(({ href, label, icon: Icon }) => {
-              const active = pathname === href || pathname.startsWith(`${href}/`);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    active ? 'bg-surface text-ink' : 'text-subtle hover:bg-surface hover:text-ink',
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
+    <nav className={cn('flex flex-col', expanded ? 'gap-4' : 'items-center gap-1.5')}>
+      {GROUPS.map((g, gi) => (
+        <div key={g.title} className={cn('flex flex-col', expanded ? 'gap-0.5' : 'items-center gap-1.5')}>
+          {expanded ? (
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-white/30">{g.title}</p>
+          ) : (
+            gi > 0 && <span className="my-1 h-px w-6 rounded-full bg-white/10" />
+          )}
+          {g.items.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <Link
+                key={href}
+                href={href}
+                title={expanded ? undefined : label}
+                aria-label={label}
+                className={cn(
+                  'group relative flex items-center rounded-[13px] transition-colors duration-200',
+                  expanded ? 'gap-3 px-3 py-2 text-[13px] font-medium' : 'size-10 justify-center',
+                  active
+                    ? 'bg-brand/[0.16] text-white ring-1 ring-inset ring-brand/25'
+                    : 'text-white/45 hover:bg-white/[0.06] hover:text-white/80',
+                )}
+              >
+                <Icon className="h-[18px] w-[18px] shrink-0" />
+                {expanded && <span className="truncate">{label}</span>}
+                {!expanded && (
+                  <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] font-medium text-white shadow-lg group-hover:block">
+                    {label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       ))}
     </nav>

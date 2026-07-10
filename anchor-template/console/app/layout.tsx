@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { getBrand, readableOn } from '@/lib/brand';
+import { getBrand } from '@/lib/brand';
+import { clearSansText, clearSansDisplay } from '@/lib/fonts';
 import './globals.css';
 
-// Render per request so getBrand() reads the RUNTIME per-anchor env (accent, logo,
-// display name) rather than baking build-time defaults.
+// Render per request so getBrand() reads the RUNTIME per-anchor env (logo, display name).
 export const dynamic = 'force-dynamic';
 
 export function generateMetadata(): Metadata {
@@ -11,18 +11,17 @@ export function generateMetadata(): Metadata {
   return {
     title: `${brand.displayName} · Operator Console`,
     description: `Operator console for the ${brand.displayName} anchor on NordStern.`,
+    // Favicon = the anchor's own logo when set, else the NordStern mark.
+    icons: { icon: brand.logoUrl || '/nordstern-dark.png' },
   };
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const brand = getBrand();
-  // Override the accent so the console re-tints to the operator's own brand.
-  const accentVars = {
-    ['--color-brand' as string]: brand.accent,
-    ['--color-brand-ink' as string]: readableOn(brand.accent),
-  } as React.CSSProperties;
+  // The operator console ALWAYS uses NordStern's default palette — the per-anchor accent is
+  // deliberately NOT applied here (only the anchor's logo/name brand the console). This keeps
+  // the operator surface consistent as a NordStern product across every anchor.
   return (
-    <html lang="en" style={accentVars}>
+    <html lang="en" className={`${clearSansText.variable} ${clearSansDisplay.variable}`}>
       <body>{children}</body>
     </html>
   );
