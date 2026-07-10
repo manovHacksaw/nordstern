@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Wallet, Plus, Trash2, ShieldCheck, LogOut, Check, X, Pencil } from 'lucide-react';
+import { Wallet, Plus, Trash2, LogOut, Check, X, Pencil } from 'lucide-react';
 import { customer as api, ApiError, type Wallet as W } from '@/lib/customer';
 import { useCustomer } from '@/components/customer-context';
-import { Card, CardBody, Badge, Button, Input, Spinner, type Tone } from '@/components/ui';
+import { useBrand } from '@/components/brand-context';
+import { Card, CardBody, Button, Input, Spinner } from '@/components/ui';
+import { VerificationCard, InfrastructureSection } from '@/components/ecosystem';
 
-const kycTone = (s: string): Tone => (s === 'approved' ? 'success' : s === 'declined' ? 'danger' : 'warning');
-const kycLabel = (s: string) => (s === 'approved' ? 'Verified' : s === 'pending' ? 'In review' : s === 'declined' ? 'Failed' : 'Not verified');
 const mask = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 export default function ProfilePage() {
   const { customer, refresh, signOut } = useCustomer();
+  const brand = useBrand();
   const router = useRouter();
 
   const [wallets, setWallets] = useState<W[] | null>(null);
@@ -46,8 +47,8 @@ export default function ProfilePage() {
   async function doSignOut() { await signOut(); router.replace('/login'); }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-ink">Profile</h1>
+    <div className="mx-auto max-w-3xl space-y-6 fade-up">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">Profile</h1>
 
       {/* Personal */}
       <Card><CardBody className="space-y-4">
@@ -69,14 +70,11 @@ export default function ProfilePage() {
         </div>
       </CardBody></Card>
 
-      {/* Identity / KYC */}
-      <Card><CardBody className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-surface"><ShieldCheck className="h-5 w-5 text-brand-deep" /></div>
-        <div className="flex-1"><p className="font-medium text-ink">Identity verification</p><p className="text-xs text-muted">Powered by DIDIT — completed once, reused everywhere.</p></div>
-        {customer?.kycStatus === 'approved'
-          ? <Badge tone="success">Verified</Badge>
-          : <Button size="sm" variant="outline" onClick={() => router.push('/verify')}>{customer?.kycStatus === 'pending' ? 'In review' : 'Verify'}</Button>}
-      </CardBody></Card>
+      {/* Identity / KYC — informative, network-aware */}
+      <VerificationCard status={customer?.kycStatus ?? 'unverified'} onAction={() => router.push('/verify')} />
+
+      {/* Infrastructure — transparency about how this service is built */}
+      <InfrastructureSection anchorName={brand.name} />
 
       {/* Linked wallets */}
       <div>
