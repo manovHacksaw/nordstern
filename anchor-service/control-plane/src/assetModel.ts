@@ -42,19 +42,19 @@ export function expectedUsdcIssuer(): string {
 
 // Fail-fast validation for the external provisioning path. Throws an actionable error
 // (surfaced as the provisioning failure) if any required value is missing or wrong —
-// no defaults, no fallbacks. Network-aware: external USDC works on BOTH networks, but
-// the issuer must match the active network (mainnet issuer on mainnet, testnet issuer
-// on testnet) and Horizon must agree with STELLAR_NETWORK. Called at the top of the
-// external provision branch.
+// no defaults, no fallbacks. The strict "USDC must be Circle's issuer" rule is a
+// MAINNET-safety guard (prevents a worthless lookalike USDC from being distributed as
+// real money). On testnet it's relaxed: any issuer is accepted so we can rehearse the
+// full external flow with a self-minted "USDC" (no dependency on Circle's faucet).
+// Horizon must always agree with STELLAR_NETWORK. Called at the top of the external branch.
 export function assertExternalAssetConfig(): void {
   const problems: string[] = [];
 
   if (!EXTERNAL_ASSET_ISSUER) {
     problems.push('EXTERNAL_ASSET_ISSUER is required (the external asset issuer)');
-  } else if (EXTERNAL_ASSET_CODE === 'USDC' && EXTERNAL_ASSET_ISSUER !== expectedUsdcIssuer()) {
-    problems.push(
-      `EXTERNAL_ASSET_ISSUER must be Circle's ${IS_PUBLIC_NETWORK ? 'mainnet' : 'testnet'} USDC issuer (${expectedUsdcIssuer()})`,
-    );
+  } else if (IS_PUBLIC_NETWORK && EXTERNAL_ASSET_CODE === 'USDC' && EXTERNAL_ASSET_ISSUER !== CIRCLE_USDC_MAINNET_ISSUER) {
+    // Mainnet only: real USDC must be Circle's official issuer. Testnet accepts any (rehearsal).
+    problems.push(`EXTERNAL_ASSET_ISSUER must be Circle's mainnet USDC issuer (${CIRCLE_USDC_MAINNET_ISSUER})`);
   }
   if (!TREASURY_PUBLIC) problems.push('TREASURY_PUBLIC is required (a funded treasury account)');
   if (!TREASURY_SECRET) problems.push('TREASURY_SECRET is required (to sign USDC transfers)');
