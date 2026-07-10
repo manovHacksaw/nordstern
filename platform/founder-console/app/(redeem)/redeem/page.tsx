@@ -26,7 +26,6 @@ const schema = z.object({
   assetPriceInr: z.string().optional(),
   settlementCurrency: z.string(),
   displayName: z.string().optional(),
-  accent: z.string().regex(/^#([0-9a-fA-F]{6})$/, 'Use a hex color like #2563EB').optional().or(z.literal('')),
   logoUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
   supportEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   websiteUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
@@ -152,7 +151,6 @@ function RedeemTypeform() {
       assetModel: 'external', settlementCurrency: 'INR',
     },
   });
-  const accentValue = watch('accent');
   const assetModel = watch('assetModel');
   const settlementCurrency = watch('settlementCurrency');
 
@@ -184,7 +182,7 @@ function RedeemTypeform() {
   const validators: Record<StepId, (keyof Form)[]> = {
     welcome: [], token: ['token'], name: ['fullName'], subdomain: ['subdomain'],
     asset: ['assetModel', 'assetCode', 'assetName', 'assetPriceInr'], currency: ['settlementCurrency'],
-    brand: ['accent', 'logoUrl', 'supportEmail', 'websiteUrl'], payment: ['razorpayKeyId', 'razorpayKeySecret'], review: [],
+    brand: ['logoUrl', 'supportEmail', 'websiteUrl'], payment: ['razorpayKeyId', 'razorpayKeySecret'], review: [],
   };
 
   async function advance() {
@@ -241,7 +239,6 @@ function RedeemTypeform() {
     }
     const branding: Record<string, string> = {};
     if (v.displayName) branding.displayName = v.displayName;
-    if (v.accent) branding.accent = v.accent;
     if (v.logoUrl) branding.logoUrl = v.logoUrl;
     if (v.supportEmail) branding.supportEmail = v.supportEmail;
     if (v.websiteUrl) branding.websiteUrl = v.websiteUrl;
