@@ -14,43 +14,52 @@ if (!env.RESEND_API_KEY) {
 }
 
 // ── Shared branded layout ─────────────────────────────────────────────────────
-// One inline-styled shell (email clients ignore <style>/external CSS) so every NordStern
-// email looks consistent — colours + wordmark mirror the landing page (sole accent: purple).
-const BRAND = '#6f5fd6';       // primary purple (landing --color-brand-700; reads on white)
-const BRAND_DEEP = '#4b3f9e';  // landing --color-brand-800
-const BRAND_TINT = '#f4f2fd';  // landing --color-brand-50
+// One inline-styled shell (email clients ignore <style>/external CSS) so every NordStern email
+// mirrors the landing page 1:1: real logo lockup, white card at 32px radius on the mint-gray
+// surface, ink text, black pill button, mint (brand-100/800) badge. Tokens are copied straight
+// from frontend/landing/app/globals.css. Custom fonts cannot load in email, so we fall back to a
+// clean system sans; every other value matches the site.
+const SURFACE = '#f2f4f3';     // landing --color-surface (backdrop)
+const CANVAS = '#ffffff';      // landing --color-canvas (card)
 const INK = '#0b0b0b';         // landing --color-ink
+const MUTED = '#5b5b5b';       // landing --color-muted
+const SUBTLE = '#9a9a9a';      // landing --color-subtle
+const LINE = '#e6e9e8';        // landing --color-line
+const BRAND_100 = '#e9e5fb';   // landing --color-brand-100 (badge bg)
+const BRAND_800 = '#4b3f9e';   // landing --color-brand-800 (badge text)
+const LOGO = 'https://www.nordstern.live/logo-dark.png';
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 function layout(opts: { heading: string; body: string; cta?: { label: string; url: string }; footnote?: string }): string {
+  // Primary button = landing's pill: bg-ink, white text, fully rounded.
   const button = opts.cta
-    ? `<tr><td style="padding:14px 0 4px"><a href="${opts.cta.url}" style="display:inline-block;background:${BRAND};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:10px">${opts.cta.label}</a></td></tr>`
+    ? `<tr><td style="padding:20px 0 2px"><a href="${opts.cta.url}" style="display:inline-block;background:${INK};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:13px 26px;border-radius:999px">${opts.cta.label}</a></td></tr>`
     : '';
-  const foot = opts.footnote ? `<p style="margin:18px 0 0;font-size:12px;color:#8a8a99">${opts.footnote}</p>` : '';
+  const foot = opts.footnote ? `<p style="margin:20px 0 0;font-size:12px;line-height:1.5;color:${SUBTLE}">${opts.footnote}</p>` : '';
   return `
-  <div style="background:${BRAND_TINT};padding:40px 0;font-family:${FONT}">
+  <div style="background:${SURFACE};padding:44px 16px;font-family:${FONT}">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #eae7f6;box-shadow:0 1px 3px rgba(75,63,158,0.06)">
-        <tr><td style="height:4px;background:linear-gradient(90deg,${BRAND} 0%,#ab9ff2 100%)"></td></tr>
-        <tr><td style="padding:24px 30px 20px;border-bottom:1px solid #f2f0fa">
-          <span style="font-size:17px;font-weight:800;letter-spacing:-0.3px;color:${INK}">Nord<span style="color:${BRAND}">Stern</span></span>
+      <table role="presentation" width="500" cellpadding="0" cellspacing="0" style="max-width:500px;background:${CANVAS};border-radius:32px;overflow:hidden;border:1px solid ${LINE}">
+        <tr><td style="padding:32px 36px 24px">
+          <img src="${LOGO}" width="36" height="36" alt="NordStern" style="display:inline-block;vertical-align:middle;border-radius:10px;width:36px;height:36px">
+          <span style="vertical-align:middle;margin-left:10px;font-size:18px;font-weight:600;letter-spacing:-0.4px;color:${INK}">NordStern</span>
         </td></tr>
-        <tr><td style="padding:28px 30px 30px">
-          <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3;font-weight:700;color:${INK}">${opts.heading}</h1>
-          <div style="font-size:14px;line-height:1.65;color:#4a4a58">${opts.body}</div>
+        <tr><td style="padding:0 36px 36px">
+          <h1 style="margin:0 0 12px;font-size:23px;line-height:1.25;font-weight:600;letter-spacing:-0.5px;color:${INK}">${opts.heading}</h1>
+          <div style="font-size:15px;line-height:1.65;color:${MUTED}">${opts.body}</div>
           <table role="presentation" cellpadding="0" cellspacing="0">${button}</table>
           ${foot}
         </td></tr>
       </table>
-      <p style="margin:18px 0 0;font-size:11px;color:#a49fc0">NordStern · Anchor infrastructure on Stellar · testnet</p>
+      <p style="margin:20px 0 0;font-size:12px;color:${SUBTLE}">NordStern · Anchor infrastructure on Stellar · testnet</p>
     </td></tr></table>
   </div>`;
 }
 
-// A branded code chip for OTP emails (big, spaced, purple-tinted).
+// The one-time code as the landing's mint badge — brand-100 fill, brand-800 text, pill-ish.
 function codeBlock(code: string): string {
-  return `<div style="margin:6px 0 2px;padding:16px 0;background:${BRAND_TINT};border:1px solid #e6e2f7;border-radius:12px;text-align:center">
-    <span style="font-size:32px;font-weight:800;letter-spacing:8px;color:${BRAND_DEEP};font-family:${FONT}">${code}</span>
+  return `<div style="margin:4px 0 2px;padding:18px 0;background:${BRAND_100};border-radius:20px;text-align:center">
+    <span style="font-size:34px;font-weight:600;letter-spacing:10px;color:${BRAND_800};font-family:${FONT}">${code}</span>
   </div>`;
 }
 
