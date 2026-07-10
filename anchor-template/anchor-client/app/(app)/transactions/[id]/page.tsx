@@ -3,9 +3,9 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowDownToLine, ArrowUpFromLine, CheckCircle2, Clock, XCircle, LifeBuoy } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, XCircle, LifeBuoy } from 'lucide-react';
 import { useBrand } from '@/components/brand-context';
-import { Card, CardBody, Badge, Skeleton, Button, type Tone } from '@/components/ui';
+import { Panel, Badge, Skeleton, Button, reveal, type Tone } from '@/components/ui';
 import { myTransaction, type CustomerTx } from '@/lib/anchor';
 import { inr, dateTime } from '@/lib/format';
 
@@ -35,16 +35,15 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (tx === undefined) return <div className="space-y-4"><Skeleton className="h-8 w-32" /><Skeleton className="h-40 w-full" /></div>;
+  if (tx === undefined) return <div className="mx-auto max-w-md space-y-4"><Skeleton className="h-8 w-32" /><Skeleton className="h-40 w-full" /></div>;
   if (tx === null) return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-md space-y-4">
       <BackBtn onClick={() => router.push('/transactions')} />
-      <Card><CardBody className="py-16 text-center text-sm text-muted">This transaction couldn’t be found.</CardBody></Card>
+      <Panel className="p-16 text-center text-sm text-muted">This transaction couldn’t be found.</Panel>
     </div>
   );
 
   const p = PHASE[tx.phase] ?? { label: tx.phase, tone: 'neutral' as Tone };
-  const Icon = tx.kind === 'buy' ? ArrowDownToLine : ArrowUpFromLine;
   const done = tx.phase === 'completed';
   const failed = tx.phase === 'failed' || tx.phase === 'refunded';
   const StatusIcon = done ? CheckCircle2 : failed ? XCircle : Clock;
@@ -52,45 +51,45 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
   const asset = tx.assetCode ?? brand.assetCode;
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-md space-y-5">
       <BackBtn onClick={() => router.push('/transactions')} />
 
-      <div className="flex flex-col items-center gap-2 py-2 text-center">
+      <div className="flex flex-col items-center gap-2 py-2 text-center" style={reveal(0.04)}>
         <StatusIcon className={`h-14 w-14 ${statusColor}`} />
-        <p className="text-2xl font-bold text-ink">
+        <p className="text-2xl font-bold tracking-tight text-ink">
           {tx.kind === 'buy' ? 'Bought' : 'Sold'} {tx.assetAmount} {asset}
         </p>
         <Badge tone={p.tone}>{p.label}</Badge>
       </div>
 
-      <Card><CardBody className="space-y-3">
+      <Panel style={reveal(0.08)} className="space-y-3 p-5 sm:p-6">
         <Row label={tx.kind === 'buy' ? 'You paid' : 'You received'} value={inr(tx.inrAmount)} />
         <Row label="Amount" value={`${tx.assetAmount ?? '—'} ${asset}`} />
         <Row label="Reference" value={tx.reference ?? '—'} mono />
         <Row label="Started" value={dateTime(tx.createdAt)} />
         {tx.completedAt && <Row label="Completed" value={dateTime(tx.completedAt)} />}
-      </CardBody></Card>
+      </Panel>
 
       <Link href="/support"><Button variant="outline" size="block"><LifeBuoy className="h-4 w-4" /> Get help with this</Button></Link>
 
       {/* Technical details, hidden unless expanded. */}
       <div className="text-center">
-        <button onClick={() => setAdvanced(!advanced)} className="text-xs text-faint hover:text-muted">{advanced ? 'Hide' : 'Advanced'} details</button>
+        <button onClick={() => setAdvanced(!advanced)} className="text-xs text-subtle transition-colors hover:text-muted">{advanced ? 'Hide' : 'Advanced'} details</button>
       </div>
       {advanced && (
-        <Card><CardBody className="space-y-1 font-mono text-[11px] text-muted">
+        <Panel className="space-y-1 p-4 font-mono text-[11px] text-muted">
           <div className="break-all">id: {tx.id}</div>
           <div>status: {tx.rawStatus}</div>
           {tx.stellarId && <div className="break-all">chain ref: {tx.stellarId}</div>}
           {tx.destination && <div className="break-all">wallet: {tx.destination}</div>}
-        </CardBody></Card>
+        </Panel>
       )}
     </div>
   );
 }
 
 function BackBtn({ onClick }: { onClick: () => void }) {
-  return <button onClick={onClick} className="flex items-center gap-1 text-sm text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" /> Activity</button>;
+  return <button onClick={onClick} className="flex items-center gap-1 text-sm text-muted transition-colors hover:text-ink"><ArrowLeft className="h-4 w-4" /> Activity</button>;
 }
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (

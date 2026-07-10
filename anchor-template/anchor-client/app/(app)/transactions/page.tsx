@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Receipt, ArrowDownToLine, ArrowUpFromLine, ChevronRight, RefreshCw, Search, ArrowUpRight } from 'lucide-react';
+import { Receipt, ArrowDownToLine, ArrowUpFromLine, ChevronRight, Download, Search, ArrowRight, Filter } from 'lucide-react';
 import { useBrand } from '@/components/brand-context';
-import { Card, CardBody, Badge, Skeleton, Table, Th, Td, type Tone } from '@/components/ui';
+import { useCustomer } from '@/components/customer-context';
+import { Panel, EmptyState, Badge, Skeleton, reveal, type Tone } from '@/components/ui';
 import { myTransactions, type CustomerTx } from '@/lib/anchor';
 import { inr, dateTime } from '@/lib/format';
 
@@ -22,6 +23,8 @@ const PHASE: Record<string, { label: string; tone: Tone }> = {
 
 export default function HistoryPage() {
   const brand = useBrand();
+  const { customer } = useCustomer();
+  const verified = customer?.kycStatus === 'approved';
   const [txns, setTxns] = useState<CustomerTx[] | null>(null);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
@@ -46,113 +49,124 @@ export default function HistoryPage() {
     );
   }, [txns, filter, query]);
 
+  // Client-side CSV of the currently-shown rows — no backend, purely presentational.
+  function exportCsv() {
+    const header = ['Date', 'Type', 'Asset', 'Amount', 'INR', 'Status', 'Reference'];
+    const lines = rows.map((t) => [
+      dateTime(t.createdAt), t.kind, t.assetCode ?? brand.assetCode, t.assetAmount ?? '',
+      t.inrAmount ?? '', PHASE[t.phase]?.label ?? t.phase, t.reference ?? t.id,
+    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${brand.slug}-activity.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <div className="space-y-6 fade-up">
-      <div className="flex items-end justify-between">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" style={reveal(0.02)}>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Activity</h1>
-          <p className="mt-1 text-sm text-muted">Every buy and sell with {brand.name}.</p>
+          <p className="text-[19px] font-semibold tracking-tight text-ink">Activity</p>
+          <p className="text-[12px] text-subtle">Every {brand.assetCode} purchase, sale, and settlement, in one place.</p>
         </div>
-        <button onClick={load} className="inline-flex h-10 items-center gap-2 rounded-xl border border-line px-3 text-sm font-medium text-muted transition hover:bg-surface hover:text-ink">
-          <RefreshCw className="h-4 w-4" /> <span className="hidden sm:inline">Refresh</span>
+        <button onClick={exportCsv} disabled={!rows.length}
+          className="inline-flex h-10 items-center gap-2 self-start rounded-full border border-black/[0.06] bg-canvas px-4 text-[12.5px] font-medium text-muted transition-colors hover:text-ink disabled:opacity-50">
+          <Download className="h-4 w-4" /> Export
         </button>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1">
-          {(['all', 'buy', 'sell', 'pending'] as Filter[]).map((f) => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition ${filter === f ? 'bg-ink text-white' : 'text-muted hover:bg-surface'}`}>
-              {f === 'all' ? 'All' : f === 'pending' ? 'In progress' : f}
-            </button>
-          ))}
-        </div>
-        <div className="relative sm:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2" style={reveal(0.06)}>
+        {(['all', 'buy', 'sell', 'pending'] as Filter[]).map((f) => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={filter === f
+              ? 'rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium capitalize text-white'
+              : 'rounded-full border border-black/[0.06] bg-canvas px-4 py-1.5 text-[12.5px] font-medium capitalize text-muted transition-colors hover:text-ink'}>
+            {f === 'all' ? 'All' : f === 'pending' ? 'In progress' : f}
+          </button>
+        ))}
+        <div className="relative order-last w-full sm:order-none sm:ml-auto sm:w-60">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search reference, amount…"
-            className="h-10 w-full rounded-xl border border-line bg-canvas pl-9 pr-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30" />
+            className="h-9 w-full rounded-full border border-black/[0.06] bg-canvas pl-9 pr-3 text-[12.5px] text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" />
         </div>
+        <span className="hidden items-center gap-1.5 text-[12.5px] text-subtle sm:inline-flex">
+          <Filter className="h-4 w-4" /> Newest first
+        </span>
       </div>
 
       {error && <div className="rounded-xl bg-[var(--color-danger-bg)] px-3 py-2 text-sm text-[var(--color-danger)]">{error}</div>}
 
+      {/* Table + empty state */}
       {txns === null ? (
-        <Card><div className="space-y-px p-2">{[0, 1, 2, 3].map((i) => <div key={i} className="p-3"><Skeleton className="h-9 w-full" /></div>)}</div></Card>
+        <Panel style={reveal(0.1)} className="p-0">
+          <div className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-black/[0.05] px-6 py-3 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">
+            <span>Transaction</span><span>Amount</span>
+          </div>
+          <div className="space-y-px p-2">{[0, 1, 2, 3].map((i) => <div key={i} className="p-3"><Skeleton className="h-9 w-full" /></div>)}</div>
+        </Panel>
       ) : !rows.length ? (
-        <Card><CardBody className="flex flex-col items-center gap-2 py-20 text-center">
-          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-surface"><Receipt className="h-8 w-8 text-faint" /></div>
-          <p className="mt-1 text-lg font-semibold text-ink">{filter === 'all' && !query ? 'No transactions yet' : 'Nothing matches'}</p>
-          <p className="max-w-sm text-sm text-muted">{filter === 'all' && !query ? `Your activity will appear here after your first purchase.` : 'Try a different filter or search.'}</p>
-          {filter === 'all' && !query && <Link href="/buy" className="mt-2 inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-[var(--color-brand-ink)] transition hover:opacity-90">Buy your first {brand.assetCode} <ArrowUpRight className="h-4 w-4" /></Link>}
-        </CardBody></Card>
+        <Panel style={reveal(0.1)} className="p-0">
+          <div className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-black/[0.05] px-6 py-3 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">
+            <span>Transaction</span><span>Amount</span>
+          </div>
+          <EmptyState
+            icon={<Receipt className="h-7 w-7" />}
+            title={filter === 'all' && !query ? 'No transactions yet' : 'Nothing matches'}
+            desc={filter === 'all' && !query ? 'Once you verify and make your first purchase, your history appears here.' : 'Try a different filter or search.'}
+            action={filter === 'all' && !query && verified
+              ? <Link href="/buy" className="inline-flex h-10 items-center gap-2 rounded-full bg-brand px-4 text-sm font-semibold text-[var(--color-brand-ink)] transition hover:opacity-90">Buy your first {brand.assetCode} <ArrowRight className="h-4 w-4" /></Link>
+              : undefined}
+          />
+        </Panel>
       ) : (
-        <>
-          {/* Desktop table (lg+) */}
-          <Card className="hidden overflow-hidden lg:block">
-            <div className="overflow-x-auto">
-              <Table>
-                <thead>
-                  <tr>
-                    <Th>Date</Th><Th>Type</Th><Th>Asset</Th><Th className="text-right">Amount</Th>
-                    <Th>Status</Th><Th>Reference</Th><Th className="w-10"></Th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((t) => {
-                    const p = PHASE[t.phase] ?? { label: t.phase, tone: 'neutral' as Tone };
-                    const Icon = t.kind === 'buy' ? ArrowDownToLine : ArrowUpFromLine;
-                    return (
-                      <tr key={t.id} className="group cursor-pointer transition hover:bg-surface/50"
-                        onClick={() => { window.location.href = `/transactions/${t.id}`; }}>
-                        <Td className="whitespace-nowrap text-muted">{dateTime(t.createdAt)}</Td>
-                        <Td>
-                          <span className="inline-flex items-center gap-2 font-medium">
-                            <span className="grid h-7 w-7 place-items-center rounded-full bg-brand/12"><Icon className="h-3.5 w-3.5 text-brand-deep" /></span>
-                            {t.kind === 'buy' ? 'Buy' : 'Sell'}
-                          </span>
-                        </Td>
-                        <Td className="font-medium">{t.assetCode ?? brand.assetCode}</Td>
-                        <Td className="text-right">
-                          <span className="font-semibold text-ink">{t.assetAmount ?? '—'} {t.assetCode ?? brand.assetCode}</span>
-                          <span className="block text-xs text-muted">{inr(t.inrAmount)}</span>
-                        </Td>
-                        <Td><Badge tone={p.tone}>{p.label}</Badge></Td>
-                        <Td className="font-mono text-xs text-muted">{t.reference ?? t.id.slice(0, 8).toUpperCase()}</Td>
-                        <Td><ChevronRight className="h-4 w-4 text-faint transition group-hover:text-ink" /></Td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </Table>
-            </div>
-          </Card>
-
-          {/* Mobile cards (below lg) */}
-          <div className="space-y-2 lg:hidden">
+        <Panel style={reveal(0.1)} className="p-0">
+          <div className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-black/[0.05] px-6 py-3 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">
+            <span>Transaction</span><span>Amount</span>
+          </div>
+          <div className="divide-y divide-black/[0.05]">
             {rows.map((t) => {
               const p = PHASE[t.phase] ?? { label: t.phase, tone: 'neutral' as Tone };
               const Icon = t.kind === 'buy' ? ArrowDownToLine : ArrowUpFromLine;
               return (
-                <Link key={t.id} href={`/transactions/${t.id}`}>
-                  <Card className="transition hover:border-brand">
-                    <CardBody className="flex items-center gap-3 p-4">
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand/12"><Icon className="h-5 w-5 text-brand-deep" /></div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-ink">{t.kind === 'buy' ? 'Bought' : 'Sold'} {t.assetAmount ?? ''} {t.assetCode ?? brand.assetCode}</p>
-                        <p className="text-xs text-muted">{dateTime(t.createdAt)}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-ink">{inr(t.inrAmount)}</p>
-                        <Badge tone={p.tone}>{p.label}</Badge>
-                      </div>
-                    </CardBody>
-                  </Card>
+                <Link key={t.id} href={`/transactions/${t.id}`}
+                  className="group grid grid-cols-[1fr_auto] items-center gap-4 px-4 py-3.5 transition-colors hover:bg-black/[0.02] sm:px-6">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700"><Icon className="h-5 w-5" /></span>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-ink">{t.kind === 'buy' ? 'Bought' : 'Sold'} {t.assetAmount ?? ''} {t.assetCode ?? brand.assetCode}</p>
+                      <p className="truncate text-xs text-subtle">{dateTime(t.createdAt)} · <span className="font-mono">{t.reference ?? t.id.slice(0, 8).toUpperCase()}</span></p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold tabular-nums text-ink">{inr(t.inrAmount)}</p>
+                      <Badge tone={p.tone}>{p.label}</Badge>
+                    </div>
+                    <ChevronRight className="hidden h-4 w-4 shrink-0 text-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700 sm:block" />
+                  </div>
                 </Link>
               );
             })}
           </div>
-        </>
+        </Panel>
+      )}
+
+      {/* Unverified CTA */}
+      {!verified && (
+        <div style={reveal(0.14)}
+          className="flex flex-col items-center gap-4 rounded-mock border border-brand-100 bg-gradient-to-br from-brand-50 to-brand-100 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <p className="text-[15px] font-semibold text-ink">Nothing to show — yet</p>
+            <p className="mt-1 text-[12.5px] text-muted">Verify your identity to unlock buying and selling {brand.assetCode}.</p>
+          </div>
+          <Link href="/verify"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-ink px-6 text-sm font-medium text-white transition-colors hover:bg-ink/90 active:scale-[0.98]">
+            Verify identity <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       )}
     </div>
   );

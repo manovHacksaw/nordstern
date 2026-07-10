@@ -180,7 +180,7 @@ export default function BuyPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="space-y-5">
       <FadeUp>
         <div className="flex items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-700"><ArrowDownToLine className="h-5 w-5" /></span>

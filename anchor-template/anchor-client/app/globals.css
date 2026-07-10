@@ -5,9 +5,10 @@
    Light mode, purple accent, self-hosted Clear Sans.
    Tokens are the single source of truth; Tailwind v4 reads
    @theme and generates the utilities (bg-surface, text-ink,
-   rounded-card, text-brand-700, …). White-label: only
-   --color-brand is overridden per-anchor (see layout.tsx),
-   so the whole palette re-skins from one variable.
+   rounded-card, text-brand-700, …). The colour palette is
+   FIXED to the NordStern brand for every anchor (the purple
+   scale below); white-label applies to name/logo/asset/fiat
+   only, never colour.
    ============================================================ */
 
 @theme {
@@ -25,13 +26,13 @@
   --color-noir:      #161520; /* dark bands / overlays */
   --color-noir-soft: #1c1b26;
 
-  /* ── Brand — purple ramp (default NordStern purple). Only --color-brand is
-     remapped per anchor; the shades below give components a full scale to use. ─── */
+  /* ── Brand — the NordStern purple ramp. Fixed for every anchor (not per-anchor
+     accented); components use the full scale below. ──────────────────────────── */
   --color-brand-50:  #f4f2fd;
   --color-brand-100: #e9e5fb;
   --color-brand-200: #d6cff7;
   --color-brand-300: #bcb1f2;
-  --color-brand:     #ab9ff2; /* DEFAULT accent (per-anchor override target) */
+  --color-brand:     #ab9ff2; /* NordStern brand accent (fixed for all anchors) */
   --color-brand-600: #8b7ee0;
   --color-brand-700: #6f5fd6;
   --color-brand-800: #4b3f9e;

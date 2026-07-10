@@ -61,7 +61,7 @@ export function StatTile({ label, value, sub, icon, className }: {
         <p className="text-[13px] font-medium text-muted">{label}</p>
         {icon && <span className="text-faint">{icon}</span>}
       </div>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-ink">{value}</p>
+      <div className="mt-2 text-2xl font-bold tracking-tight text-ink">{value}</div>
       {sub != null && <p className="mt-1 text-xs text-muted">{sub}</p>}
     </div>
   );
@@ -145,7 +145,7 @@ export function Kpi({ label, value, sub, icon, accent, badge, badgeClass, style 
           ? <span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold', badgeClass ?? 'bg-surface-2 text-muted')}>{badge}</span>
           : icon && <span className="text-brand-700">{icon}</span>}
       </div>
-      <p className={cn('mt-3.5 text-[27px] font-semibold leading-none tracking-[-0.02em] tabular-nums sm:text-[29px]', accent ? 'text-[var(--color-up)]' : 'text-ink')}>{value}</p>
+      <div className={cn('mt-3.5 text-[27px] font-semibold leading-none tracking-[-0.02em] tabular-nums sm:text-[29px]', accent ? 'text-[var(--color-up)]' : 'text-ink')}>{value}</div>
       {sub != null && <p className="mt-2.5 text-[11.5px] text-subtle">{sub}</p>}
     </Panel>
   );

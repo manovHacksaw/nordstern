@@ -3,20 +3,20 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  ArrowDownToLine, ArrowUpFromLine, ChevronRight, Receipt,
-  TrendingUp, Wallet, CheckCircle2, ArrowRight, Sparkles, ShieldCheck,
+  ArrowDownToLine, ArrowUpFromLine, ArrowDownLeft, ArrowUpRight, ChevronRight, Receipt,
+  TrendingUp, Wallet, CheckCircle2, ArrowRight, Sparkles, ShieldCheck, Circle,
 } from 'lucide-react';
 import { useCustomer } from '@/components/customer-context';
 import { useBrand } from '@/components/brand-context';
 import {
-  Panel, PanelHead, Kpi, ActionCard, EmptyState, Badge, Skeleton, reveal, type Tone,
+  Panel, PanelHead, Kpi, EmptyState, Badge, Skeleton, reveal, type Tone,
 } from '@/components/ui';
 import { FadeUp } from '@/components/motion';
 import { myTransactions, getQuote, type CustomerTx } from '@/lib/anchor';
 import { customer as customerApi } from '@/lib/customer';
 import { getAccount } from '@/lib/api';
 import { inr, dateTime } from '@/lib/format';
-import { VerificationCard } from '@/components/ecosystem';
+import { DiditMark, ENVIRONMENT } from '@/components/ecosystem';
 import { useRouter } from 'next/navigation';
 
 const PHASE: Record<string, { label: string; tone: Tone }> = {
@@ -64,31 +64,15 @@ export default function HomePage() {
   const hasHoldings = (holdings ? Number(holdings) : 0) > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Greeting */}
-      <FadeUp className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-5">
+      {/* Header */}
+      <FadeUp className="flex items-baseline justify-between">
         <div>
           <p className="text-[13px] font-medium text-brand-700">Welcome back</p>
-          <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-ink">Hi, {firstName}</h1>
+          <h1 className="mt-0.5 text-[26px] font-bold tracking-tight text-ink">Hi, {firstName}</h1>
         </div>
-        {verified && (
-          <div className="flex gap-2">
-            <Link href="/buy" className="inline-flex h-11 items-center gap-2 rounded-xl bg-[linear-gradient(to_right,var(--color-brand),color-mix(in_srgb,var(--color-brand)_45%,#000))] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_color-mix(in_srgb,var(--color-brand)_70%,transparent)] transition hover:brightness-[1.04]">
-              <ArrowDownToLine className="h-4 w-4" /> Buy {brand.assetCode}
-            </Link>
-            <Link href="/sell" className="inline-flex h-11 items-center gap-2 rounded-xl border border-line bg-canvas px-5 text-sm font-semibold text-ink transition-colors hover:bg-surface">
-              <ArrowUpFromLine className="h-4 w-4" /> Sell
-            </Link>
-          </div>
-        )}
+        <p className="text-[12px] text-subtle">Updated just now · {ENVIRONMENT.toLowerCase()}</p>
       </FadeUp>
-
-      {/* KYC gate — verification comes before anything else */}
-      {!verified && (
-        <div style={reveal(0.04)}>
-          <VerificationCard status={customer?.kycStatus ?? 'unverified'} onAction={() => router.push('/verify')} />
-        </div>
-      )}
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -96,7 +80,7 @@ export default function HomePage() {
           style={reveal(0.06)}
           label="Your holdings" icon={<Wallet className="h-4 w-4" />}
           value={holdings === null ? <Skeleton className="h-7 w-24" /> : `${Number(holdings).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${brand.assetCode}`}
-          sub={rate && holdings ? `≈ ${inr(Number(holdings) * Number(rate))}` : `Balance in ${brand.assetCode}`}
+          sub={rate && holdings ? `≈ ${inr(Number(holdings) * Number(rate))}` : `≈ ${inr(0)}`}
         />
         <Kpi
           style={reveal(0.12)}
@@ -108,43 +92,42 @@ export default function HomePage() {
           style={reveal(0.18)}
           label="Latest rate" icon={<Sparkles className="h-4 w-4" />}
           value={rate === null ? <Skeleton className="h-7 w-24" /> : inr(rate)}
-          sub={`1 ${brand.assetCode} · live`}
+          sub={`1 ${brand.assetCode} · live conversion`}
         />
         <Kpi
           style={reveal(0.24)}
           label="Identity"
           value={verified ? 'Verified' : 'Unverified'}
-          sub={verified ? 'buy & sell unlocked' : 'verify to unlock'}
-          badge={verified ? 'Verified' : 'Action'}
-          badgeClass={verified ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'}
+          sub={verified ? 'buy & sell unlocked' : 'verify to unlock buying'}
+          badge={verified ? 'verified' : 'action'}
+          badgeClass={verified ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[#f6eccf] text-[#8a6410]'}
         />
       </div>
 
       {/* Body */}
       <div className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
-        {/* Left: actions + activity */}
+        {/* Left: quick actions + activity */}
         <div className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ActionCard
-              style={reveal(0.3)}
-              href={verified ? '/buy' : '/verify'} locked={!verified}
-              icon={<ArrowDownToLine className="h-5 w-5" />}
-              title={`Buy ${brand.assetCode}`} desc={`Convert INR to ${brand.assetCode} and receive it in your wallet.`}
-              cta={verified ? 'Buy now' : 'Verify to unlock'}
-            />
-            <ActionCard
-              style={reveal(0.34)}
-              href={verified ? '/sell' : '/verify'} locked={!verified}
-              icon={<ArrowUpFromLine className="h-5 w-5" />}
-              title={`Sell ${brand.assetCode}`} desc={`Convert ${brand.assetCode} back to INR, paid to your bank.`}
-              cta={verified ? 'Sell now' : 'Verify to unlock'}
-            />
-          </div>
+          <Panel style={reveal(0.3)} className="p-5">
+            <PanelHead title="Quick actions" meta={<span className="text-[11.5px] text-subtle">{verified ? '2 available' : 'verify to unlock'}</span>} />
+            <div className="-mx-2 space-y-0.5">
+              <QuickAction
+                href={verified ? '/buy' : '/verify'} locked={!verified}
+                icon={<ArrowDownLeft className="h-5 w-5" />}
+                title={`Buy ${brand.assetCode}`} desc={`Convert ${brand.fiatCurrency} to ${brand.assetCode} and receive it in your wallet.`}
+              />
+              <QuickAction
+                href={verified ? '/sell' : '/verify'} locked={!verified}
+                icon={<ArrowUpRight className="h-5 w-5" />}
+                title={`Sell ${brand.assetCode}`} desc={`Convert ${brand.assetCode} back to ${brand.fiatCurrency}, paid to your bank.`}
+              />
+            </div>
+          </Panel>
 
           <Panel style={reveal(0.38)} className="p-5">
             <PanelHead
               title="Recent activity"
-              meta={<Link href="/transactions" className="inline-flex items-center text-[13px] font-medium text-brand-700 hover:text-brand-800">View all <ChevronRight className="h-4 w-4" /></Link>}
+              meta={<Link href="/transactions" className="inline-flex items-center text-[11.5px] font-medium text-brand-700 hover:text-brand-800">View all <ArrowRight className="ml-0.5 h-3.5 w-3.5" /></Link>}
             />
             {txns === null ? (
               <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -152,7 +135,7 @@ export default function HomePage() {
               <EmptyState
                 icon={<Receipt className="h-6 w-6" />}
                 title="No transactions yet"
-                desc={`Your activity will appear here after your first ${verified ? 'purchase' : 'verification'}.`}
+                desc={`Your ${brand.assetCode} purchases and sales will show up here.`}
                 action={verified
                   ? <Link href="/buy" className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-[var(--color-brand-ink)] transition hover:opacity-90">Buy your first {brand.assetCode} <ArrowRight className="h-4 w-4" /></Link>
                   : undefined}
@@ -164,7 +147,7 @@ export default function HomePage() {
                   const Icon = t.kind === 'buy' ? ArrowDownToLine : ArrowUpFromLine;
                   return (
                     <Link key={t.id} href={`/transactions/${t.id}`}
-                      className={`flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-surface/70 ${i > 0 ? 'border-t border-line/70' : ''}`}>
+                      className={`flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-black/[0.03] ${i > 0 ? 'border-t border-line/70' : ''}`}>
                       <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700"><Icon className="h-5 w-5" /></div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-ink">{t.kind === 'buy' ? 'Bought' : 'Sold'} {t.assetAmount ?? ''} {t.assetCode ?? brand.assetCode}</p>
@@ -182,18 +165,36 @@ export default function HomePage() {
           </Panel>
         </div>
 
-        {/* Right: next steps + rate */}
+        {/* Right: get started + verify */}
         <div className="space-y-5">
           <Panel style={reveal(0.34)} className="p-5">
             <PanelHead title="Get started" />
             <div className="-mx-2">
-              <Insight done={verified} label="Verify your identity" href="/verify" />
-              <Insight done={(txns?.length ?? 0) > 0} label="Make your first purchase" href={verified ? '/buy' : '/verify'} />
-              <Insight done={hasHoldings} label="Hold a balance" href={verified ? '/buy' : '/verify'} />
+              <Checklist done={verified} label="Verify your identity" href="/verify" />
+              <Checklist done={(txns?.length ?? 0) > 0} label="Make your first purchase" href={verified ? '/buy' : '/verify'} />
+              <Checklist done={hasHoldings} label="Hold a balance" href={verified ? '/buy' : '/verify'} />
             </div>
           </Panel>
 
-          <Panel style={reveal(0.4)} className="p-5">
+          {!verified && (
+            <Panel style={reveal(0.4)} className="p-5">
+              <div className="flex items-start gap-3">
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700"><ShieldCheck className="h-5 w-5" /></span>
+                <div>
+                  <p className="text-sm font-semibold text-ink">Verify your identity</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-1 text-[12.5px] leading-relaxed text-muted">
+                    One quick check with <DiditMark className="text-[12.5px]" /> unlocks buying and selling.
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => router.push('/verify')}
+                className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-ink px-5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.99]">
+                Start verification <ArrowRight className="h-4 w-4" />
+              </button>
+            </Panel>
+          )}
+
+          <Panel style={reveal(0.44)} className="p-5">
             <PanelHead
               title="Today's rate"
               meta={<span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--color-up)]"><Sparkles className="h-3 w-3" /> Live</span>}
@@ -206,25 +207,33 @@ export default function HomePage() {
               </Link>
             )}
           </Panel>
-
-          {verified && (
-            <Panel style={reveal(0.44)} className="flex items-center gap-3 p-4">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--color-success-bg)] text-[var(--color-success)]"><ShieldCheck className="h-[18px] w-[18px]" /></span>
-              <p className="text-[13px] leading-snug text-muted">Your identity is verified — buying and selling are unlocked here and across participating services.</p>
-            </Panel>
-          )}
         </div>
       </div>
     </div>
   );
 }
 
-function Insight({ done, label, href }: { done: boolean; label: string; href: string }) {
+// One "Quick action" row (Buy / Sell) — icon tile, label + description, lock/chevron.
+function QuickAction({ href, icon, title, desc, locked }: { href: string; icon: React.ReactNode; title: string; desc: string; locked?: boolean }) {
   return (
-    <Link href={href} className="group flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-surface/70">
+    <Link href={href} className="group flex items-center gap-3.5 rounded-xl px-2 py-3 transition-colors hover:bg-black/[0.03]">
+      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand group-hover:text-white">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[15px] font-semibold text-ink">{title}</p>
+        <p className="truncate text-[12.5px] text-muted">{desc}</p>
+      </div>
+      {locked && <span className="hidden shrink-0 rounded-pill bg-surface px-2.5 py-1 text-[11px] font-semibold text-muted sm:inline">Verify first</span>}
+      <ChevronRight className="h-4 w-4 shrink-0 text-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700" />
+    </Link>
+  );
+}
+
+function Checklist({ done, label, href }: { done: boolean; label: string; href: string }) {
+  return (
+    <Link href={href} className="group flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-black/[0.03]">
       {done
         ? <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--color-success)]" />
-        : <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-line" />}
+        : <Circle className="h-5 w-5 shrink-0 text-line" />}
       <span className={`flex-1 text-[13px] ${done ? 'text-subtle line-through' : 'font-medium text-ink'}`}>{label}</span>
       {!done && <ChevronRight className="h-4 w-4 text-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700" />}
     </Link>

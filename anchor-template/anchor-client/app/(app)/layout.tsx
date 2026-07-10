@@ -3,7 +3,10 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, ArrowDownToLine, ArrowUpFromLine, Receipt, User, LifeBuoy, ShieldCheck } from 'lucide-react';
+import {
+  LayoutGrid, Zap, Landmark, Activity, User, LifeBuoy, BookOpen,
+  Search, Bell, ChevronRight,
+} from 'lucide-react';
 import { useCustomer } from '@/components/customer-context';
 import { useBrand } from '@/components/brand-context';
 import { BrandMark } from '@/components/brand-mark';
@@ -13,22 +16,11 @@ import { Avatar } from '@/components/avatar';
 import { cn } from '@/lib/cn';
 
 const NAV = [
-  { href: '/home', label: 'Home', icon: Home },
-  { href: '/buy', label: 'Buy', icon: ArrowDownToLine },
-  { href: '/sell', label: 'Sell', icon: ArrowUpFromLine },
-  { href: '/transactions', label: 'Activity', icon: Receipt },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/home', label: 'Home', icon: LayoutGrid },
+  { href: '/buy', label: 'Buy', icon: Zap },
+  { href: '/sell', label: 'Sell', icon: Landmark },
+  { href: '/transactions', label: 'Activity', icon: Activity },
 ];
-
-const PAGE_TITLE: Record<string, string> = {
-  '/home': 'Overview',
-  '/buy': 'Buy',
-  '/sell': 'Sell',
-  '/transactions': 'Activity',
-  '/profile': 'Profile',
-  '/verify': 'Identity verification',
-  '/support': 'Support',
-};
 
 function kycChip(status: string | undefined): { tone: Tone; label: string } {
   switch (status) {
@@ -49,102 +41,123 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => { if (!loading && !customer) router.replace('/login'); }, [customer, loading, router]);
 
   if (loading || !customer) {
-    return <div className="grid min-h-screen place-items-center"><Spinner className="h-6 w-6 text-brand" /></div>;
+    return <div className="grid min-h-screen place-items-center bg-[#f4f4f8]"><Spinner className="h-6 w-6 text-brand" /></div>;
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  const title = Object.entries(PAGE_TITLE).find(([h]) => isActive(h))?.[1] ?? brand.name;
+  const verified = customer.kycStatus === 'approved';
   const kyc = kycChip(customer.kycStatus);
 
-  return (
-    <div className="min-h-screen bg-surface/40 lg:flex">
-      {/* ── Desktop sidebar (lg+) ─────────────────────────────────────────────── */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-canvas lg:flex">
-        <div className="flex h-16 items-center gap-2.5 border-b border-line px-5">
-          <BrandMark size={30} />
-          <span className="truncate text-[15px] font-semibold text-ink">{brand.name}</span>
-        </div>
+  // Brand wordmark, nord-v2 style: lead word(s) italic + the final word as an uppercase
+  // accent pill (e.g. "Mizu" + "PAY"). Fully white-label — derived from brand.name, so a
+  // single-word anchor ("Coro") renders italic with no pill.
+  const nameWords = brand.name.trim().split(/\s+/);
+  const wordmarkLead = nameWords.length > 1 ? nameWords.slice(0, -1).join(' ') : brand.name;
+  const wordmarkTag = nameWords.length > 1 ? nameWords[nameWords.length - 1] : null;
+  const Wordmark = () => (
+    <>
+      <span className="italic tracking-tight">{wordmarkLead}</span>
+      {wordmarkTag && <span className="rounded-md bg-brand-100 px-1.5 py-0.5 text-[10px] font-bold not-italic uppercase tracking-wide text-brand-800">{wordmarkTag}</span>}
+    </>
+  );
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+  return (
+    <div className="flex min-h-screen w-full bg-[#f4f4f8]">
+      {/* ── Desktop dark icon rail (sm+) ──────────────────────────────────────── */}
+      <aside className="sticky top-0 hidden h-screen w-[68px] shrink-0 flex-col items-center justify-between self-start bg-[#161520] py-6 sm:flex">
+        <div className="flex flex-col items-center gap-2">
+          <Link href="/home" className="mb-3" aria-label={brand.name}>
+            <BrandMark size={38} />
+          </Link>
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = isActive(href);
             return (
-              <Link key={href} href={href}
+              <Link key={href} href={href} title={label}
                 className={cn(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-                  active ? 'bg-brand-50 text-brand-800' : 'text-muted hover:bg-surface hover:text-ink',
+                  'grid size-11 place-items-center rounded-[14px] transition-colors duration-200',
+                  active ? 'bg-brand/[0.16] text-white ring-1 ring-inset ring-brand/25' : 'text-white/45 hover:bg-white/[0.06] hover:text-white/80',
                 )}>
-                <Icon className={cn('h-[18px] w-[18px]', active ? 'text-brand-700' : 'text-subtle')} />
-                {label}
+                <Icon className="h-[19px] w-[19px]" />
               </Link>
             );
           })}
-        </nav>
-
-        {/* Verification nudge — the money gate lives at the foot of the rail */}
-        {customer.kycStatus !== 'approved' && (
-          <Link href="/verify" className="mx-3 mb-2 block rounded-mock border border-line bg-surface/60 p-4 transition-colors hover:border-brand-200">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-brand-700" />
-              <span className="text-xs font-semibold text-ink">Verify your identity</span>
-            </div>
-            <p className="mt-1 text-[11px] leading-snug text-muted">One quick check unlocks buying and selling.</p>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <Link href="/support" title="Support"
+            className="grid size-11 place-items-center rounded-[14px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/80">
+            <BookOpen className="h-[19px] w-[19px]" />
           </Link>
-        )}
-
-        <div className="border-t border-line p-3">
-          <Link href="/profile" className="flex items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-surface">
-            <Avatar customer={customer} size="md" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-ink">{customer.fullName || 'Your account'}</p>
-              <p className="truncate text-[11px] text-muted">{customer.email}</p>
-            </div>
+          <Link href="/profile" title="Profile"
+            className={cn('grid size-11 place-items-center rounded-[14px] transition-colors',
+              isActive('/profile') ? 'bg-brand/[0.16] text-white ring-1 ring-inset ring-brand/25' : 'text-white/40 hover:bg-white/[0.06] hover:text-white/80')}>
+            <User className="h-[19px] w-[19px]" />
           </Link>
-          {/* Trust badge — Anchor stays primary; NordStern is the infrastructure line beneath. */}
-          <div className="mt-1 flex items-center justify-between px-2">
-            <ProvisionedByNordStern compact />
-            {!IS_PRODUCTION && <Badge tone="info" className="text-[10px]">{ENVIRONMENT}</Badge>}
-          </div>
+          <span className="my-1 h-px w-6 rounded-full bg-white/10" />
+          <Link href="/profile" aria-label="Your account"><Avatar customer={customer} size="sm" className="ring-1 ring-white/15" /></Link>
         </div>
       </aside>
 
       {/* ── Main column ───────────────────────────────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile top bar (below lg) */}
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-canvas/80 px-5 py-3 backdrop-blur lg:hidden">
-          <Link href="/home" className="flex items-center gap-2">
-            <BrandMark size={28} />
-            <span className="font-semibold text-ink">{brand.name}</span>
+      <div className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(130%_100%_at_50%_-20%,#faf9ff_0%,#f5f5f9_55%,#f1f0f6_100%)]">
+        {/* Desktop top bar (sm+) */}
+        <header className="sticky top-0 z-30 hidden items-center gap-3 border-b border-black/[0.05] bg-[#faf9ff]/85 px-6 py-4 backdrop-blur sm:flex">
+          <Link href="/home" className="flex items-center gap-1.5 text-[15px] font-semibold text-ink">
+            <Wordmark />
           </Link>
-          <Link href="/support" className="rounded-lg p-2 text-muted hover:bg-surface hover:text-ink" aria-label="Support">
-            <LifeBuoy className="h-5 w-5" />
-          </Link>
+          <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide',
+            IS_PRODUCTION ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[#f6eccf] text-[#8a6410]')}>
+            <span className={cn('size-1.5 rounded-full', IS_PRODUCTION ? 'bg-[var(--color-success)]' : 'bg-[#c9992e]')} /> {ENVIRONMENT}
+          </span>
+          <span className="hidden rounded-full border border-black/[0.06] bg-canvas/70 px-2.5 py-1 text-[11px] font-medium text-muted md:inline">
+            Stellar · {brand.assetCode}
+          </span>
+
+          <div className="ml-auto flex items-center gap-2.5">
+            <span className="hidden items-center gap-2 rounded-full border border-black/[0.06] bg-canvas px-4 py-2 text-[12.5px] text-subtle lg:flex">
+              <Search className="h-[15px] w-[15px]" /> Search transactions, memos…
+            </span>
+            {!verified && (
+              <Link href="/verify" className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-warning-bg)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-warning)] transition-colors hover:brightness-95">
+                Verify identity <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            )}
+            <Link href="/support" aria-label="Support"
+              className="grid size-9 place-items-center rounded-full border border-black/[0.06] bg-canvas text-muted transition-colors hover:text-ink">
+              <Bell className="h-[15px] w-[15px]" />
+            </Link>
+            <Link href="/profile" aria-label="Profile"><Avatar customer={customer} size="sm" /></Link>
+          </div>
         </header>
 
-        {/* Desktop top bar (lg+) */}
-        <header className="sticky top-0 z-20 hidden h-16 items-center justify-between border-b border-line bg-canvas/80 px-8 backdrop-blur lg:flex">
-          <h1 className="text-[15px] font-semibold text-ink">{title}</h1>
-          <div className="flex items-center gap-2">
-            <Badge tone={kyc.tone}>{kyc.label}</Badge>
-            <Link href="/support" className="rounded-lg p-2 text-muted transition hover:bg-surface hover:text-ink" aria-label="Support">
-              <LifeBuoy className="h-[18px] w-[18px]" />
-            </Link>
-            <Link href="/profile" aria-label="Profile">
-              <Avatar customer={customer} size="sm" />
+        {/* Mobile top bar (below sm) */}
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-black/[0.05] bg-[#faf9ff]/90 px-5 py-3 backdrop-blur sm:hidden">
+          <Link href="/home" className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+            <BrandMark size={26} />
+            <span className="flex items-center gap-1.5"><Wordmark /></span>
+          </Link>
+          <div className="flex items-center gap-1.5">
+            {!verified && <Badge tone={kyc.tone}>{kyc.label}</Badge>}
+            <Link href="/support" className="rounded-lg p-2 text-muted hover:bg-black/[0.04] hover:text-ink" aria-label="Support">
+              <LifeBuoy className="h-5 w-5" />
             </Link>
           </div>
         </header>
 
-        {/* Content — narrow flows stay readable; the dashboard/table use the full width. */}
-        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-6 pb-24 lg:px-8 lg:py-10 lg:pb-10">
+        {/* Content */}
+        <main className="w-full flex-1 p-5 pb-24 sm:p-6">
           {children}
         </main>
+
+        {/* Attribution footer (desktop) */}
+        <div className="hidden items-center justify-center gap-2 border-t border-black/[0.05] px-6 py-3 sm:flex">
+          <ProvisionedByNordStern compact />
+        </div>
       </div>
 
-      {/* ── Mobile bottom tab bar (below lg only) ─────────────────────────────── */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-canvas lg:hidden">
+      {/* ── Mobile bottom tab bar (below sm) ──────────────────────────────────── */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-black/[0.06] bg-canvas sm:hidden">
         <div className="mx-auto grid max-w-lg grid-cols-5">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {[...NAV, { href: '/profile', label: 'Profile', icon: User }].map(({ href, label, icon: Icon }) => {
             const active = isActive(href);
             return (
               <Link key={href} href={href} className={cn('flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors', active ? 'text-brand-700' : 'text-subtle hover:text-muted')}>

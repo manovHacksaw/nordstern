@@ -62,7 +62,10 @@ export default function LoginPage() {
 
   function skipName() { router.replace('/home'); }
 
-  const mount = reduce ? {} : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 } };
+  // SSR-safe: server + first client paint render the resting state (initial={false}); the
+  // entrance runs after mount, so hydration never diverges on reduced-motion preference.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const swap = reduce ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 } };
 
   const heading = step === 'email' ? 'Welcome back' : step === 'code' ? 'Check your email' : 'What should we call you?';
@@ -81,7 +84,8 @@ export default function LoginPage() {
       </div>
 
       <motion.div
-        {...mount}
+        initial={false}
+        animate={mounted && !reduce ? { opacity: [0, 1], y: [14, 0] } : { opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: EASE }}
         className="relative grid w-full max-w-5xl overflow-hidden rounded-card bg-canvas p-3 shadow-[0_40px_120px_-45px_rgba(75,63,158,0.4)] sm:p-4 lg:grid-cols-2"
       >
@@ -97,7 +101,7 @@ export default function LoginPage() {
               <Badge tone={IS_PRODUCTION ? 'success' : 'info'}>{ENVIRONMENT}</Badge>
             </div>
 
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div key={step} {...swap} transition={{ duration: 0.35, ease: EASE }}>
                 <h1 className="text-3xl font-bold tracking-tight text-ink">{heading}</h1>
                 <p className="mt-2 text-[15px] leading-relaxed text-muted">

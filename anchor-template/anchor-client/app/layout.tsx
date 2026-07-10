@@ -24,10 +24,11 @@ export function generateMetadata(): Metadata {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const brand = getBrand();
-  // Apply the anchor's accent colour to the brand token so the whole app re-skins.
-  const style = brand.accent ? ({ ['--color-brand' as string]: brand.accent }) : undefined;
+  // Colour is fixed to the NordStern brand palette for EVERY anchor (the per-anchor accent is
+  // intentionally not applied to colour). Everything else — name, logo, asset, fiat, support —
+  // stays white-label. The whole purple scale therefore resolves from globals.css tokens.
   return (
-    <html lang="en" className={`${clearSansText.variable} ${clearSansDisplay.variable} ${mono.variable}`} style={style as React.CSSProperties}>
+    <html lang="en" className={`${clearSansText.variable} ${clearSansDisplay.variable} ${mono.variable}`}>
       <body className="min-h-screen antialiased">
         <BrandProvider brand={brand}>
           <CustomerProvider>{children}</CustomerProvider>
