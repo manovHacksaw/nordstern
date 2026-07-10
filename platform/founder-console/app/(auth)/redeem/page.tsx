@@ -10,7 +10,8 @@ import { Button } from '@nordstern/shared-ui';
 import { Input } from '@nordstern/shared-ui';
 import { Label } from '@nordstern/shared-ui';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@nordstern/shared-ui';
-import { CheckCircle2, Loader2, ShieldCheck, Clock, Palette } from 'lucide-react';
+import { CheckCircle2, Loader2, ShieldCheck, Clock, Palette, Coins } from 'lucide-react';
+import { FIAT, COMING_SOON_LABEL } from '../../../lib/onboarding/availability';
 
 const schema = z.object({
   token: z.string().min(1, 'Token is required'),
@@ -19,6 +20,14 @@ const schema = z.object({
     .max(63, 'Maximum 63 characters')
     .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, 'Only lowercase letters, numbers, and hyphens'),
   fullName: z.string().min(2, 'Name is required'),
+  // Asset the anchor distributes. `external` = Circle USDC (real, mainnet-capable, live-priced).
+  // `self-issued` = a custom test token the founder mints (TESTNET ONLY) with a fixed price.
+  assetModel: z.enum(['external', 'self-issued']),
+  assetCode: z.string().optional(),
+  assetName: z.string().optional(),
+  assetPriceInr: z.string().optional(),
+  // Settlement (fiat) currency. INR only today; others render "Soon".
+  settlementCurrency: z.string(),
   // Brand identity — powers the customer app + operator console. All optional; sensible
   // defaults (NordStern purple + monogram) apply when omitted.
   displayName: z.string().optional(),
@@ -32,6 +41,17 @@ const schema = z.object({
   razorpayKeySecret: z.string().min(1, 'Required — anchors launch on a real on-ramp'),
   cashfreeAppId: z.string().optional(),
   cashfreeSecretKey: z.string().optional(),
+}).superRefine((v, ctx) => {
+  // A custom self-issued token needs a valid code and a fixed INR price (no market to quote).
+  if (v.assetModel === 'self-issued') {
+    if (!/^[A-Za-z0-9]{1,12}$/.test(v.assetCode ?? '')) {
+      ctx.addIssue({ code: 'custom', path: ['assetCode'], message: '1–12 letters or digits' });
+    }
+    const p = Number(v.assetPriceInr);
+    if (!Number.isFinite(p) || p <= 0) {
+      ctx.addIssue({ code: 'custom', path: ['assetPriceInr'], message: 'Enter a price in INR greater than 0' });
+    }
+  }
 });
 
 type Form = z.infer<typeof schema>;
@@ -96,17 +116,36 @@ function RedeemForm() {
   const [slug, setSlug] = useState('');
   const [homeDomain, setHomeDomain] = useState<string | null>(null);
   const [evidence, setEvidence] = useState<Evidence | null>(null);
+  // The platform's Stellar network — custom self-issued tokens are offered ONLY on testnet.
+  // Defaults to mainnet (the safe assumption) until the verify call confirms.
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('mainnet');
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<Form>({
     resolver: zodResolver(schema),
-    defaultValues: { token: searchParams.get('token') || '', subdomain: '', fullName: '' },
+    defaultValues: {
+      token: searchParams.get('token') || '', subdomain: '', fullName: '',
+      assetModel: 'external', settlementCurrency: 'INR',
+    },
   });
   const accentValue = watch('accent');
+  const assetModel = watch('assetModel');
 
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) setValue('token', token);
+    // Learn the platform network (gates the custom-token option). Best-effort: on failure
+    // we keep the safe mainnet default (custom hidden).
+    if (token) {
+      api.get(`/anchor-invitations/verify?token=${encodeURIComponent(token)}`)
+        .then((r: any) => { if (r?.network === 'testnet' || r?.network === 'mainnet') setNetwork(r.network); })
+        .catch(() => {});
+    }
   }, [searchParams, setValue]);
+
+  // On mainnet, force the external (USDC) model — custom minting isn't allowed there.
+  useEffect(() => {
+    if (network === 'mainnet' && assetModel === 'self-issued') setValue('assetModel', 'external');
+  }, [network, assetModel, setValue]);
 
   // Poll the REAL provisioning status endpoint until terminal.
   async function pollStatus(jobId: string) {
@@ -143,9 +182,15 @@ function RedeemForm() {
     if (v.logoUrl) branding.logoUrl = v.logoUrl;
     if (v.supportEmail) branding.supportEmail = v.supportEmail;
     if (v.websiteUrl) branding.websiteUrl = v.websiteUrl;
+    // The founder's asset choice: USDC (external, live-priced) or a custom self-issued
+    // token (testnet only) with a fixed INR price. Backend re-validates + enforces network.
+    const asset = v.assetModel === 'self-issued'
+      ? { model: 'self-issued', code: v.assetCode, name: v.assetName || v.assetCode, priceInr: Number(v.assetPriceInr) }
+      : { model: 'external' };
     try {
       const res = await api.post('/anchor-invitations/redeem', {
         token: v.token, subdomain: v.subdomain, fullName: v.fullName,
+        asset, settlementCurrency: v.settlementCurrency || 'INR',
         ...(Object.keys(credentials).length ? { credentials } : {}),
         ...(Object.keys(branding).length ? { branding } : {}),
       }) as any;
@@ -312,6 +357,94 @@ function RedeemForm() {
               <span className="text-sm text-muted-foreground">.nordstern.live</span>
             </div>
             {errors.subdomain && <p className="text-xs text-destructive">{errors.subdomain.message}</p>}
+          </div>
+
+          {/* Token + settlement selection. USDC (external, live-priced) is the default and the
+              only option on mainnet; a custom self-issued token is offered only on testnet. */}
+          <div className="space-y-4 rounded-lg border border-line bg-surface p-4">
+            <div className="flex items-start gap-2">
+              <Coins className="h-4 w-4 text-brand mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Choose your token.</span> The asset your customers
+                receive when they on-ramp.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setValue('assetModel', 'external')}
+                className={`rounded-lg border p-3 text-left transition ${assetModel === 'external' ? 'border-brand bg-brand/5' : 'border-line bg-background hover:border-brand/40'}`}
+              >
+                <div className="text-sm font-medium text-foreground">USDC</div>
+                <div className="text-xs text-muted-foreground">Circle USD Coin · live price</div>
+              </button>
+              <button
+                type="button"
+                disabled={network !== 'testnet'}
+                onClick={() => network === 'testnet' && setValue('assetModel', 'self-issued')}
+                className={`rounded-lg border p-3 text-left transition ${
+                  network !== 'testnet'
+                    ? 'cursor-not-allowed border-line bg-background opacity-50'
+                    : assetModel === 'self-issued'
+                      ? 'border-brand bg-brand/5'
+                      : 'border-line bg-background hover:border-brand/40'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  Custom token
+                  {network !== 'testnet' && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Testnet only</span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">Launch your own · fixed price</div>
+              </button>
+            </div>
+
+            {assetModel === 'self-issued' && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Token code</Label>
+                  <Input placeholder="e.g. MIZU" {...register('assetCode')} />
+                  {errors.assetCode && <p className="text-xs text-destructive">{errors.assetCode.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Token name</Label>
+                  <Input placeholder="e.g. Mizu Token" {...register('assetName')} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-xs">Price (INR per token)</Label>
+                  <Input type="number" step="0.01" min="0" placeholder="e.g. 88.50" {...register('assetPriceInr')} />
+                  {errors.assetPriceInr && <p className="text-xs text-destructive">{errors.assetPriceInr.message}</p>}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Settlement currency</Label>
+              <div className="flex flex-wrap gap-2">
+                {FIAT.map((f) => {
+                  const selected = watch('settlementCurrency') === f.value;
+                  return (
+                    <button
+                      key={f.value}
+                      type="button"
+                      disabled={!f.available}
+                      onClick={() => f.available && setValue('settlementCurrency', f.value)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        !f.available
+                          ? 'cursor-not-allowed border-line text-muted-foreground opacity-50'
+                          : selected
+                            ? 'border-brand bg-brand/10 text-foreground'
+                            : 'border-line bg-background text-muted-foreground hover:border-brand/40'
+                      }`}
+                    >
+                      {f.value}
+                      {!f.available && <span className="ml-1 text-[10px]">{COMING_SOON_LABEL}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Brand identity — applied to the customer app + operator console. Optional. */}
