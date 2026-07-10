@@ -98,6 +98,15 @@ services:
       DIDIT_WEBHOOK_SECRET: ${DIDIT_WEBHOOK_SECRET}
       # Passed through to each provisioned anchor's operator console for logo uploads (Vercel Blob).
       BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN:-}
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-PUBLIC}
+      HORIZON_URL: ${HORIZON_URL:-https://horizon.stellar.org}
+      NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE:-Public Global Stellar Network ; September 2015}
+      ASSET_MODEL: ${ASSET_MODEL:-self-issued}
+      EXTERNAL_ASSET_CODE: ${EXTERNAL_ASSET_CODE:-USDC}
+      EXTERNAL_ASSET_ISSUER: ${EXTERNAL_ASSET_ISSUER:-}
+      TREASURY_PUBLIC: ${TREASURY_PUBLIC:-}
+      TREASURY_SECRET: ${TREASURY_SECRET:-}
+      MIN_TREASURY_XLM: ${MIN_TREASURY_XLM:-5}
       SECRETS_ENDPOINT: ""
       AWS_ACCESS_KEY_ID: ""
       AWS_SECRET_ACCESS_KEY: ""

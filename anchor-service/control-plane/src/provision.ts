@@ -2,11 +2,18 @@ import { Router, Response } from 'express';
 import { pool } from './db.js';
 import { requireAuth, AuthedRequest } from './auth.js';
 import { encryptSecret } from './crypto.js';
-import { generateKeypairs, provisionAssetOnChain, assetCodeFromSlug } from './stellar.js';
+import {
+  generateKeypairs, provisionAssetOnChain, assetCodeFromSlug, verifyExternalTreasury,
+} from './stellar.js';
 import { generateAnchorConfig } from './config-gen.js';
 import {
   createAnchorStack, createAnchorDb, dropAnchorDb, removeStack, waitHealthy, anchorDbName,
 } from './orchestrator.js';
+import { Keypair } from '@stellar/stellar-sdk';
+import {
+  IS_EXTERNAL_ASSET, EXTERNAL_ASSET_CODE, EXTERNAL_ASSET_ISSUER,
+  TREASURY_PUBLIC, TREASURY_SECRET, assertExternalAssetConfig,
+} from './assetModel.js';
 
 export const anchorsRouter = Router();
 anchorsRouter.use(requireAuth as any);
@@ -161,10 +168,27 @@ async function runProvision(anchor: any): Promise<void> {
   const brand: Record<string, string> = branding && typeof branding === 'object' ? branding : {};
 
   await setStatus(id, 'provisioning', 'Generating keypairs');
-  const kps = generateKeypairs();
-  // Prefer the founder's chosen asset code (stored at anchor-create); fall back to slug-derived
-  // only for legacy anchors created before asset selection existed.
-  const assetCode = (asset_code && String(asset_code).trim()) || assetCodeFromSlug(slug);
+  
+  let signingKp: Keypair;
+  let distributionKp: Keypair;
+  let issuerKp: Keypair | null = null;
+  let issuerPublic: string;
+  let assetCode: string;
+
+  if (IS_EXTERNAL_ASSET) {
+    assertExternalAssetConfig();
+    signingKp = Keypair.random();
+    distributionKp = Keypair.fromSecret(TREASURY_SECRET);
+    issuerPublic = EXTERNAL_ASSET_ISSUER;
+    assetCode = EXTERNAL_ASSET_CODE;
+  } else {
+    const kps = generateKeypairs();
+    signingKp = kps.signing;
+    distributionKp = kps.distribution;
+    issuerKp = kps.issuer;
+    issuerPublic = kps.issuer.publicKey();
+    assetCode = (asset_code && String(asset_code).trim()) || assetCodeFromSlug(slug);
+  }
 
   // Idempotent re-provision (retry after a failed attempt): clear any partial state
   // from a prior run so re-inserting keypairs can't collide. Keys are regenerated
@@ -172,21 +196,46 @@ async function runProvision(anchor: any): Promise<void> {
   await pool.query(`DELETE FROM anchor_secrets WHERE tenant_id = $1`, [id]);
 
   // Encrypt + store secrets (public key stays in the clear).
-  for (const [role, kp] of [['signing', kps.signing], ['distribution', kps.distribution], ['issuer', kps.issuer]] as const) {
-    const sealed = encryptSecret(kp.secret());
+  const sealedSigning = encryptSecret(signingKp.secret());
+  await pool.query(
+    `INSERT INTO anchor_secrets (tenant_id, role, public_key, ciphertext, iv, tag)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [id, 'signing', signingKp.publicKey(), sealedSigning.ciphertext, sealedSigning.iv, sealedSigning.tag],
+  );
+
+  const sealedDistribution = encryptSecret(distributionKp.secret());
+  await pool.query(
+    `INSERT INTO anchor_secrets (tenant_id, role, public_key, ciphertext, iv, tag)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [id, 'distribution', distributionKp.publicKey(), sealedDistribution.ciphertext, sealedDistribution.iv, sealedDistribution.tag],
+  );
+
+  if (!IS_EXTERNAL_ASSET && issuerKp) {
+    const sealedIssuer = encryptSecret(issuerKp.secret());
     await pool.query(
       `INSERT INTO anchor_secrets (tenant_id, role, public_key, ciphertext, iv, tag)
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [id, role, kp.publicKey(), sealed.ciphertext, sealed.iv, sealed.tag],
+      [id, 'issuer', issuerKp.publicKey(), sealedIssuer.ciphertext, sealedIssuer.iv, sealedIssuer.tag],
     );
   }
+
   await pool.query(
     `UPDATE tenants SET asset_code = $1, asset_issuer = $2 WHERE id = $3`,
-    [assetCode, kps.issuer.publicKey(), id],
+    [assetCode, issuerPublic, id],
   );
 
-  await setStatus(id, 'provisioning', 'Funding accounts & issuing asset on Stellar');
-  await provisionAssetOnChain(kps, assetCode);
+  if (IS_EXTERNAL_ASSET) {
+    await setStatus(id, 'provisioning', 'Verifying external treasury');
+    await verifyExternalTreasury(distributionKp.publicKey());
+  } else {
+    await setStatus(id, 'provisioning', 'Funding accounts & issuing asset on Stellar');
+    const kps = {
+      signing: signingKp,
+      distribution: distributionKp,
+      issuer: issuerKp!,
+    };
+    await provisionAssetOnChain(kps, assetCode);
+  }
 
   await setStatus(id, 'provisioning', 'Generating config');
   const database = anchorDbName(slug);
@@ -198,9 +247,9 @@ async function runProvision(anchor: any): Promise<void> {
     homeDomain: home_domain,
     database,
     assetCode,
-    assetIssuer: kps.issuer.publicKey(),
-    distributionPublic: kps.distribution.publicKey(),
-    signingPublic: kps.signing.publicKey(),
+    assetIssuer: issuerPublic,
+    distributionPublic: distributionKp.publicKey(),
+    signingPublic: signingKp.publicKey(),
     orgName: name,
   });
 
@@ -218,10 +267,10 @@ async function runProvision(anchor: any): Promise<void> {
     homeDomain: home_domain,
     database,
     assetCode,
-    assetIssuer: kps.issuer.publicKey(),
-    distributionPublic: kps.distribution.publicKey(),
-    distributionSecret: kps.distribution.secret(),
-    signingSecret: kps.signing.secret(),
+    assetIssuer: issuerPublic,
+    distributionPublic: distributionKp.publicKey(),
+    distributionSecret: distributionKp.secret(),
+    signingSecret: signingKp.secret(),
     adapters: {
       kyc: adapters?.kyc_provider ?? 'didit',   // universal real KYC (DIDIT) by default
       deposit: adapters?.deposit_provider ?? 'mock',

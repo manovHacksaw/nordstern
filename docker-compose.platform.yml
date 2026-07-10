@@ -82,8 +82,15 @@ services:
       ANCHOR_CONFIG_DIR: /anchor-configs
       ANCHOR_CONFIG_HOST_ROOT: ${ANCHOR_CONFIG_HOST_ROOT:?run anchor-service/scripts/setup-base.mjs and export ANCHOR_CONFIG_HOST_ROOT}
       ANCHOR_DOMAIN_SUFFIX: anchors.127.0.0.1.sslip.io
-      HORIZON_URL: https://horizon-testnet.stellar.org
-      NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-TESTNET}
+      HORIZON_URL: ${HORIZON_URL:-https://horizon-testnet.stellar.org}
+      NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}
+      ASSET_MODEL: ${ASSET_MODEL:-self-issued}
+      EXTERNAL_ASSET_CODE: ${EXTERNAL_ASSET_CODE:-USDC}
+      EXTERNAL_ASSET_ISSUER: ${EXTERNAL_ASSET_ISSUER:-}
+      TREASURY_PUBLIC: ${TREASURY_PUBLIC:-}
+      TREASURY_SECRET: ${TREASURY_SECRET:-}
+      MIN_TREASURY_XLM: ${MIN_TREASURY_XLM:-5}
       # SEP-45 (contract-account / passkey smart-wallet web auth). Empty by default → every
       # anchor provisions SEP-10-only, unchanged. Set to the deployed stellar/sep45-reference
       # `web_auth` contract id (see nordstern-passkey-smart-wallets) to enable passkey wallets

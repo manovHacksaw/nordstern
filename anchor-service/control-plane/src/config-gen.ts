@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
+import { IS_EXTERNAL_ASSET } from './assetModel.js';
 
 // ─── Per-anchor config generation (DL-008) ─────────────────────────────────────
 // Each anchor gets its own generated Anchor Platform config, stellar.toml (SEP-1),
@@ -139,6 +140,12 @@ assets:
 }
 
 function stellarToml(a: AnchorConfigInput): string {
+  const isExternal = IS_EXTERNAL_ASSET;
+  const status = isExternal ? "live" : "test";
+  const name = isExternal ? "USD Coin" : `${a.assetCode} (NordStern anchor)`;
+  const desc = isExternal ? "Circle USD Coin on Stellar" : `Test asset issued by the ${a.slug} anchor`;
+  const isAssetAnchored = isExternal ? "true" : "false";
+
   return `NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE}"
 TRANSFER_SERVER_SEP0024="${PUBLIC_SCHEME}://${a.homeDomain}/sep24"
 WEB_AUTH_ENDPOINT="${PUBLIC_SCHEME}://${a.homeDomain}/auth"${SEP45_ENABLED ? `
@@ -154,20 +161,24 @@ ORG_DESCRIPTION="NordStern-managed Stellar anchor (${a.slug})"
 [[CURRENCIES]]
 code="${a.assetCode}"
 issuer="${a.assetIssuer}"
-status="test"
-name="${a.assetCode} (NordStern anchor)"
-desc="Test asset issued by the ${a.slug} anchor"
-is_asset_anchored=false
+status="${status}"
+name="${name}"
+desc="${desc}"
+is_asset_anchored=${isAssetAnchored}
 anchor_asset_type="fiat"
 display_decimals=2
 `;
 }
 
 function assetsYaml(a: AnchorConfigInput): string {
+  const isExternal = IS_EXTERNAL_ASSET;
+  const decimals = isExternal ? 7 : 2;
+  const withdrawEnabled = isExternal ? "false" : "true";
+
   return `items:
   - id: "stellar:${a.assetCode}:${a.assetIssuer}"
     distribution_account: "${a.distributionPublic}"
-    significant_decimals: 2
+    significant_decimals: ${decimals}
     sep24:
       enabled: true
       deposit:
@@ -177,7 +188,7 @@ function assetsYaml(a: AnchorConfigInput): string {
         methods:
           - WIRE
       withdraw:
-        enabled: true
+        enabled: ${withdrawEnabled}
         min_amount: 1
         max_amount: 1000000
         methods:

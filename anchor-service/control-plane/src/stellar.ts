@@ -1,6 +1,9 @@
 import {
   Keypair, Networks, Horizon, Asset, TransactionBuilder, BASE_FEE, Operation,
 } from '@stellar/stellar-sdk';
+import {
+  IS_EXTERNAL_ASSET, EXTERNAL_ASSET_CODE, EXTERNAL_ASSET_ISSUER, MIN_TREASURY_XLM
+} from './assetModel.js';
 
 // ─── Stellar provisioning ──────────────────────────────────────────────────────
 // Extracted from the old tenants.ts and scripts/setup-testnet.mjs so the factory
@@ -38,6 +41,9 @@ export function assetCodeFromSlug(slug: string): string {
 }
 
 async function fund(kp: Keypair): Promise<void> {
+  if (IS_EXTERNAL_ASSET) {
+    throw new Error('Friendbot funding is forbidden in external-asset mode');
+  }
   const res = await fetch(`${FRIENDBOT_URL}?addr=${kp.publicKey()}`);
   if (!res.ok) throw new Error(`Friendbot failed for ${kp.publicKey()}: ${await res.text()}`);
 }
@@ -48,6 +54,9 @@ async function fund(kp: Keypair): Promise<void> {
  * (provisioning runs once per anchor).
  */
 export async function provisionAssetOnChain(kps: AnchorKeypairs, assetCode: string): Promise<void> {
+  if (IS_EXTERNAL_ASSET) {
+    throw new Error('On-chain asset provisioning is forbidden in external-asset mode');
+  }
   await fund(kps.signing);
   await fund(kps.distribution);
   await fund(kps.issuer);
@@ -69,4 +78,59 @@ export async function provisionAssetOnChain(kps: AnchorKeypairs, assetCode: stri
     .setTimeout(30).build();
   mintTx.sign(kps.issuer);
   await horizon.submitTransaction(mintTx);
+}
+
+/**
+ * Verify that the external treasury is fully funded and ready.
+ * Asserts:
+ *  1. Account exists on-chain.
+ *  2. Trustline exists to the specified external issuer for external asset code.
+ *  3. XLM balance >= MIN_TREASURY_XLM.
+ *  4. USDC balance > 0.
+ */
+export async function verifyExternalTreasury(treasuryPublic: string): Promise<void> {
+  if (!IS_EXTERNAL_ASSET) {
+    return;
+  }
+
+  try {
+    const account = await horizon.loadAccount(treasuryPublic);
+
+    // 1. Assert has USDC trustline to Circle issuer
+    const usdcBal = account.balances.find(
+      (b: any) =>
+        b.asset_code === EXTERNAL_ASSET_CODE &&
+        b.asset_issuer === EXTERNAL_ASSET_ISSUER,
+    );
+    if (!usdcBal) {
+      throw new Error(
+        `treasury account ${treasuryPublic} has no trustline for external asset ${EXTERNAL_ASSET_CODE}:${EXTERNAL_ASSET_ISSUER}. ` +
+        `Please create the trustline first.`
+      );
+    }
+
+    // 2. Assert XLM >= MIN_TREASURY_XLM
+    const nativeBal = account.balances.find((b) => b.asset_type === 'native');
+    const xlmAmount = Number(nativeBal?.balance ?? '0');
+    if (xlmAmount < MIN_TREASURY_XLM) {
+      throw new Error(
+        `treasury account ${treasuryPublic} has insufficient XLM balance (found ${xlmAmount} XLM, need at least ${MIN_TREASURY_XLM} XLM). ` +
+        `Please fund the account with more XLM.`
+      );
+    }
+
+    // 3. Assert USDC balance > 0
+    const usdcAmount = Number(usdcBal.balance ?? '0');
+    if (usdcAmount <= 0) {
+      throw new Error(
+        `treasury account ${treasuryPublic} has no USDC balance (found ${usdcAmount}). ` +
+        `Please fund the treasury with USDC first.`
+      );
+    }
+  } catch (err: any) {
+    if (err.status === 404) {
+      throw new Error(`treasury account ${treasuryPublic} does not exist on-chain. Please create and fund it with XLM first.`);
+    }
+    throw err;
+  }
 }
