@@ -44,6 +44,9 @@ export default function BuyPage() {
   // (not by string-matching `error`) because friendly() rewrites the message and drops the
   // word "trustline", which would hide the "Enable {asset}" button.
   const [needsTrustline, setNeedsTrustline] = useState(false);
+  // The anchor's official asset issuer — shown so the customer trusts the RIGHT asset (a
+  // same-code trustline to another issuer is common on testnet and silently breaks delivery).
+  const [assetIssuer, setAssetIssuer] = useState<string | null>(null);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const verified = customer?.kycStatus === 'approved';
@@ -51,7 +54,10 @@ export default function BuyPage() {
   // Load the anchor's min/max once so we can validate as the user types (before any handoff).
   useEffect(() => {
     getQuote(1, 'buy')
-      .then((q) => setLimits({ min: q.minAmount ?? null, max: q.maxAmount ?? null }))
+      .then((q) => {
+        setLimits({ min: q.minAmount ?? null, max: q.maxAmount ?? null });
+        if (q.assetIssuer) setAssetIssuer(q.assetIssuer);
+      })
       .catch(() => {});
   }, []);
 
@@ -234,18 +240,25 @@ export default function BuyPage() {
             <div className="space-y-3">
               <Msg tone="error" text={error} />
               {needsTrustline && (
-                <Button
-                  size="block"
-                  variant="outline"
-                  disabled={addingTrustline}
-                  onClick={addTrustline}
-                >
-                  {addingTrustline ? (
-                    <span className="flex items-center justify-center gap-2"><Spinner className="h-4 w-4" /> Enabling asset…</span>
-                  ) : (
-                    <span>Enable {brand.assetCode} in wallet</span>
+                <>
+                  <Button
+                    size="block"
+                    variant="outline"
+                    disabled={addingTrustline}
+                    onClick={addTrustline}
+                  >
+                    {addingTrustline ? (
+                      <span className="flex items-center justify-center gap-2"><Spinner className="h-4 w-4" /> Enabling asset…</span>
+                    ) : (
+                      <span>Enable {brand.assetCode} in wallet</span>
+                    )}
+                  </Button>
+                  {assetIssuer && (
+                    <p className="text-center text-[11px] text-faint break-all">
+                      Official {brand.assetCode} issuer: {assetIssuer.slice(0, 6)}…{assetIssuer.slice(-6)}
+                    </p>
                   )}
-                </Button>
+                </>
               )}
             </div>
           )}
@@ -261,10 +274,8 @@ export default function BuyPage() {
           <Card><CardBody className="flex flex-col items-center gap-3 py-6 text-center">
             <div className="grid h-12 w-12 place-items-center rounded-full bg-brand/15"><ExternalLink className="h-6 w-6 text-brand-deep" /></div>
             <p className="font-medium text-ink">Complete your payment</p>
-            <p className="max-w-xs text-sm text-muted">A secure payment page opens in a new tab. Pay {inr(quote?.inrAmount)} with UPI or card — you’ll come back here automatically and we’ll deliver {amount} {brand.assetCode} to your wallet.</p>
-            <a href={payUrl} target="_blank" rel="noopener noreferrer" className="w-full" onClick={() => setTimeout(() => setStep('processing'), 500)}>
-              <Button size="block">Continue to payment · {inr(quote?.inrAmount)}</Button>
-            </a>
+            <p className="max-w-xs text-sm text-muted">A secure payment window opens. Pay {inr(quote?.inrAmount)} with UPI or card — you’ll come back here automatically and we’ll deliver {amount} {brand.assetCode} to your wallet.</p>
+            <Button size="block" onClick={() => { openPaymentWindow(payUrl); setStep('processing'); }}>Continue to payment · {inr(quote?.inrAmount)}</Button>
             <button className="text-sm text-muted hover:text-ink" onClick={() => setStep('processing')}>I’ve paid — track my money</button>
           </CardBody></Card>
         </>
@@ -325,6 +336,25 @@ export default function BuyPage() {
       )}
     </div>
   );
+}
+
+// Open the fiat payment page as a centered popup window (the pattern payment gateways use),
+// not a new browser tab. Falls back to a normal tab if the browser blocks the popup.
+function openPaymentWindow(url: string): void {
+  const w = 460, h = 720;
+  const dualLeft = window.screenLeft ?? window.screenX ?? 0;
+  const dualTop = window.screenTop ?? window.screenY ?? 0;
+  const width = window.innerWidth || document.documentElement.clientWidth || screen.width;
+  const height = window.innerHeight || document.documentElement.clientHeight || screen.height;
+  const left = dualLeft + (width - w) / 2;
+  const top = dualTop + (height - h) / 2;
+  const popup = window.open(
+    url,
+    'payment',
+    `popup=yes,width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`,
+  );
+  if (popup) { popup.focus(); return; }
+  window.open(url, '_blank', 'noopener,noreferrer'); // popup blocked → fall back to a tab
 }
 
 function friendly(msg: string): string {

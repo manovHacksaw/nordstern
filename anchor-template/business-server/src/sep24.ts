@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ASSET_CODE, IS_MAINNET, TREASURY_PUBLIC, assetId } from './config.js';
+import { ASSET_CODE, ASSET_ISSUER_PUBLIC, IS_MAINNET, TREASURY_PUBLIC, assetId } from './config.js';
 import { fetchTransaction, patchTransaction } from './platform.js';
 import { generateMemo, hasUsdcTrustline } from './stellar.js';
 import { executeRelease } from './releases.js';
@@ -500,6 +500,10 @@ sep24Router.get('/interactive', async (req, res) => {
         <div class="card"><div class="label">One step in your wallet</div>
           <p class="note" style="margin:6px 0 0">Your wallet must add a ${ASSET_CODE} trustline before it can receive tokens.
             Add ${ASSET_CODE} in your wallet, then reload this page to pay.</p></div>
+        <div class="card"><div class="label">Official ${ASSET_CODE} issuer — trust THIS one</div>
+          <p class="note" style="margin:6px 0 0">${ASSET_CODE} exists under many issuers on testnet. Make sure the
+            trustline you add points to the anchor's official issuer below, not a same-named asset.</p>
+          <div class="value" style="margin-top:6px">${ASSET_ISSUER_PUBLIC}</div></div>
         <div class="card"><div class="label">Your address</div><div class="value">${destination}</div></div>`));
       return;
     }

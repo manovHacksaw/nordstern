@@ -29,6 +29,7 @@ walletRouter.get('/api/quote', async (req, res) => {
       .catch(() => null);
     const body: Record<string, unknown> = {
       assetCode: ASSET_CODE,
+      assetIssuer: ASSET_ISSUER_PUBLIC,   // so the UI can show WHICH issuer's asset this is
       inrPerUnit: inrPerUnit.toFixed(2),
       source: q.source,
       minAmount: strategy?.minDeposit ?? null,
@@ -51,8 +52,13 @@ walletRouter.get('/api/account/:address', async (req, res) => {
   if (!r.ok) { res.json({ xlm: null, anch: null, error: 'Account not found' }); return; }
   const data: any = await r.json();
   const xlm  = data.balances?.find((b: any) => b.asset_type === 'native')?.balance ?? '0';
-  const anch = data.balances?.find((b: any) => b.asset_code === ASSET_CODE)?.balance ?? null;
-  res.json({ xlm, anch });
+  // Match the anchor's asset by CODE *and* ISSUER — a wallet can hold a same-code trustline to a
+  // DIFFERENT issuer (common on testnet after prior tests). Matching code-only false-positives and
+  // makes the buy flow skip the (real) enable-trustline step, so delivery then fails op_no_trust.
+  const anch = data.balances?.find(
+    (b: any) => b.asset_code === ASSET_CODE && b.asset_issuer === ASSET_ISSUER_PUBLIC,
+  )?.balance ?? null;
+  res.json({ xlm, anch, assetCode: ASSET_CODE, assetIssuer: ASSET_ISSUER_PUBLIC });
 });
 
 walletRouter.post('/api/xdr/trustline', async (req, res) => {
