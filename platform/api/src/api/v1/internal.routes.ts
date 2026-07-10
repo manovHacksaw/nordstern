@@ -73,9 +73,11 @@ internalRouter.get('/customers/kyc', ah(async (req, res) => {
   res.json({ customerId: c.id, status: c.kycStatus });
 }));
 
-// A customer's linked wallet addresses. Lets the anchor business-server scope "my
+// A customer's PROVEN wallet addresses. Lets the anchor business-server scope "my
 // transactions" to the authenticated customer without holding the wallet list itself.
+// Proven-only is the confidentiality boundary: history is visible only for wallets the
+// customer cryptographically proved they own — never a merely-claimed address.
 internalRouter.get('/customers/:id/wallets', ah(async (req, res) => {
-  const wallets = await customerWalletsRepo.listForCustomer(req.params.id as string);
-  res.json({ addresses: wallets.map((w) => w.address) });
+  const addresses = await customerWalletsRepo.listProvenAddresses(req.params.id as string);
+  res.json({ addresses });
 }));

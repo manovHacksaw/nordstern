@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Wallet, Plus, Trash2, LogOut, Check, X, Pencil } from 'lucide-react';
+import { Wallet, Trash2, LogOut, Check, X, Pencil, ShieldCheck, Link2 } from 'lucide-react';
 import { customer as api, ApiError, type Wallet as W } from '@/lib/customer';
+import { connect } from '@/lib/wallet';
+import { ensureWalletLinked } from '@/lib/link-wallet';
 import { useCustomer } from '@/components/customer-context';
 import { useBrand } from '@/components/brand-context';
-import { Card, CardBody, Button, Input, Spinner } from '@/components/ui';
+import { Card, CardBody, Button, Input, Spinner, Badge } from '@/components/ui';
 import { VerificationCard, InfrastructureSection } from '@/components/ecosystem';
 
 const mask = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -19,9 +21,7 @@ export default function ProfilePage() {
   const [wallets, setWallets] = useState<W[] | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState(customer?.fullName ?? '');
-  const [addr, setAddr] = useState('');
-  const [label, setLabel] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [linking, setLinking] = useState(false);
   const [err, setErr] = useState('');
 
   useEffect(() => { api.wallets().then(setWallets).catch(() => setWallets([])); }, []);
@@ -31,13 +31,21 @@ export default function ProfilePage() {
     await api.updateProfile({ fullName: name.trim() }).catch(() => {});
     await refresh(); setEditingName(false);
   }
-  async function addWallet() {
-    setAdding(true); setErr('');
+
+  // Prove-then-link: connect a wallet, sign a server-issued challenge, verify. This is the
+  // only way to attach a wallet — you can link only a wallet you can actually sign with.
+  async function linkWallet() {
+    setLinking(true); setErr('');
     try {
-      await api.addWallet(addr.trim(), label.trim() || undefined);
-      setWallets(await api.wallets()); setAddr(''); setLabel('');
-    } catch (e) { setErr(e instanceof ApiError ? e.message : 'Could not link wallet'); }
-    finally { setAdding(false); }
+      const address = await connect();
+      await ensureWalletLinked(address);
+      setWallets(await api.wallets());
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message
+        : e instanceof Error && /cancel|denied|reject/i.test(e.message) ? 'Verification cancelled'
+        : 'Could not verify wallet ownership';
+      setErr(msg);
+    } finally { setLinking(false); }
   }
   async function removeWallet(id: string) {
     if (!confirm('Unlink this wallet?')) return;
@@ -76,29 +84,36 @@ export default function ProfilePage() {
       {/* Infrastructure — transparency about how this service is built */}
       <InfrastructureSection anchorName={brand.name} />
 
-      {/* Linked wallets */}
+      {/* Linked wallets — proven ownership only */}
       <div>
         <div className="mb-2 flex items-center gap-2"><Wallet className="h-4 w-4 text-muted" /><h2 className="font-semibold text-ink">Linked wallets</h2></div>
         <Card><CardBody className="space-y-3">
-          <p className="text-xs text-muted">Wallets are optional and can be added or removed anytime. Your account is your email — wallets just link to it.</p>
+          <p className="text-xs text-muted">
+            Your account is your email. Link a wallet by proving you control it — you&apos;ll be asked to
+            sign a quick verification request. Only wallets you can sign with can be linked.
+          </p>
           {wallets === null ? <Skeletons /> : wallets.length === 0 ? (
             <p className="py-2 text-sm text-faint">No wallets linked yet.</p>
           ) : (
             <div className="space-y-2">
               {wallets.map((w) => (
                 <div key={w.id} className="flex items-center justify-between rounded-xl border border-line px-3 py-2">
-                  <div><p className="text-sm font-medium text-ink">{w.label || 'Wallet'}</p><p className="font-mono text-xs text-faint">{mask(w.address)}</p></div>
-                  <button onClick={() => removeWallet(w.id)} className="text-muted hover:text-[var(--color-danger)]"><Trash2 className="h-4 w-4" /></button>
+                  <div>
+                    <p className="text-sm font-medium text-ink">{w.label || 'Wallet'}</p>
+                    <p className="font-mono text-xs text-faint">{mask(w.address)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge tone="success"><ShieldCheck className="mr-1 inline h-3 w-3" />Verified</Badge>
+                    <button onClick={() => removeWallet(w.id)} className="text-muted hover:text-[var(--color-danger)]"><Trash2 className="h-4 w-4" /></button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
           <div className="space-y-2 border-t border-line pt-3">
-            <Input value={addr} onChange={(e) => setAddr(e.target.value)} placeholder="Wallet address" className="h-10 font-mono text-sm" />
-            <div className="flex gap-2">
-              <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (optional)" className="h-10" />
-              <Button size="sm" onClick={addWallet} disabled={adding || !addr}>{adding ? <Spinner className="h-4 w-4" /> : <><Plus className="h-4 w-4" /> Link</>}</Button>
-            </div>
+            <Button size="block" variant="outline" onClick={linkWallet} disabled={linking}>
+              {linking ? <><Spinner className="h-4 w-4" /> Waiting for signature…</> : <><Link2 className="h-4 w-4" /> Connect &amp; verify a wallet</>}
+            </Button>
             {err && <p className="text-sm text-[var(--color-danger)]">{err}</p>}
           </div>
         </CardBody></Card>
