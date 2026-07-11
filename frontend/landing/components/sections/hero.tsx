@@ -84,7 +84,7 @@ export function Hero() {
         <div className=" grid gap-y-8  lg:grid-cols-[1.35fr_0.85fr] lg:items-start lg:gap-x-12 font-clear-display">
           <div>
             <motion.div {...rise(0.15, 12, 0.55)}>
-              <Link href={HERO.eyebrow.href} className="group inline-block">
+              <Link href={HERO.eyebrow.href} target="_blank" rel="noreferrer" className="group inline-block">
                 <Badge
                   variant="outline"
                   className="gap-2 px-4 py-2.5 text-[13px] shadow-[0_1px_2px_rgba(20,20,43,0.04)] transition-colors group-hover:bg-surface"
@@ -122,6 +122,8 @@ export function Hero() {
             <Button
               id="hero-primary-button"
               href={HERO.primary.href}
+              target="_blank"
+              rel="noreferrer"
               variant="primary"
               className="h-12 px-7"
             >

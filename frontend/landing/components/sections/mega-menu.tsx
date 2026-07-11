@@ -2,6 +2,11 @@ import Link from "next/link";
 import { ICONS } from "@/components/ui/icon-map";
 import { ArrowUpRight } from "@/components/ui/icons";
 import type { NavMenu } from "@/lib/content";
+import { isExternal } from "@/lib/links";
+
+/** next/link props with new-tab attrs for off-site menu destinations. */
+const linkProps = (href: string) =>
+  isExternal(href) ? { href, target: "_blank" as const, rel: "noreferrer" } : { href };
 
 /** Column heading with a hairline divider — matches the reference labels. */
 function ColumnLabel({ children }: { children: React.ReactNode }) {
@@ -27,7 +32,7 @@ function Row({
   const Icon = ICONS[icon];
   return (
     <Link
-      href={href}
+      {...linkProps(href)}
       className="group/row -mx-3 flex items-start gap-3.5 rounded-xl p-3 transition-colors hover:bg-surface"
     >
       <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-surface text-[19px] text-ink transition-colors group-hover/row:bg-white">
@@ -70,7 +75,7 @@ export function MegaMenu({ menu }: { menu: NavMenu }) {
             return (
               <Link
                 key={c.title}
-                href={c.href}
+                {...linkProps(c.href)}
                 className="group/card flex items-center gap-3 rounded-xl bg-surface px-4 py-5 transition-colors hover:bg-surface-2"
               >
                 <span className="text-[19px] text-ink">{Icon ? <Icon /> : null}</span>

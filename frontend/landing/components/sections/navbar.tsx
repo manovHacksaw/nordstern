@@ -11,11 +11,12 @@ import { ChevronRight } from "@/components/ui/icons";
 import { MegaMenu } from "@/components/sections/mega-menu";
 import { EASE } from "@/components/motion/ease";
 import { NAV } from "@/lib/content";
+import { SECTIONS } from "@/lib/links";
 import { cn } from "@/lib/cn";
 
 // nav items that have a mega-menu vs plain anchor links
 const PLAIN_NAV = [
-  { label: "Mobile App", href: "#mobile-app" },
+  { label: "Mobile App", href: SECTIONS.mobileApp },
 ] as const;
 
 export function Navbar() {
@@ -79,7 +80,7 @@ export function Navbar() {
         <Container className="flex h-[72px] items-center justify-between lg:h-20">
           {/* left: logo + desktop nav */}
           <div className="flex items-center gap-9 xl:gap-12">
-            <Link href="#top" aria-label="NordStern home" onClick={closeAll} className="shrink-0">
+            <Link href="/" aria-label="NordStern home" onClick={closeAll} className="shrink-0">
               <Logo />
             </Link>
 
@@ -131,10 +132,10 @@ export function Navbar() {
 
           {/* right: actions */}
           <div className="hidden items-center gap-3 lg:flex">
-            <Link id="nav-sandbox-link" href="#build" className="rounded-full px-3 py-2 text-[14px] font-medium text-muted transition-colors hover:bg-surface hover:text-ink">
+            <Link id="nav-sandbox-link" href={SECTIONS.build} className="rounded-full px-3 py-2 text-[14px] font-medium text-muted transition-colors hover:bg-surface hover:text-ink">
               Sandbox
             </Link>
-            <Button id="nav-cta-button" href="#cta" variant="ghost" className="h-10 gap-1.5 pl-4 pr-3.5">
+            <Button id="nav-cta-button" href={SECTIONS.cta} variant="ghost" className="h-10 gap-1.5 pl-4 pr-3.5">
               Talk to us
               <ChevronRight className="text-subtle" />
             </Button>
@@ -242,8 +243,8 @@ export function Navbar() {
               </nav>
 
               <div className="mt-4 grid grid-cols-[0.8fr_1.2fr] gap-2 border-t border-line pt-4">
-                <Button href="#build" onClick={closeAll} variant="ghost" size="sm">Sandbox</Button>
-                <Button href="#cta" onClick={closeAll} variant="primary" size="sm">Talk to us <ChevronRight /></Button>
+                <Button href={SECTIONS.build} onClick={closeAll} variant="ghost" size="sm">Sandbox</Button>
+                <Button href={SECTIONS.cta} onClick={closeAll} variant="primary" size="sm">Talk to us <ChevronRight /></Button>
               </div>
             </Container>
           </motion.div>

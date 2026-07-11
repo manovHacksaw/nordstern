@@ -4,6 +4,31 @@ import { Button } from "@/components/ui/button";
 import { LogoMark } from "@/components/ui/logo";
 import { Heading } from "@/components/ui/typography";
 import { FOOTER } from "@/lib/content";
+import { ROUTES, isExternal } from "@/lib/links";
+
+/** Footer link: next/link internally, plain <a> (new tab) for off-site URLs. */
+function FooterLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (isExternal(href)) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
 
 /** Green status pill (bottom-left), adapted from Phantom's "Operational". */
 function StatusBadge() {
@@ -23,7 +48,7 @@ export function Footer() {
         <div className="grid gap-12 lg:grid-cols-[1fr_2.15fr] lg:gap-16">
           {/* left: brand + status, generous negative space between */}
           <div className="flex flex-col justify-between gap-16">
-            <Link href="#top" aria-label="NordStern home" className="inline-flex">
+            <Link href="/" aria-label="NordStern home" className="inline-flex">
               <LogoMark className="size-11" />
             </Link>
             <StatusBadge />
@@ -42,6 +67,8 @@ export function Footer() {
                 <Button
                   id="footer-cta-button"
                   href={FOOTER.cta.button.href}
+                  target="_blank"
+                  rel="noreferrer"
                   variant="primary"
                   className="w-fit shrink-0"
                 >
@@ -57,13 +84,13 @@ export function Footer() {
                   <p className="text-sm font-medium text-subtle">{heading}</p>
                   <ul className="mt-4 space-y-3">
                     {items.map((it) => (
-                      <li key={it}>
-                        <Link
-                          href="#"
+                      <li key={it.label}>
+                        <FooterLink
+                          href={it.href}
                           className="text-[15px] text-ink transition-colors hover:text-brand-700"
                         >
-                          {it}
-                        </Link>
+                          {it.label}
+                        </FooterLink>
                       </li>
                     ))}
                   </ul>
@@ -78,9 +105,9 @@ export function Footer() {
       <Container className="mt-4 flex flex-col items-center justify-between gap-3 px-3 text-[13px] text-muted sm:flex-row">
         <span>© {new Date().getFullYear()} NordStern</span>
         <div className="flex gap-6">
-          <Link href="#" className="transition-colors hover:text-ink">Terms</Link>
-          <Link href="#" className="transition-colors hover:text-ink">Privacy</Link>
-          <Link href="#" className="transition-colors hover:text-ink">Cookies</Link>
+          <Link href={ROUTES.terms} className="transition-colors hover:text-ink">Terms</Link>
+          <Link href={ROUTES.privacy} className="transition-colors hover:text-ink">Privacy</Link>
+          <Link href={ROUTES.cookies} className="transition-colors hover:text-ink">Cookies</Link>
         </div>
       </Container>
     </footer>
