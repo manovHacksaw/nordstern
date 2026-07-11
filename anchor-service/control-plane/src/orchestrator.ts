@@ -26,6 +26,9 @@ const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN ?? '';
 const CONFIG_HOST_ROOT = process.env.ANCHOR_CONFIG_HOST_ROOT ?? '';
 const HORIZON_URL        = process.env.HORIZON_URL        ?? 'https://horizon-testnet.stellar.org';
 const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? 'Test SDF Network ; September 2015';
+// Mainnet? Provisioned business-servers need NODE_ENV=production so their M0 boot guard passes
+// (real-money anchors must not run in dev mode). Derived from the control-plane's own network.
+const IS_MAINNET = (process.env.STELLAR_NETWORK ?? '').toUpperCase() === 'PUBLIC' || !HORIZON_URL.includes('testnet');
 const DB_USER = process.env.DB_USER ?? 'anchor';
 const DB_PASSWORD = process.env.DB_PASSWORD ?? 'anchor';
 // RDS rejects unencrypted connections (pg_hba "no encryption"). In prod the control-plane
@@ -263,6 +266,8 @@ export async function createAnchorStack(p: StackParams): Promise<{ apId: string;
     `SEP_SERVER_URL=http://${apName(p.slug)}:8080`,
     `HORIZON_URL=${HORIZON_URL}`,
     `NETWORK_PASSPHRASE=${NETWORK_PASSPHRASE}`,
+    // Real-money anchors must run in production mode (the M0 boot guard requires it).
+    ...(IS_MAINNET ? ['NODE_ENV=production'] : []),
     `KYC_PROVIDER=${p.adapters.kyc}`,
     `DEPOSIT_PROVIDER=${p.adapters.deposit}`,
     `PAYOUT_PROVIDER=${p.adapters.payout}`,
