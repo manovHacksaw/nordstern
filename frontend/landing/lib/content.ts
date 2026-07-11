@@ -1,7 +1,13 @@
 /**
  * All landing copy + data in one typed place. Sections stay presentational;
  * branding/wording iterations happen here.
+ *
+ * Every `href` resolves through lib/links.ts (ROUTES / SECTIONS / EXTERNAL /
+ * docs() / STELLAR) — there are no bare "#" placeholders. On-page anchors are
+ * root-relative (`/#build`) so they also work from a sub-route.
  */
+
+import { ROUTES, SECTIONS, EXTERNAL, docs, STELLAR } from "@/lib/links";
 
 /**
  * Navigation with config-driven mega menus. Each item's `menu` renders the same
@@ -10,124 +16,124 @@
 export const NAV = [
   {
     label: "Platform",
-    href: "#platform",
+    href: SECTIONS.platform,
     menu: {
       columns: [
         {
           label: "Products",
           items: [
-            { icon: "bank", title: "Virtual accounts", desc: "Dedicated INR account numbers & IFSC.", href: "#platform" },
-            { icon: "bolt", title: "On/Off Ramp", desc: "Same-day settlement across Indian rails.", href: "#platform" },
-            { icon: "shield", title: "Compliance", desc: "FIU-IND reporting & monitoring built in.", href: "#platform" },
+            { icon: "bank", title: "Virtual accounts", desc: "Dedicated INR account numbers & IFSC.", href: SECTIONS.platform },
+            { icon: "bolt", title: "On/Off Ramp", desc: "Same-day settlement across Indian rails.", href: SECTIONS.platform },
+            { icon: "shield", title: "Compliance", desc: "FIU-IND reporting & monitoring built in.", href: ROUTES.security },
           ],
         },
         {
           label: "Capabilities",
           items: [
-            { icon: "users", title: "KYC & onboarding", desc: "Liveness, face-match, deepfake checks.", href: "#platform" },
-            { icon: "chart", title: "Treasury", desc: "Reserves, pricing and settlement.", href: "#platform" },
-            { icon: "layers", title: "Unified ledger", desc: "Fiat + Stellar bookkeeping in one.", href: "#platform" },
+            { icon: "users", title: "KYC & onboarding", desc: "Liveness, face-match, deepfake checks.", href: ROUTES.identity },
+            { icon: "chart", title: "Treasury", desc: "Reserves, pricing and settlement.", href: SECTIONS.platform },
+            { icon: "layers", title: "Unified ledger", desc: "Fiat + Stellar bookkeeping in one.", href: ROUTES.architecture },
           ],
         },
       ],
       featured: {
         label: "Featured",
         cards: [
-          { icon: "box", title: "Sandbox", href: "#" },
-          { icon: "activity", title: "Status", href: "#" },
+          { icon: "box", title: "Sandbox", href: EXTERNAL.register },
+          { icon: "activity", title: "Status", href: ROUTES.status },
         ],
       },
     },
   },
   {
     label: "Anchors",
-    href: "#audiences",
+    href: SECTIONS.audiences,
     menu: {
       columns: [
         {
           label: "Use cases",
           items: [
-            { icon: "bank", title: "Fintechs & PSPs", desc: "Become the money hub for your users.", href: "#audiences" },
-            { icon: "bolt", title: "Wallets", desc: "Instant on/off-ramps and balances.", href: "#audiences" },
-            { icon: "users", title: "Exchanges", desc: "A compliant fiat gateway with cards.", href: "#audiences" },
+            { icon: "bank", title: "Fintechs & PSPs", desc: "Become the money hub for your users.", href: SECTIONS.audiences },
+            { icon: "bolt", title: "Wallets", desc: "Instant on/off-ramps and balances.", href: SECTIONS.audiences },
+            { icon: "users", title: "Exchanges", desc: "A compliant fiat gateway with cards.", href: SECTIONS.audiences },
           ],
         },
         {
           label: "Outcomes",
           items: [
-            { icon: "rocket", title: "Faster launch", desc: "Go live in weeks, not quarters.", href: "#outcomes" },
-            { icon: "chart", title: "New revenue", desc: "Monetise every ramp and flow.", href: "#outcomes" },
-            { icon: "shield", title: "Stay compliant", desc: "Audit-ready from day one.", href: "#outcomes" },
+            { icon: "rocket", title: "Faster launch", desc: "Go live in weeks, not quarters.", href: SECTIONS.outcomes },
+            { icon: "chart", title: "New revenue", desc: "Monetise every ramp and flow.", href: SECTIONS.outcomes },
+            { icon: "shield", title: "Stay compliant", desc: "Audit-ready from day one.", href: SECTIONS.outcomes },
           ],
         },
       ],
       featured: {
         label: "Featured",
         cards: [
-          { icon: "book", title: "Case studies", href: "#" },
-          { icon: "box", title: "Sandbox", href: "#" },
+          { icon: "book", title: "Case studies", href: ROUTES.customers },
+          { icon: "box", title: "Sandbox", href: EXTERNAL.register },
         ],
       },
     },
   },
   {
     label: "Developers",
-    href: "#build",
+    href: SECTIONS.build,
     menu: {
       columns: [
         {
           label: "Documentation",
           items: [
-            { icon: "code", title: "API Reference", desc: "Explore our APIs to start building.", href: "#build" },
-            { icon: "layers", title: "SDKs", desc: "Client libraries for every stack.", href: "#build" },
-            { icon: "rocket", title: "Ready-to-Launch", desc: "Embed with a single line of code.", href: "#build" },
+            { icon: "code", title: "API Reference", desc: "Explore our APIs to start building.", href: docs("developers") },
+            { icon: "layers", title: "SDKs", desc: "Client libraries for every stack.", href: docs("developers") },
+            { icon: "rocket", title: "Ready-to-Launch", desc: "Embed with a single line of code.", href: SECTIONS.build },
           ],
         },
         {
           label: "Popular guides",
           items: [
-            { icon: "book", title: "SEP-24 & SEP-10", desc: "Interactive deposits and auth.", href: "#build" },
-            { icon: "book", title: "On/Off ramp", desc: "Understand ramp flows end to end.", href: "#build" },
-            { icon: "book", title: "Compliance", desc: "FIU-IND, sanctions and monitoring.", href: "#build" },
+            { icon: "book", title: "SEP-24 & SEP-10", desc: "Interactive deposits and auth.", href: STELLAR.anchorPlatform },
+            { icon: "book", title: "On/Off ramp", desc: "Understand ramp flows end to end.", href: docs("engineering/money-flow") },
+            { icon: "book", title: "Compliance", desc: "FIU-IND, sanctions and monitoring.", href: docs("getting-started/compliance") },
           ],
         },
       ],
       featured: {
         label: "Featured",
         cards: [
-          { icon: "box", title: "Sandbox", href: "#" },
-          { icon: "activity", title: "Status", href: "#" },
+          { icon: "box", title: "Sandbox", href: SECTIONS.build },
+          { icon: "activity", title: "Status", href: ROUTES.status },
         ],
       },
     },
   },
   {
     label: "Resources",
-    href: "#resources",
+    href: SECTIONS.resources,
     menu: {
       columns: [
         {
           label: "Learn",
           items: [
-            { icon: "book", title: "Blog", desc: "Product news and deep dives.", href: "#resources" },
-            { icon: "book", title: "Guides", desc: "How-tos for anchor operators.", href: "#resources" },
-            { icon: "layers", title: "Changelog", desc: "What shipped, every week.", href: "#resources" },
+            { icon: "book", title: "Blog", desc: "Product news and deep dives.", href: ROUTES.blog },
+            { icon: "book", title: "Guides", desc: "How-tos for anchor operators.", href: ROUTES.guides },
+            { icon: "layers", title: "Changelog", desc: "What shipped, every week.", href: ROUTES.changelog },
           ],
         },
         {
           label: "Company",
           items: [
-            { icon: "users", title: "About", desc: "Our mission and team.", href: "#" },
-            { icon: "rocket", title: "Careers", desc: "Build the future of money.", href: "#" },
-            { icon: "shield", title: "Security", desc: "How we keep funds safe.", href: "#" },
+            { icon: "users", title: "About", desc: "Our mission and team.", href: ROUTES.about },
+            { icon: "rocket", title: "Careers", desc: "Build the future of money.", href: ROUTES.careers },
+            { icon: "shield", title: "Security", desc: "How we keep funds safe.", href: ROUTES.security },
           ],
         },
       ],
       featured: {
         label: "Featured",
         cards: [
-          { icon: "book", title: "FAQ", href: "#" },
-          { icon: "activity", title: "Status", href: "#" },
+          { icon: "book", title: "FAQ", href: ROUTES.faq },
+          { icon: "activity", title: "Status", href: ROUTES.status },
         ],
       },
     },
@@ -138,11 +144,11 @@ export type NavItem = (typeof NAV)[number];
 export type NavMenu = NavItem["menu"];
 
 export const HERO = {
-  eyebrow: { label: "Read: why SEP-24 shifts the burden to the anchor", href: "#" },
+  eyebrow: { label: "Read: why SEP-24 shifts the burden to the anchor", href: docs("getting-started/concepts") },
   title: "Become a Stellar anchor without building the stack.",
   lead: "Nordstern runs the SEP servers, KYC, payment rails, treasury, and operator console behind a Stellar on/off-ramp. Bring your license, bank, and liquidity — launch on testnet, then go live when you're ready.",
-  primary: { label: "Talk to us", href: "http://localhost:4001/register" },
-  secondary: { label: "Explore the platform", href: "#platform" },
+  primary: { label: "Talk to us", href: EXTERNAL.register },
+  secondary: { label: "Explore the platform", href: SECTIONS.platform },
 } as const;
 
 /**
@@ -185,28 +191,28 @@ export const OUTCOMES = {
       title: "Go live in weeks, not quarters.",
       description:
         "Skip the multi-quarter build. NordStern ships the rails, KYC, and compliance so your anchor launches fast.",
-      cta: { label: "See how it works", href: "#build" },
+      cta: { label: "See how it works", href: SECTIONS.build },
     },
     {
       label: "Lower risk",
       title: "Stay audit-ready by default.",
       description:
         "FIU-IND reporting, sanctions screening, and a hash-chained audit log keep every flow defensible — automatically.",
-      cta: { label: "Explore compliance", href: "#platform" },
+      cta: { label: "Explore compliance", href: ROUTES.security },
     },
     {
       label: "New revenue",
       title: "Turn every ramp into revenue.",
       description:
         "Monetise on/off-ramp spread, treasury, and settlement with pricing controls built for margin.",
-      cta: { label: "See the platform", href: "#platform" },
+      cta: { label: "See the platform", href: SECTIONS.platform },
     },
     {
       label: "Scale with confidence",
       title: "From your first ramp to millions.",
       description:
         "The same infrastructure that launches your anchor scales to millions of verified users — no re-platforming.",
-      cta: { label: "Why teams trust us", href: "#trust" },
+      cta: { label: "Why teams trust us", href: SECTIONS.trust },
     },
   ],
   /** Two editorial images. Leave `src` null for a branded placeholder; drop in a
@@ -259,14 +265,14 @@ export const BUILD_PATHS = {
       title: "Custom",
       body: "Design your own money experience with direct control over SEP-24/SEP-10 servers, treasury and pricing.",
       chips: ["Full API", "Launch in 6 weeks"],
-      href: "#",
+      href: docs("developers"),
       variant: "code" as const,
     },
     {
       title: "Ready-to-Launch",
       body: "A fully managed, white-labelled anchor embedded with a single line of code.",
       chips: ["No code", "Launch in 3 weeks"],
-      href: "#",
+      href: EXTERNAL.register,
       variant: "dashboard" as const,
     },
   ],
@@ -315,14 +321,14 @@ export const RESOURCES = {
   eyebrow: "Resources",
   title: "Guides for anchor operators",
   posts: [
-    { tag: "Blog", read: "3 min", title: "What to look for in a SEP-24 provider" },
-    { tag: "Blog", read: "5 min", title: "Adoption tooling for embedded finance programs" },
+    { tag: "Blog", read: "3 min", title: "What to look for in a SEP-24 provider", href: ROUTES.blog },
+    { tag: "Blog", read: "5 min", title: "Adoption tooling for embedded finance programs", href: ROUTES.blog },
   ],
   featured: [
-    { title: "Enterprise-grade financial infrastructure", href: "#" },
-    { title: "Beyond the API: running a compliant anchor", href: "#" },
+    { title: "Enterprise-grade financial infrastructure", href: ROUTES.blog },
+    { title: "Beyond the API: running a compliant anchor", href: ROUTES.blog },
   ],
-  cta: { label: "See all resources", href: "#" },
+  cta: { label: "See all resources", href: ROUTES.blog },
 } as const;
 
 export const FAQ = {
@@ -358,22 +364,47 @@ export const FAQ = {
 
 export const FINAL_CTA = {
   title: "Launch money solutions for your users. Unlock new revenue for your anchor.",
-  cta: { label: "Talk to us", href: "http://localhost:4001/register" },
+  cta: { label: "Talk to us", href: EXTERNAL.register },
 } as const;
 
 export const FOOTER = {
   cta: {
     title: "Launch your Anchor today",
     body: "Build compliant Stellar anchors with integrated fiat rails, KYC, and on/off ramps.",
-    button: { label: "Talk to us", href: "http://localhost:4001/register" },
+    button: { label: "Talk to us", href: EXTERNAL.register },
   },
   status: "Live on Stellar",
   columns: {
-    Platform: ["Anchors", "On/Off Ramp", "Treasury", "Compliance"],
-    Developers: ["Documentation", "API Reference", "SDK", "Status"],
-    Resources: ["Blog", "Guides", "Changelog", "FAQ"],
-    Company: ["About", "Contact", "Careers", "Privacy"],
-    Social: ["X", "LinkedIn", "GitHub", "Discord"],
+    Platform: [
+      { label: "Anchors", href: SECTIONS.audiences },
+      { label: "On/Off Ramp", href: SECTIONS.platform },
+      { label: "Treasury", href: SECTIONS.platform },
+      { label: "Compliance", href: ROUTES.security },
+    ],
+    Developers: [
+      { label: "Documentation", href: EXTERNAL.docs },
+      { label: "API Reference", href: docs("developers") },
+      { label: "SDK", href: docs("developers") },
+      { label: "Status", href: ROUTES.status },
+    ],
+    Resources: [
+      { label: "Blog", href: ROUTES.blog },
+      { label: "Guides", href: ROUTES.guides },
+      { label: "Changelog", href: ROUTES.changelog },
+      { label: "FAQ", href: ROUTES.faq },
+    ],
+    Company: [
+      { label: "About", href: ROUTES.about },
+      { label: "Contact", href: ROUTES.contact },
+      { label: "Careers", href: ROUTES.careers },
+      { label: "Privacy", href: ROUTES.privacy },
+    ],
+    Social: [
+      { label: "X", href: EXTERNAL.twitter },
+      { label: "LinkedIn", href: EXTERNAL.linkedin },
+      { label: "GitHub", href: EXTERNAL.github },
+      { label: "Discord", href: EXTERNAL.discord },
+    ],
   },
   legal: [
     "NordStern is a technology company and not a bank. Banking services are provided by our regulated partners.",

@@ -3,6 +3,7 @@ import { Hero } from "@/components/sections/hero";
 import { Mission } from "@/components/sections/mission";
 import {LogoStrip} from "@/components/sections/logo-strip";
 import { Outcomes } from "@/components/sections/outcomes";
+import { Audiences } from "@/components/sections/audiences";
 import { PrimitivesBento } from "@/components/sections/primitives-bento";
 import { BuildPaths } from "@/components/sections/build-paths";
 import { MobileApp } from "@/components/sections/mobile-app";
@@ -22,6 +23,7 @@ export default function Home() {
         <LogoStrip />
         <Mission />
         <Outcomes />
+        <Audiences />
         <BuildPaths />
         <MobileApp />
         <PrimitivesBento />

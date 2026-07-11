@@ -9,7 +9,7 @@ export const siteConfig = {
   name: "NordStern",
   shortName: "NordStern",
   // Placeholder production URL — swap when the domain is finalized.
-  url: "https://nordstern.finance",
+  url: "https://nordstern.live",
   title: "NordStern — Anchor Infrastructure for India",
   titleTemplate: "%s · NordStern",
   description:
@@ -55,7 +55,7 @@ export const siteConfig = {
     "crypto compliance India",
     "B2B fintech API",
   ],
-  authors: [{ name: "NordStern", url: "https://nordstern.finance" }],
+  authors: [{ name: "NordStern", url: "https://nordstern.live" }],
   creator: "NordStern",
   publisher: "NordStern",
   // Brand tokens mirrored from globals.css @theme (kept in sync for OG/icons,

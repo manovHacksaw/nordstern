@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Section } from "@/components/ui/section";
 import { SectionHeader } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
@@ -20,9 +21,9 @@ export function Resources() {
                 <p className="text-xs uppercase tracking-wide text-subtle">
                   {p.tag} · {p.read}
                 </p>
-                <a href="#" className="mt-1 block text-lg font-medium hover:text-brand-700">
+                <Link href={p.href} className="mt-1 block text-lg font-medium hover:text-brand-700">
                   {p.title}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -35,7 +36,7 @@ export function Resources() {
         <Stagger className="grid gap-5 sm:grid-cols-2">
           {RESOURCES.featured.map((f) => (
             <StaggerItem key={f.title}>
-              <Card as="a" tone="outline" interactive className="flex h-full flex-col justify-between">
+              <Card as={Link} href={f.href} tone="outline" interactive className="flex h-full flex-col justify-between">
                 <div className="aspect-[4/3] rounded-mock bg-gradient-to-br from-surface to-brand-100" />
                 <div className="mt-5 flex items-start justify-between gap-4">
                   <h3 className="text-lg font-medium leading-snug">{f.title}</h3>

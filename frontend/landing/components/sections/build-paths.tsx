@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Stagger, StaggerItem } from "@/components/motion/stagger";
+import { docs } from "@/lib/links";
 
 type Language = "TypeScript" | "Node" | "cURL";
 type RequestState = "ready" | "sending" | "complete";
@@ -99,7 +100,7 @@ export function BuildPaths() {
             <p className="max-w-xl text-[17px] leading-relaxed text-muted">
               NordStern handles Stellar protocols, financial rails, and settlement infrastructure. When you need deeper control, our SDK gives your team an additional way to build a fully custom experience on top.
             </p>
-            <a href="/docs" className="group mt-5 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-noir-soft hover:shadow-md">
+            <a href={docs("developers")} target="_blank" rel="noreferrer" className="group mt-5 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-noir-soft hover:shadow-md">
               Explore the SDK
               <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </a>
