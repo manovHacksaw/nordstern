@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ASSET_CODE, ASSET_ISSUER_PUBLIC, IS_MAINNET, TREASURY_PUBLIC, assetId } from './config.js';
+import { ASSET_CODE, ASSET_ISSUER_PUBLIC, IS_MAINNET, TREASURY_PUBLIC, ANCHOR_DISPLAY_NAME, ANCHOR_LOGO_URL, assetId } from './config.js';
 import { fetchTransaction, patchTransaction } from './platform.js';
 import { generateMemo, hasUsdcTrustline } from './stellar.js';
 import { executeRelease } from './releases.js';
@@ -20,99 +20,116 @@ import { pool } from './db.js';
 
 export const sep24Router = Router();
 
-// North-star brand mark (inline SVG — self-contained, no remote assets in the
-// third-party wallet webview where these pages render).
-const STAR = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 1.6l2.35 7.7 7.7 2.35-7.7 2.35L12 21.7l-2.35-7.7L1.95 11.65l7.7-2.35L12 1.6z" fill="url(#g)"/><defs><linearGradient id="g" x1="2" y1="2" x2="22" y2="22"><stop stop-color="#c7bef7"/><stop offset="1" stop-color="#8b7ee0"/></linearGradient></defs></svg>`;
+// Ecosystem marks (inline SVG — self-contained, no remote assets in the third-party wallet
+// webview where these pages render). Stellar + a shield convey "real network, secure".
+const STELLAR_MARK = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="11.2" stroke="currentColor" stroke-width="1.4" opacity=".55"/><path d="M4.4 8.2 19.6 15.8M19.6 8.2 4.4 15.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+const SHIELD = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.6l7 2.8v5.1c0 4.5-3 8.2-7 9.9-4-1.7-7-5.4-7-9.9V5.4l7-2.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m8.8 12 2.2 2.2 4.2-4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-// Shared premium shell. Dark, Phantom-inspired — mirrors the operator console's
-// design tokens (client/app/globals.css): base #100f16, brand #ab9ff2, emerald-in.
-// Body content supplies the h2 + cards + CTA; the shell adds the branded header
-// with the network badge and wraps everything in a floating panel.
+// The anchor's brand lockup for the header: real logo if provided, else a NordStern star.
+const STAR = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 1.6l2.35 7.7 7.7 2.35-7.7 2.35L12 21.7l-2.35-7.7L1.95 11.65l7.7-2.35L12 1.6z" fill="#ab9ff2"/></svg>`;
+const brandMark = ANCHOR_LOGO_URL
+  ? `<img src="${ANCHOR_LOGO_URL}" alt="" class="logo" />`
+  : `<span class="star">${STAR}</span>`;
+
+// Shared checkout shell — LIGHT theme, matching the customer app (nord-v2): white canvas,
+// ink text, NordStern purple accent. Header shows the anchor's real logo + name + network;
+// a trust rail (Stellar + secured-by) reassures the customer this is a real, safe on-ramp.
+// Body content supplies the h2 + cards + CTA; the shell wraps it in a floating card.
 const page = (title: string, body: string) => `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title>
 <style>
   :root{
-    --bg:#100f16; --sunken:#0b0a10; --s1:#181722; --s2:#201f2d; --s3:#29283a;
-    --bd:rgba(171,159,242,.15); --bd-strong:rgba(171,159,242,.30);
-    --tx:#f4f3f7; --tx2:#a6a2b8; --tx3:#6e6a80;
-    --brand:#ab9ff2; --brand2:#9b8dec; --fill:rgba(171,159,242,.14); --fill2:rgba(171,159,242,.24);
-    --pos:#2ec08b; --pos-fill:rgba(46,192,139,.14); --warn:#f2b84b; --crit:#ff5a5a;
+    --canvas:#ffffff; --bg:#f5f5f9; --surface:#f2f4f3; --surface2:#eaeeec;
+    --line:#e6e9e8; --line-strong:#d9dcdb;
+    --ink:#0b0b0b; --muted:#5b5b5b; --subtle:#9a9a9a;
+    --brand:#ab9ff2; --brand2:#8b7ee0; --brand-50:#f4f2fd; --brand-100:#e9e5fb; --brand-800:#4b3f9e;
+    --pos:#059669; --pos-bg:#d1fae5; --warn:#b45309; --crit:#c53d1f;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{color-scheme:dark;-webkit-text-size-adjust:100%}
+  html{color-scheme:light;-webkit-text-size-adjust:100%}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
-    background:radial-gradient(1100px 560px at 50% -12%,rgba(171,159,242,.12),transparent 60%),var(--bg);
-    color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    font-family:"Clear Sans","ClearSans",-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+    background:radial-gradient(130% 100% at 50% -20%,#faf9ff 0%,#f5f5f9 55%,#f1f0f6 100%);
+    color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
     display:flex;justify-content:center;align-items:flex-start;padding:22px 16px 44px;line-height:1.5;
   }
   .shell{width:100%;max-width:440px;animation:rise .4s cubic-bezier(.16,1,.3,1)}
   @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  .brand{display:flex;align-items:center;gap:9px;margin:2px 4px 16px}
-  .brand svg{width:24px;height:24px;filter:drop-shadow(0 2px 8px rgba(171,159,242,.4))}
-  .brand .nm{font-weight:650;font-size:15px;letter-spacing:.2px}
+  .brand{display:flex;align-items:center;gap:9px;margin:2px 2px 14px}
+  .brand .logo{width:26px;height:26px;border-radius:8px;object-fit:contain}
+  .brand .star{display:inline-flex;width:26px;height:26px}
+  .brand .star svg{width:26px;height:26px}
+  .brand .nm{font-weight:650;font-size:15px;letter-spacing:.2px;color:var(--ink)}
   .brand .net{margin-left:auto;font-size:9.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
-    color:var(--brand);background:var(--fill);border:1px solid var(--bd);padding:4px 10px;border-radius:999px}
-  .panel{background:linear-gradient(180deg,var(--s1),#131220);border:1px solid var(--bd);
-    border-radius:22px;padding:22px;box-shadow:0 28px 70px rgba(6,4,12,.7)}
-  h2{font-size:20px;font-weight:640;letter-spacing:-.3px;margin-bottom:4px}
-  h3{font-size:17px;font-weight:640;margin-bottom:6px}
+    color:var(--brand-800);background:var(--brand-100);padding:4px 10px;border-radius:999px}
+  .panel{background:var(--canvas);border:1px solid var(--line);
+    border-radius:22px;padding:22px;box-shadow:0 1px 2px rgba(24,22,54,.05),0 18px 44px -24px rgba(34,24,78,.22)}
+  h2{font-size:20px;font-weight:650;letter-spacing:-.3px;margin-bottom:4px;color:var(--ink)}
+  h3{font-size:17px;font-weight:650;margin-bottom:6px;color:var(--ink)}
   h3.err,.err{color:var(--crit)}
-  .sub{font-size:11.5px;color:var(--tx3);margin-bottom:18px;font-variant-numeric:tabular-nums;word-break:break-all}
-  code{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:11px;color:var(--tx2)}
-  .card{background:var(--s2);border:1px solid var(--bd);border-radius:14px;padding:13px 15px;margin:9px 0}
-  .card.hero{background:linear-gradient(180deg,var(--s2),#1b1a28);border-color:var(--bd-strong)}
-  .label{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-weight:650}
-  .value{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:12.5px;color:var(--tx);word-break:break-all;line-height:1.55}
+  .sub{font-size:11.5px;color:var(--subtle);margin-bottom:18px;font-variant-numeric:tabular-nums;word-break:break-all}
+  code{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin:9px 0}
+  .card.hero{background:var(--brand-50);border-color:var(--brand-100)}
+  .label{font-size:10px;color:var(--subtle);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-weight:650}
+  .value{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:12.5px;color:var(--ink);word-break:break-all;line-height:1.55}
   .value.big{font-family:inherit;font-size:30px;font-weight:720;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
   .value.recv{color:var(--pos)}
-  .value.pay{color:var(--tx)}
-  .unit{font-size:15px;font-weight:600;color:var(--tx2);margin-left:5px;letter-spacing:0}
-  .rateline{font-size:11px;color:var(--tx3);margin-top:5px}
-  .note{font-size:12px;color:var(--tx2);line-height:1.6;margin:14px 2px}
+  .value.pay{color:var(--ink)}
+  .unit{font-size:15px;font-weight:600;color:var(--muted);margin-left:5px;letter-spacing:0}
+  .rateline{font-size:11px;color:var(--subtle);margin-top:5px}
+  .note{font-size:12px;color:var(--muted);line-height:1.6;margin:14px 2px}
   .note.warn{color:var(--warn)}
   form{margin:0}
   .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;
-    background:linear-gradient(180deg,var(--brand),var(--brand2));color:#171525;font-size:15px;font-weight:660;
+    background:linear-gradient(180deg,var(--brand),var(--brand2));color:#1a1530;font-size:15px;font-weight:680;
     border:none;border-radius:14px;cursor:pointer;margin-top:16px;letter-spacing:.1px;
-    transition:transform .14s,box-shadow .2s,opacity .2s;box-shadow:0 8px 26px rgba(171,159,242,.30)}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 12px 34px rgba(171,159,242,.44)}
+    transition:transform .14s,box-shadow .2s,opacity .2s;box-shadow:0 8px 22px -8px rgba(139,126,224,.6)}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -8px rgba(139,126,224,.7)}
   .btn:active{transform:translateY(0)}
   .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
-  input[type=number]{width:100%;background:var(--sunken);border:1px solid var(--bd);border-radius:14px;
-    color:var(--tx);font-size:34px;font-weight:720;padding:18px 16px;text-align:center;font-variant-numeric:tabular-nums;
+  input[type=number]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    color:var(--ink);font-size:34px;font-weight:720;padding:18px 16px;text-align:center;font-variant-numeric:tabular-nums;
     outline:none;transition:border-color .2s,box-shadow .2s}
-  input[type=number]:focus{border-color:var(--bd-strong);box-shadow:0 0 0 3px rgba(171,159,242,.18)}
+  input[type=number]:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(171,159,242,.25)}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .chips{display:flex;gap:8px;margin-top:12px}
-  .chip{flex:1;text-align:center;padding:10px 0;border-radius:11px;background:var(--fill);color:var(--brand);
-    font-size:13px;font-weight:640;cursor:pointer;border:1px solid var(--bd);font-variant-numeric:tabular-nums;
+  .chip{flex:1;text-align:center;padding:10px 0;border-radius:11px;background:var(--brand-50);color:var(--brand-800);
+    font-size:13px;font-weight:650;cursor:pointer;border:1px solid var(--brand-100);font-variant-numeric:tabular-nums;
     transition:background .15s,border-color .15s,transform .12s}
-  .chip:hover{background:var(--fill2);border-color:var(--bd-strong)}
+  .chip:hover{background:var(--brand-100)}
   .chip:active{transform:scale(.97)}
   .qr{display:flex;justify-content:center;margin:14px 0}
-  .qr img{border-radius:16px;border:1px solid var(--bd);padding:9px;background:#fff;max-width:210px}
+  .qr img{border-radius:16px;border:1px solid var(--line);padding:9px;background:#fff;max-width:210px}
   .center{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 2px}
   .ring{width:66px;height:66px;border-radius:999px;display:grid;place-items:center;margin-bottom:15px}
-  .ring.ok{background:var(--pos-fill);border:1px solid rgba(46,192,139,.32)}
-  .ring.err{background:rgba(255,90,90,.12);border:1px solid rgba(255,90,90,.32)}
+  .ring.ok{background:var(--pos-bg);border:1px solid rgba(5,150,105,.28);color:var(--pos)}
+  .ring.err{background:#fdeeea;border:1px solid rgba(197,61,31,.28);color:var(--crit)}
   .ring svg{width:30px;height:30px}
-  .spinner{width:58px;height:58px;border-radius:999px;border:3px solid var(--bd);border-top-color:var(--brand);
+  .spinner{width:58px;height:58px;border-radius:999px;border:3px solid var(--line);border-top-color:var(--brand);
     animation:spin 1s linear infinite;margin:4px auto 16px}
   @keyframes spin{to{transform:rotate(360deg)}}
-  a{color:var(--brand)}
-  .link{color:var(--brand);font-size:13px;text-decoration:none;font-weight:640;display:inline-flex;align-items:center;gap:5px}
+  a{color:var(--brand-800)}
+  .link{color:var(--brand-800);font-size:13px;text-decoration:none;font-weight:650;display:inline-flex;align-items:center;gap:5px}
   .link:hover{text-decoration:underline}
-  .status{font-size:12.5px;color:var(--tx2);margin-top:12px;text-align:center;min-height:18px}
-  pre{background:var(--sunken);border:1px solid var(--bd);border-radius:12px;padding:12px;font-size:11.5px;
-    color:var(--tx2);white-space:pre-wrap;word-break:break-word;margin-top:12px;font-family:ui-monospace,monospace}
+  .status{font-size:12.5px;color:var(--muted);margin-top:12px;text-align:center;min-height:18px}
+  pre{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:11.5px;
+    color:var(--muted);white-space:pre-wrap;word-break:break-word;margin-top:12px;font-family:ui-monospace,monospace}
   iframe{width:100%;height:70vh;border:0;border-radius:14px;margin-top:6px}
+  .trust{display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 2px 2px;flex-wrap:wrap}
+  .trust .item{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--subtle)}
+  .trust .item svg{width:13px;height:13px}
 </style></head><body>
   <div class="shell">
-    <div class="brand">${STAR}<span class="nm">NordStern</span><span class="net">${IS_MAINNET ? 'Mainnet' : 'Testnet'}</span></div>
+    <div class="brand">${brandMark}<span class="nm">${ANCHOR_DISPLAY_NAME}</span><span class="net">${IS_MAINNET ? 'Mainnet' : 'Testnet'}</span></div>
     <div class="panel">${body}</div>
+    <div class="trust">
+      <span class="item">${SHIELD} Secure checkout</span>
+      <span class="item">${STELLAR_MARK} Stellar network</span>
+      <span class="item">Powered by NordStern</span>
+    </div>
   </div>
 </body></html>`;
 

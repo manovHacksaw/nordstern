@@ -33,6 +33,12 @@ export const SEP_SERVER_URL   = process.env.SEP_SERVER_URL   ?? PLATFORM_API_URL
 export const TREASURY_PUBLIC  = process.env.TREASURY_PUBLIC  ?? '';
 export const TREASURY_SECRET  = process.env.TREASURY_SECRET  ?? '';
 
+// White-label display name + logo for the SEP-24 interactive pages (the payment/webview
+// screens). Injected by the provisioner from the anchor's branding; fall back gracefully so
+// the pages always render something sensible.
+export const ANCHOR_DISPLAY_NAME = process.env.ANCHOR_DISPLAY_NAME ?? process.env.RAZORPAY_BUSINESS_NAME ?? 'NordStern';
+export const ANCHOR_LOGO_URL     = process.env.ANCHOR_LOGO_URL     ?? '';
+
 export const ASSET_CODE          = process.env.ASSET_CODE          ?? 'USDC';
 export const ASSET_ISSUER_PUBLIC = process.env.ASSET_ISSUER_PUBLIC ?? '';
 export const HORIZON_URL         = process.env.HORIZON_URL         ?? 'https://horizon-testnet.stellar.org';
