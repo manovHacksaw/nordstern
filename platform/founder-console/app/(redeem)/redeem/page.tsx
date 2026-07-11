@@ -30,7 +30,7 @@ const schema = z.object({
   maxTxn: z.string().optional(),
   displayName: z.string().optional(),
   logoUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
-  supportEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  supportEmail: z.string().min(1, 'A support email is required').email('Enter a valid email'),
   websiteUrl: z.string().url('Must be a URL').optional().or(z.literal('')),
   razorpayKeyId: z.string().min(1, 'Required — anchors launch on a real on-ramp'),
   razorpayKeySecret: z.string().min(1, 'Required — anchors launch on a real on-ramp'),
@@ -657,8 +657,13 @@ function RedeemTypeform() {
         );
       case 'brand':
         return (
-          <Q index={n} title="Brand your anchor" helper="Optional — make it feel like your product. Leave blank for the NordStern default.">
+          <Q index={n} title="Your brand & contact" helper="A support email is required so your customers can reach you. Branding is optional — leave blank for the NordStern default.">
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className={FIELD_LABEL}>Support email <span className="text-destructive">*</span></label>
+                <input type="email" placeholder="support@yourbrand.com" {...register('supportEmail')} className={SMALL_INPUT} />
+                {errors.supportEmail && <p className="mt-1 text-xs text-destructive">{errors.supportEmail.message}</p>}
+              </div>
               <div className="sm:col-span-2">
                 <label className={FIELD_LABEL}>Display name</label>
                 <input placeholder="e.g. MizuPay" {...register('displayName')} className={SMALL_INPUT} />
@@ -668,14 +673,9 @@ function RedeemTypeform() {
                 <LogoUpload value={watch('logoUrl')} onChange={(url) => setValue('logoUrl', url, { shouldValidate: true })} />
                 {errors.logoUrl && <p className="mt-1 text-xs text-destructive">{errors.logoUrl.message}</p>}
               </div>
-              <div>
-                <label className={FIELD_LABEL}>Support email</label>
-                <input placeholder="support@mizupay.io" {...register('supportEmail')} className={SMALL_INPUT} />
-                {errors.supportEmail && <p className="mt-1 text-xs text-destructive">{errors.supportEmail.message}</p>}
-              </div>
-              <div>
-                <label className={FIELD_LABEL}>Website</label>
-                <input placeholder="https://mizupay.io" {...register('websiteUrl')} className={SMALL_INPUT} />
+              <div className="sm:col-span-2">
+                <label className={FIELD_LABEL}>Website <span className="font-normal text-subtle/70">(optional)</span></label>
+                <input placeholder="https://yourbrand.com" {...register('websiteUrl')} className={SMALL_INPUT} />
                 {errors.websiteUrl && <p className="mt-1 text-xs text-destructive">{errors.websiteUrl.message}</p>}
               </div>
             </div>
@@ -721,6 +721,7 @@ function RedeemTypeform() {
               <ReviewRow label="Settlement" value={v.settlementCurrency || 'INR'} />
               <ReviewRow label="Limits / txn" value={(v.minTxn || v.maxTxn) ? `${v.minTxn || '0'} – ${v.maxTxn || '∞'}` : 'Default'} />
               <ReviewRow label="Brand" value={v.displayName || 'NordStern default'} />
+              <ReviewRow label="Support email" value={v.supportEmail || '—'} />
               <ReviewRow label="On-ramp" value={v.razorpayKeyId ? `Razorpay ${v.razorpayKeyId.startsWith('rzp_live_') ? 'LIVE' : 'test'}` : '—'} />
             </dl>
             <p className="mt-5 flex items-center gap-2 text-sm text-subtle">
