@@ -32,13 +32,13 @@ things everything else depends on come first.
 ### The command we use (and why each part)
 
 ```
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up -d <service>
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up -d <service>
 ```
 
 - `docker compose` — manages a group of containers described in a YAML file.
 - `--env-file anchor-service/.env.base` — fills in `${VARIABLES}` in the YAML (the master
   encryption key, config paths, JWT secret). Missing → services misbehave.
-- `-f docker-compose.platform.yml` — pins us to the **correct** stack file (not the default).
+- `-f infrastructure/docker/platform.yml` — pins us to the **correct** stack file (not the default).
 - `up -d` — create/start in the background (`-d` = detached, returns your prompt).
 - `<service>` — act on only that one service, so we go one at a time.
 
@@ -75,8 +75,8 @@ bank rails on the outside — NordStern stays **non-custodial**. Postgres holds 
 
 **How we started & verified it:**
 ```
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up -d db
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml ps db   # want: Up (healthy)
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up -d db
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml ps db   # want: Up (healthy)
 docker exec -it nordstern-platform-db-1 psql -U anchor -l                                 # list the databases
 ```
 
@@ -114,8 +114,8 @@ restart; you'd re-enter them to run a real payment. (Also in the DR runbook.)
 
 **How we started & verified it:**
 ```
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up -d secrets
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml ps secrets   # want: Up (healthy)
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up -d secrets
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml ps secrets   # want: Up (healthy)
 ```
 (Listens on port **4566** — the standard LocalStack endpoint.)
 
@@ -192,8 +192,8 @@ it's up and waiting for anchors.
 
 **How we started & verified it:**
 ```
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up -d traefik
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml ps traefik   # want: Up (ports 80 + 8090)
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up -d traefik
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml ps traefik   # want: Up (ports 80 + 8090)
 ```
 Note: Traefik shows plain `Up` (no healthcheck defined) — that's fine. In **prod** the same
 setup adds TLS + a real wildcard domain (`*.nordstern.live`); that's config, not new code.
@@ -228,7 +228,7 @@ platform-migrate-1 exited with code 0
 
 **How we ran it (foreground, to watch it):**
 ```
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up platform-migrate
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up platform-migrate
 ```
 (No `-d`, so it runs in the foreground and prints its result, then returns the prompt. First
 run may build the `./platform/api` image.)
@@ -291,7 +291,7 @@ later, at redeem time.)
 
 **How we started & verified it:**
 ```
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up -d platform-api
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up -d platform-api
 docker compose ... ps platform-api        # want: Up on :4000
 curl -s localhost:4000/health             # {"status":"ok"}
 ```
@@ -456,7 +456,7 @@ re-run any number of times.
 
 **How we started & verified it:**
 ```
-docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up -d platform-console
+docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up -d platform-console
 docker compose ... ps platform-console      # want: Up, 0.0.0.0:4001->3000
 # then open a browser:
 #   http://localhost:4001/register      (founder wizard)

@@ -94,33 +94,52 @@ Concretely, **one platform provisions and operates many isolated anchor stacks.*
 
 ## Repository structure
 
-One git repository, several independently-tooled subprojects. There is **no top-level build** — work inside the relevant subproject. Everything below is what actually runs.
+One git repository, organized into `apps/` · `services` · `packages/` · `templates` · `infrastructure/` · `docs/`. There is **no top-level build** — each subproject has its own tooling; work inside the relevant one.
 
+**`apps/`** — user-facing frontends
 | Path | Role |
 |---|---|
-| [`platform/api/`](platform/api/) | **Platform API** (Express, `:4000`) — onboarding applications, organizations & memberships, OTP auth realms (operator / customer / admin), customer identity, secret refs, audit, and the email lifecycle. Drives the provisioner and registers live anchors. |
-| [`platform/founder-console/`](platform/founder-console/) | **Founder Console** (Next.js, `:4001` → `register.nordstern.live`) — the founder journey: apply, log in, redeem → provision, portfolio overview, wallet. |
-| [`platform/admin-console/`](platform/admin-console/) | **Admin Console** (Next.js, `:4002` → `admin.nordstern.live`) — NordStern-internal application review queue: approve / reject → generates redeem invites. |
-| [`platform/shared-ui/`](platform/shared-ui/), [`platform/shared-auth/`](platform/shared-auth/) | Shared UI primitives and auth helpers used by both consoles. |
-| [`anchor-service/control-plane/`](anchor-service/control-plane/) | **Control Plane / Provisioner** (Express, `:3002`) — the factory: `dockerode` orchestration, keygen, Friendbot funding, on-chain asset issuance, per-anchor `CREATE DATABASE`, config generation, and container launch with Traefik labels. |
-| [`anchor-template/`](anchor-template/) | **The per-anchor template** — cloned (as images) for every anchor. Contains: |
-| &nbsp;&nbsp;↳ [`business-server/`](anchor-template/business-server/) | **Per-anchor money runtime** (`:3000`) — answers Anchor Platform callbacks, hosts the SEP-24 interactive webview, mints/sends on Stellar, and owns the money-safety core + swappable adapters. Image `nordstern/business-server:dev`. |
-| &nbsp;&nbsp;↳ [`anchor-client/`](anchor-template/anchor-client/) | **Customer App** (Next.js) — white-label buy / sell / KYC / history. Image `nordstern/anchor-client:dev`. |
-| &nbsp;&nbsp;↳ [`console/`](anchor-template/console/) | **Operator Console** (Next.js) — per-anchor operator dashboard. Image `nordstern/operator-console:dev`. |
-| &nbsp;&nbsp;↳ [`aggregator-service/`](anchor-template/aggregator-service/) | **Aggregator** (Express, `:3005`) — live-anchor registry + health / routing / quote engine. |
-| &nbsp;&nbsp;↳ [`config/`](anchor-template/config/) | Anchor Platform config templates (`anchor-platform.yaml`, `stellar.toml`, `assets.yaml`). |
-| [`frontend/landing/`](frontend/landing/) | **Marketing landing** site (Next.js) — top-of-funnel into the founder application. |
-| [`docs-website/`](docs-website/) | **Documentation site** ([Fumadocs](https://fumadocs.dev)) — `docs.nordstern.live`. |
-| [`deploy/`](deploy/) | **Deployment** — `pg-init.sql`, ops `scripts/`, and modular **Terraform** (`deploy/terraform/`) for the AWS pilot (single EC2 + RDS). |
-| [`scripts/`](scripts/) | Operational scripts — `backup.sh`, `restore.sh`, `dr-drill.sh`. |
+| [`apps/landing/`](apps/landing/) | **Marketing landing** site (Next.js) — top-of-funnel into the founder application. |
+| [`apps/docs/`](apps/docs/) | **Documentation site** ([Fumadocs](https://fumadocs.dev)) — `docs.nordstern.live`. |
+| [`platform/founder-console/`](platform/founder-console/) | **Founder Console** (Next.js, `:4001` → `register.nordstern.live`) — apply, log in, redeem → provision, portfolio overview. |
+| [`platform/admin-console/`](platform/admin-console/) | **Admin Console** (Next.js, `:4002` → `admin.nordstern.live`) — internal application review queue (approve / reject → redeem invites). |
+| [`anchor-template/anchor-client/`](anchor-template/anchor-client/) | **Customer App** (Next.js, per anchor) — white-label buy / sell / KYC / history. Image `nordstern/anchor-client:dev`. |
+| [`anchor-template/console/`](anchor-template/console/) | **Operator Console** (Next.js, per anchor) — treasury, transactions, customers, compliance. Image `nordstern/operator-console:dev`. |
+| [`apps/mobile/`](apps/mobile/) | In-progress native wallet prototype (React Native / Expo). |
+
+**Services** — backend runtimes (Express / Node)
+| Path | Role |
+|---|---|
+| [`platform/api/`](platform/api/) | **Platform API** (`:4000`) — onboarding, orgs & memberships, OTP auth realms, customer identity, secret refs, audit, email lifecycle. Drives the provisioner; registers live anchors. |
+| [`anchor-service/control-plane/`](anchor-service/control-plane/) | **Control Plane / Provisioner** (`:3002`) — the factory: `dockerode` orchestration, keygen, Friendbot funding, on-chain asset issuance, per-anchor `CREATE DATABASE`, config generation, container launch. |
+| [`anchor-template/aggregator-service/`](anchor-template/aggregator-service/) | **Aggregator** (`:3005`) — live-anchor registry + health / routing / quote engine. |
+| [`anchor-template/business-server/`](anchor-template/business-server/) | **Per-anchor money runtime** (`:3000`) — Anchor Platform callbacks, SEP-24 webview, mint/send, money-safety core + swappable adapters. Image `nordstern/business-server:dev`. |
+
+**`packages/`** — shared libraries
+| Path | Role |
+|---|---|
+| [`platform/shared-ui/`](platform/shared-ui/), [`platform/shared-auth/`](platform/shared-auth/) | Shared UI primitives + auth helpers used by both platform consoles. |
+| [`packages/design-system/`](packages/design-system/) | Brand + design-system source and the Cashfree payment-integration skills (`.claude/skills/`). |
+
+**Templates** — cloned per anchor at provision time
+| Path | Role |
+|---|---|
+| [`anchor-template/config/`](anchor-template/config/) | Anchor Platform config templates (`anchor-platform.yaml`, `stellar.toml`, `assets.yaml`). |
+
+**`infrastructure/`** — deployment & ops
+| Path | Role |
+|---|---|
+| [`infrastructure/docker/`](infrastructure/docker/) | Compose stacks — `platform.yml` (local dev), `production.yml` (RDS/TLS/mainnet overlay), `pg-init.sql`, and the connected-platform run guide. |
+| [`infrastructure/aws/`](infrastructure/aws/) | Modular **Terraform** (`terraform/`) + EC2 ops scripts (`scripts/`) for the AWS pilot (single EC2 + RDS). |
+| [`infrastructure/scripts/`](infrastructure/scripts/) | Backup / restore / disaster-recovery drill scripts. |
+
+**`docs/`**
+| Path | Role |
+|---|---|
 | [`docs/project/`](docs/project/) | **Authored, maintained context** — architecture, roadmap, readiness, audits, ADRs. |
 | [`docs/`](docs/) (non-`project`) | Saved Stellar docs (Admin Guide, SEP guides, API references) + founder research. |
-| [`mobile/nordpay/`](mobile/nordpay/) | In-progress native wallet prototype (React Native / Expo). |
-| [`sdk/`](sdk/) | NordStern SDK (in progress). |
-| `docker-compose.platform.yml` | **The one canonical stack** for local development (root of repo). |
-| `docker-compose.prod.yml` | Production overlay (RDS, TLS, mainnet, no public dashboard/DB). |
 
-> **On `anchor-service/` vs `anchor-template/`:** the canonical provisioner lives in `anchor-service/control-plane`; the canonical per-anchor code (business-server, customer app, operator console) lives in `anchor-template/`. The old standalone `anchor-service/{business-server,client}` stack was retired 2026-07-09 (see [`docs/project/LEGACY_CODE_AUDIT.md`](docs/project/LEGACY_CODE_AUDIT.md)).
+> **On `anchor-service/` vs `anchor-template/`:** the canonical provisioner lives in `anchor-service/control-plane`; the per-anchor runtime + template code (business-server, customer app, operator console, config) lives in `anchor-template/`. The four service/console folders keep their historical paths — grouped above by role — while `apps/`, `packages/`, and `infrastructure/` hold the reorganized components.
 
 ---
 
@@ -210,7 +229,7 @@ To run the **local platform** you need exactly:
 
 ## Environment variables
 
-> Do **not** hand-edit dozens of variables. Almost everything has a safe dev default baked into `docker-compose.platform.yml`. You generate a couple of secrets once, and optionally add API keys to enable real KYC/email.
+> Do **not** hand-edit dozens of variables. Almost everything has a safe dev default baked into `infrastructure/docker/platform.yml`. You generate a couple of secrets once, and optionally add API keys to enable real KYC/email.
 
 ### Development
 
@@ -244,7 +263,7 @@ This generates:
 Copy [`.env.prod.example`](.env.prod.example) → a git-ignored `.env` **on the host** and fill it from AWS Secrets Manager (created by Terraform). Bring up with the prod overlay:
 
 ```bash
-docker compose -f docker-compose.platform.yml -f docker-compose.prod.yml --env-file .env up -d
+docker compose -f infrastructure/docker/platform.yml -f infrastructure/docker/production.yml --env-file .env up -d
 ```
 
 Required production secrets and where they come from:
@@ -282,7 +301,7 @@ node scripts/setup-base.mjs
 `dev.sh` runs, in order:
 1. Builds `nordstern/business-server:dev`, `nordstern/anchor-client:dev`, `nordstern/operator-console:dev` from `anchor-template/*`.
 2. `docker pull stellar/anchor-platform:latest`.
-3. `docker compose --env-file anchor-service/.env.base -f ../docker-compose.platform.yml up -d --build`.
+3. `docker compose --env-file anchor-service/.env.base -f ../infrastructure/docker/platform.yml up -d --build`.
 
 **Services that start (and their ports):**
 
@@ -297,16 +316,16 @@ node scripts/setup-base.mjs
 | **Founder Console** | **`http://localhost:4001`** (or `http://register.localhost`) | Apply · redeem · provision · overview |
 | **Admin Console** | **`http://localhost:4002`** (or `http://admin.localhost`) | Approve / reject applications |
 
-**Startup & health:** `depends_on` sequences boot — Postgres (healthcheck) → schema push (`platform-migrate` runs `drizzle-kit push` and exits) → control-plane + aggregator + LocalStack (healthcheck) → platform-api → consoles. First boot takes a few minutes (image builds + `stellar/anchor-platform` pull). You know it's up when `http://localhost:4001` loads the founder console and `docker compose -f docker-compose.platform.yml ps` shows the services healthy.
+**Startup & health:** `depends_on` sequences boot — Postgres (healthcheck) → schema push (`platform-migrate` runs `drizzle-kit push` and exits) → control-plane + aggregator + LocalStack (healthcheck) → platform-api → consoles. First boot takes a few minutes (image builds + `stellar/anchor-platform` pull). You know it's up when `http://localhost:4001` loads the founder console and `docker compose -f infrastructure/docker/platform.yml ps` shows the services healthy.
 
 **Tear down:**
 
 ```bash
-docker compose -f docker-compose.platform.yml down          # stop
-docker compose -f docker-compose.platform.yml down -v        # stop + wipe the Postgres volume
+docker compose -f infrastructure/docker/platform.yml down          # stop
+docker compose -f infrastructure/docker/platform.yml down -v        # stop + wipe the Postgres volume
 ```
 
-> **Manual path** (equivalent to `dev.sh`, if you prefer to see each step): run `node scripts/setup-base.mjs`, then `export MASTER_KEK=… ANCHOR_CONFIG_HOST_ROOT=/abs/path/anchor-service/anchor-configs`, build the three images above, `docker pull stellar/anchor-platform:latest`, and `docker compose -f docker-compose.platform.yml up --build`.
+> **Manual path** (equivalent to `dev.sh`, if you prefer to see each step): run `node scripts/setup-base.mjs`, then `export MASTER_KEK=… ANCHOR_CONFIG_HOST_ROOT=/abs/path/anchor-service/anchor-configs`, build the three images above, `docker pull stellar/anchor-platform:latest`, and `docker compose -f infrastructure/docker/platform.yml up --build`.
 
 ---
 
@@ -324,8 +343,8 @@ Every service also runs standalone for hot-reload development (`npm install` onc
 | Business Server | `cd anchor-template/business-server && npm install && npm run dev` | `:3000` |
 | Customer App | `cd anchor-template/anchor-client && npm install && npm run dev` | `:3001` |
 | Operator Console | `cd anchor-template/console && npm install && npm run dev` | `:3001` |
-| Landing site | `cd frontend/landing && npm install && npm run dev` | `:3000` |
-| Docs site | `cd docs-website && npm install && npm run dev` | `:3000` |
+| Landing site | `cd apps/landing && npm install && npm run dev` | `:3000` |
+| Docs site | `cd apps/docs && npm install && npm run dev` | `:3000` |
 
 > **Zero-backend UI work:** the two consoles can proxy `/api/*` to the **live** backend, so you can style them with no local stack. Set `API_URL=https://api.nordstern.live`. See [`platform/LOCAL_DEV.md`](platform/LOCAL_DEV.md). Type-check any workspace with `npm run typecheck`.
 
@@ -346,7 +365,7 @@ With the platform up (`./scripts/dev.sh`), take an anchor from application to li
 
 `*.sslip.io` resolves to `127.0.0.1` automatically, so **no `/etc/hosts` editing is needed**.
 
-> **Prefer curl?** The exact request/response for each step (applications → approve → redeem → status → aggregator quote/route → SEP handoff) is in [`deploy/README.md`](deploy/README.md). SEP-24 itself is **wallet-driven**: the aggregator returns real SEP endpoints, and a Stellar wallet performs SEP-10 + SEP-24 to move funds.
+> **Prefer curl?** The exact request/response for each step (applications → approve → redeem → status → aggregator quote/route → SEP handoff) is in [`infrastructure/docker/README.md`](infrastructure/docker/README.md). SEP-24 itself is **wallet-driven**: the aggregator returns real SEP endpoints, and a Stellar wallet performs SEP-10 + SEP-24 to move funds.
 
 ---
 
@@ -363,7 +382,7 @@ With the platform up (`./scripts/dev.sh`), take an anchor from application to li
 | Database / secrets | Local Postgres + LocalStack (ephemeral) | **RDS** + AWS **Secrets Manager** (durable) |
 | Routing / TLS | Traefik `web` (`:80`) under `*.anchors.127.0.0.1.sslip.io` | Traefik `websecure` (`:443`) + Let's Encrypt under `*.nordstern.live` |
 | Money | **None — no real funds move** | Real funds — irreversible; a deliberate go-live gate |
-| Compose | `docker-compose.platform.yml` | `+ docker-compose.prod.yml` overlay |
+| Compose | `infrastructure/docker/platform.yml` | `+ infrastructure/docker/production.yml` overlay |
 
 > Testnet/sandbox is the **default**, and moving real money is a deliberate, reviewed change ([`AGENTS.md`](AGENTS.md) §7). Production readiness is tracked honestly in [`PRODUCTION_READINESS.md`](docs/project/PRODUCTION_READINESS.md).
 
@@ -384,7 +403,7 @@ cd platform/api && npm install && npm test
 npm run typecheck
 
 # Disaster-recovery drill — backup → destroy → restore, asserting money data returns byte-for-byte
-./scripts/dr-drill.sh
+./infrastructure/scripts/dr-drill.sh
 ```
 
 **CI (GitHub Actions, 6 workflows on every PR):** build/typecheck, DB migration apply-to-fresh-Postgres, `docker build` for changed images, gitleaks + artifact hygiene, money-flow tests, and the DR drill. See [`docs/project/R6_M2_CI_DESIGN.md`](docs/project/R6_M2_CI_DESIGN.md).
@@ -397,8 +416,8 @@ npm run typecheck
 
 We recommend reviewing the project in this order:
 
-1. **Landing page** — `cd frontend/landing && npm install && npm run dev` (or [nordstern.live](https://nordstern.live)). The product story and positioning.
-2. **Documentation** — `cd docs-website && npm install && npm run dev` (or [docs.nordstern.live](https://docs.nordstern.live)). Concepts, architecture, operator/customer guides.
+1. **Landing page** — `cd apps/landing && npm install && npm run dev` (or [nordstern.live](https://nordstern.live)). The product story and positioning.
+2. **Documentation** — `cd apps/docs && npm install && npm run dev` (or [docs.nordstern.live](https://docs.nordstern.live)). Concepts, architecture, operator/customer guides.
 3. **Bring up the platform** — `cd anchor-service && node scripts/setup-base.mjs && ./scripts/dev.sh`.
 4. **Founder onboarding** — `http://localhost:4001/register` → submit an application.
 5. **Admin approval** — `http://localhost:4002` (log in `admin` / `admin`) → approve → copy the redeem link.
@@ -411,12 +430,12 @@ We recommend reviewing the project in this order:
 
 ## Screenshots
 
-Best experienced live — every surface below runs locally in minutes via [`./scripts/dev.sh`](#local-development-one-command). The table maps each product surface to the URL where you can see it and the asset path it publishes to. Capture specs (1440px, light theme, redacted test data) and the full inbox mapping are in [`docs-website/public/screenshots/MANIFEST.md`](docs-website/public/screenshots/MANIFEST.md).
+Best experienced live — every surface below runs locally in minutes via [`./scripts/dev.sh`](#local-development-one-command). The table maps each product surface to the URL where you can see it and the asset path it publishes to. Capture specs (1440px, light theme, redacted test data) and the full inbox mapping are in [`apps/docs/public/screenshots/MANIFEST.md`](apps/docs/public/screenshots/MANIFEST.md).
 
 | Surface | See it live at | Published asset |
 |---|---|---|
-| **Landing** | `frontend/landing` (`:3000`) or [nordstern.live](https://nordstern.live) | `screenshots/landing/hero.png` |
-| **Docs** | `docs-website` (`:3000`) or [docs.nordstern.live](https://docs.nordstern.live) | — |
+| **Landing** | `apps/landing` (`:3000`) or [nordstern.live](https://nordstern.live) | `screenshots/landing/hero.png` |
+| **Docs** | `apps/docs` (`:3000`) or [docs.nordstern.live](https://docs.nordstern.live) | — |
 | **Founder Console** | `http://localhost:4001/register` | `screenshots/founder/register.png` |
 | **Provision flow** | redeem → live status stream | `screenshots/founder/activate-workspace.png` |
 | **Admin Console** | `http://localhost:4002` | `screenshots/admin/applications-queue.png` |
@@ -426,7 +445,7 @@ Best experienced live — every surface below runs locally in minutes via [`./sc
 | **Customer Buy flow** | Customer → Buy | `screenshots/customer/buy.png` |
 | **Customer Sell flow** | Customer → Sell | `screenshots/customer/sell.png` |
 
-> Image assets live under `docs-website/public/screenshots/<surface>/` (relative to the docs site). Capture per the manifest, then embed with `![Surface](docs-website/public/screenshots/<surface>/<file>.png)`.
+> Image assets live under `apps/docs/public/screenshots/<surface>/` (relative to the docs site). Capture per the manifest, then embed with `![Surface](apps/docs/public/screenshots/<surface>/<file>.png)`.
 
 ---
 
@@ -444,10 +463,10 @@ Best experienced live — every surface below runs locally in minutes via [`./sc
 | Disaster-recovery runbook | [`docs/project/DR_RUNBOOK.md`](docs/project/DR_RUNBOOK.md) |
 | Manual product test plan | [`docs/project/MANUAL_PRODUCT_TEST_PLAN.md`](docs/project/MANUAL_PRODUCT_TEST_PLAN.md) |
 | Compliance open questions | [`docs/project/COMPLIANCE_OPEN_QUESTIONS.md`](docs/project/COMPLIANCE_OPEN_QUESTIONS.md) |
-| Connected-platform run + curl flow | [`deploy/README.md`](deploy/README.md) |
-| Terraform deployment | [`deploy/terraform/README.md`](deploy/terraform/README.md) |
+| Connected-platform run + curl flow | [`infrastructure/docker/README.md`](infrastructure/docker/README.md) |
+| Terraform deployment | [`infrastructure/aws/terraform/README.md`](infrastructure/aws/terraform/README.md) |
 | Anchor operations | [`anchor-template/OPERATIONS.md`](anchor-template/OPERATIONS.md) |
-| Hosted docs site (Fumadocs) | [docs.nordstern.live](https://docs.nordstern.live) · source in [`docs-website/`](docs-website/) |
+| Hosted docs site (Fumadocs) | [docs.nordstern.live](https://docs.nordstern.live) · source in [`apps/docs/`](apps/docs/) |
 | Saved Stellar references | [`docs/`](docs/) (Admin Guide, SEP guides, API references) |
 
 ---
@@ -460,7 +479,7 @@ Best experienced live — every surface below runs locally in minutes via [`./sc
 | **`anchor-service/.env.base not found`** | You skipped setup. Run `cd anchor-service && node scripts/setup-base.mjs` first. |
 | **`.env.base already exists` on setup** | Intentional guard. Delete it manually to regenerate (this rotates `MASTER_KEK` — testnet-only, safe). |
 | **`MASTER_KEK … not set` (manual path)** | Only when running `docker compose` directly. `export MASTER_KEK=… ANCHOR_CONFIG_HOST_ROOT=…`, or just use `./scripts/dev.sh` which passes `--env-file`. |
-| **Port already in use** (5432 / 80 / 4000 / 4001 / 4002 / 3002 / 3005 / 4566 / 8090) | Stop the conflicting process, or remap the port in `docker-compose.platform.yml`. Common: a local Postgres on 5432. |
+| **Port already in use** (5432 / 80 / 4000 / 4001 / 4002 / 3002 / 3005 / 4566 / 8090) | Stop the conflicting process, or remap the port in `infrastructure/docker/platform.yml`. Common: a local Postgres on 5432. |
 | **Provisioning fails at "Creating database & containers"** | The per-anchor `nordstern/business-server:dev` image wasn't built, or the Docker socket isn't mounted. `./scripts/dev.sh` builds the images; ensure `/var/run/docker.sock` is accessible. |
 | **Anchor Platform container won't become healthy** | It's slow on first boot and the image is large. Ensure `docker pull stellar/anchor-platform:latest` succeeded and give it a minute; check `docker logs` for the anchor's AP container. |
 | **`<slug>.anchors.127.0.0.1.sslip.io` doesn't resolve** | You're offline (sslip.io needs DNS) or behind a DNS filter. Add a `/etc/hosts` entry mapping the host to `127.0.0.1`, or check the Traefik dashboard (`:8090`) for the router. |

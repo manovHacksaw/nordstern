@@ -7,7 +7,7 @@ This document describes self-hosting deployment options and operational procedur
 ## 🚀 1. Deployment Options
 
 ### Option A: Single VM (Docker Compose) + Managed Database (Recommended for Pilots)
-A simple, low-cost architecture matching the Terraform pilot in `deploy/terraform`:
+A simple, low-cost architecture matching the Terraform pilot in `infrastructure/aws/terraform`:
 * **Compute**: AWS EC2 (t3.medium) or Google Compute Engine VM running Docker.
 * **Database**: AWS RDS Postgres or GCP Cloud SQL (PostgreSQL 15+).
 * **Secrets**: AWS Secrets Manager or GCP Secret Manager.

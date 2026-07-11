@@ -137,7 +137,7 @@ an **isolated stack per anchor** — its own Anchor Platform container, business
 container, `<slug>.anchors.127.0.0.1.sslip.io` subdomain (Traefik) for zero-config
 wildcard routing, encrypted keypairs (DL-007), generated AP config (DL-008), and
 `anchordb_<slug>`. An operator owns many anchors and manages them from the console.
-The base `docker-compose.platform.yml` runs only shared infra (db + traefik +
+The base `infrastructure/docker/platform.yml` runs only shared infra (db + traefik +
 control-plane + platform-api); anchors are created at provision time via the Docker
 Engine API. Secrets are encrypted at rest, not
 plaintext.

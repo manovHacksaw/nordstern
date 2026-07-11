@@ -2,7 +2,7 @@
 # Canonical local dev launcher for the NordStern platform.
 #
 # Builds the per-anchor images the provisioner launches, then brings up the connected
-# platform stack (docker-compose.platform.yml). This is the SINGLE supported way to run
+# platform stack (infrastructure/docker/platform.yml). This is the SINGLE supported way to run
 # NordStern locally — the old standalone anchor-service stack was retired.
 #
 #   node scripts/setup-base.mjs   # one-time: writes .env.base (MASTER_KEK, config dir)
@@ -26,8 +26,8 @@ docker build -t nordstern/operator-console:dev  "$REPO_ROOT/anchor-template/cons
 echo "▸ Pulling the Anchor Platform image…"
 docker pull stellar/anchor-platform:latest
 
-echo "▸ Starting the connected platform stack (docker-compose.platform.yml)…"
+echo "▸ Starting the connected platform stack (infrastructure/docker/platform.yml)…"
 docker compose --env-file "$ANCHOR_SERVICE/.env.base" \
-  -f "$REPO_ROOT/docker-compose.platform.yml" up -d --build "$@"
+  -f "$REPO_ROOT/infrastructure/docker/platform.yml" up -d --build "$@"
 
 echo "✓ Platform up. Founder: http://register.localhost:4001  Admin: http://admin.localhost:4002"

@@ -8,7 +8,7 @@ once (so the check name `ci-required` is registered as selectable).
 
 Required checks (add each as it lands):
 - **`ci-required`** — aggregation job in `ci.yml`; green only when every *blocking*
-  workspace passes (`docs-website` is non-blocking and cannot fail it).
+  workspace passes (`apps/docs` is non-blocking and cannot fail it).
 - **`secret-scan`** — gitleaks (M2-b); blocks on a genuine new secret in the PR range.
 - **`hygiene`** — committed-build-artifact guard (M2-b); blocks on tracked generated files.
 - **`docker-required`** — Docker build validation aggregation (M2-d); green when all

@@ -37,7 +37,7 @@
 
 | ID | Pri | Steps | Expected | Result / Issue |
 |----|-----|-------|----------|----------------|
-| ENV-01 | P0 | Build base images and bring up the connected stack: `docker compose --env-file anchor-service/.env.base -f docker-compose.platform.yml up -d --build` | All services start; no container in `Restarting` | ☐ Pass ☐ Fail — ____ |
+| ENV-01 | P0 | Build base images and bring up the connected stack: `docker compose --env-file anchor-service/.env.base -f infrastructure/docker/platform.yml up -d --build` | All services start; no container in `Restarting` | ☐ Pass ☐ Fail — ____ |
 | ENV-02 | P0 | `curl -s localhost:4000/health` (platform-api), `localhost:3002/health` (control-plane), `localhost:3005/health` (aggregator) | Each returns healthy JSON (`ok`/`up`) | ☐ Pass ☐ Fail — ____ |
 | ENV-03 | P0 | Open platform console `http://localhost:4001` (platform-console container); open Traefik dashboard `http://localhost:8090` | Console landing renders; Traefik dashboard reachable | ☐ Pass ☐ Fail — ____ |
 | ENV-04 | P1 | Confirm a real inbox / mail-catcher is reachable for OTP + approval emails (Resend sandbox or console log fallback) | You can retrieve OTP codes and the approval link | ☐ Pass ☐ Fail — ____ |

@@ -31,7 +31,7 @@ jobs:
   quality:
     name: quality
     runs-on: ubuntu-latest
-    # docs-website is non-blocking: its leg may fail without failing the gate.
+    # apps/docs is non-blocking: its leg may fail without failing the gate.
     continue-on-error: ${{ matrix.optional == true }}
     strategy:
       fail-fast: false
@@ -43,8 +43,8 @@ jobs:
           - { workspace: anchor-template/business-server }
           - { workspace: anchor-template/anchor-client, install_flags: '--legacy-peer-deps' }
           - { workspace: anchor-template/console }
-          - { workspace: frontend/landing }
-          - { workspace: docs-website, optional: true }
+          - { workspace: apps/landing }
+          - { workspace: apps/docs, optional: true }
     steps:
       - uses: actions/checkout@v4
 
@@ -104,7 +104,7 @@ jobs:
           npm run -w @nordstern/admin-console typecheck
 
   # Single required check for branch protection. Green only if every blocking
-  # matrix leg passed (docs-website, being continue-on-error, cannot fail this).
+  # matrix leg passed (apps/docs, being continue-on-error, cannot fail this).
   ci-required:
     name: ci-required
     if: always()

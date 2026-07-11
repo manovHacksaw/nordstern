@@ -5,7 +5,7 @@
 > the file(s) to touch. **P0** = functional gap / correctness; **P1** = product-boundary
 > or trust issue; **P2** = polish / future.
 >
-> **Dev iteration:** stack runs via `docker-compose.platform.yml`. Admin console
+> **Dev iteration:** stack runs via `infrastructure/docker/platform.yml`. Admin console
 > `admin.localhost:4002`, founder `register.localhost:4001`. For UI work use dev mode
 > (`npm run -w @nordstern/<app> dev`, hot reload on :3000, proxies `/api` → :4000).
 

@@ -211,16 +211,16 @@ relevant subproject.
 ### Running the platform (the ONE supported way)
 
 There is a single canonical run path — the connected platform stack
-(`docker-compose.platform.yml`). The old standalone `anchor-service/docker-compose.yml`
+(`infrastructure/docker/platform.yml`). The old standalone `anchor-service/docker-compose.yml`
 stack was retired.
 
 ```bash
 cd anchor-service
 node scripts/setup-base.mjs   # one-time: writes .env.base (MASTER_KEK + config dir)
-./scripts/dev.sh              # builds the per-anchor images + brings up docker-compose.platform.yml
+./scripts/dev.sh              # builds the per-anchor images + brings up infrastructure/docker/platform.yml
 ```
 
-Services and ports (see `docker-compose.platform.yml`):
+Services and ports (see `infrastructure/docker/platform.yml`):
 
 | Service            | Port      | Role                                                       |
 |--------------------|-----------|------------------------------------------------------------|
@@ -233,19 +233,22 @@ Services and ports (see `docker-compose.platform.yml`):
 | `founder-console`  | 4001      | `register.*` — founder journey                             |
 | `admin-console`    | 4002      | `admin.*` — NordStern internal review                      |
 
-Per-anchor containers (Anchor Platform, business-server, anchor-client, operator-console)
-are created **dynamically** by the control-plane during provisioning — not by compose.
+The compose files live under `infrastructure/docker/` (`platform.yml` for local dev,
+`production.yml` as the mainnet/RDS/TLS overlay). Per-anchor containers (Anchor Platform,
+business-server, anchor-client, operator-console) are created **dynamically** by the
+control-plane during provisioning — not by compose.
 
 - `.env.base` does **not** exist until you run `setup-base.mjs` — the first failure new
   agents hit. `dev.sh` will tell you.
 - Smoke-test flows without a wallet: `node scripts/test-deposit.mjs`,
   `node scripts/test-withdrawal.mjs`.
 
-### Running the console/landing (`frontend/`)
+### Running the console/landing (`apps/landing`)
 
-The Next.js `frontend/landing` marketing app (see its own
-`package.json` / `AGENTS.md`). These are **prototypes with synthetic data** —
-running them does not touch the anchor backend.
+The Next.js `apps/landing` marketing app (see its own
+`package.json` / `AGENTS.md`). It is a **prototype with synthetic data** —
+running it does not touch the anchor backend. Its brand/design-system source and the
+Cashfree payment-integration skills live in `packages/design-system/`.
 
 ### Going live / real money — treat as a gated, deliberate act
 
@@ -260,8 +263,8 @@ just config:
   checklist (env swap, webhook signature verification, backend re-verification,
   domain whitelisting, dead-code cleanup) rather than declaring readiness.
 - Payment-provider integration work (Cashfree, RazorpayX) has its own skills under
-  `frontend/.claude/skills/` and its own `frontend/CLAUDE.md`. Follow those when
-  touching PSP code.
+  `packages/design-system/.claude/skills/` and its own `packages/design-system/CLAUDE.md`.
+  Follow those when touching PSP code.
 
 ### General conventions
 

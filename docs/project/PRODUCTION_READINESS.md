@@ -12,7 +12,7 @@ Legend: ✅ Complete · ⚠️ Partial · ❌ Missing.
 
 ## 0. Ground truth (what actually runs today)
 
-- **Live path** = `docker-compose.platform.yml` (platform-api :4000, control-plane,
+- **Live path** = `infrastructure/docker/platform.yml` (platform-api :4000, control-plane,
   Traefik, LocalStack secrets, Postgres) + **`dockerode` provisioning**
   (`anchor-service/control-plane/src/orchestrator.ts`) that spins per-anchor
   containers on **one Docker host**, routed by Traefik labels on `*.sslip.io`.
@@ -65,7 +65,7 @@ privilege** of the provisioner.
 | Item | State | Notes |
 |---|---|---|
 | Docker | ✅ | All services containerized; multi-stage Dockerfiles present. |
-| Docker Compose | ✅ | `docker-compose.platform.yml` is the working orchestration. |
+| Docker Compose | ✅ | `infrastructure/docker/platform.yml` is the working orchestration. |
 | Traefik | ✅ | Dynamic per-anchor routing via container labels (live). |
 | Gateway API | ❌ | Not used. |
 | Kubernetes | ⚠️ | Helm `anchor-stack` authored; **never deployed**; provisioner is dockerode, not K8s. |
@@ -331,7 +331,7 @@ Everything below is **required before the first real anchor business**:
 ### Low
 16. `CURRENT_STATE.md` is a 12-byte stub (stale).
 17. `chat.txt` / `chat2.txt` / `KYC_DIDIT*.txt` junk in `anchor-template/`.
-18. `docs-website/` duplication vs `docs/`.
+18. `apps/docs/` duplication vs `docs/`.
 19. `.env` sprawl; no env schema doc.
 
 ---

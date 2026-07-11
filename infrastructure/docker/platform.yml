@@ -1,0 +1,262 @@
+name: nordstern-platform
+
+# The ONE compose that runs the connected control-plane end-to-end:
+#   platform-api (onboarding)  →  control-plane (REAL dockerode provisioner)  →  aggregator
+# plus shared Postgres + Traefik (for provisioned-anchor routing).
+#
+# ── PREREQUISITES (real provisioning genuinely needs these — see infrastructure/docker/README.md) ──
+#   1. cd anchor-service && node scripts/setup-base.mjs
+#        → generates MASTER_KEK + the anchor-config host dir; export them (or use a .env here).
+#   2. Build the business-server image the provisioner launches per anchor
+#      (hardened money runtime — M3 tests + M4 migrations + webhook HMAC + idempotent release):
+#        docker build -t nordstern/business-server:dev anchor-template/business-server
+#   3. export MASTER_KEK=... ANCHOR_CONFIG_HOST_ROOT=/abs/path   (this file interpolates them)
+#
+#   Then:  docker compose -f infrastructure/docker/platform.yml up --build
+#   Verify: infrastructure/docker/README.md walks the full apply → approve → redeem → provision → route flow.
+
+networks:
+  nordstern-net:
+    name: nordstern-net          # control-plane launches provisioned anchors onto this network
+
+volumes:
+  pgdata:
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: anchor
+      POSTGRES_PASSWORD: anchor
+      POSTGRES_DB: anchordb
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./pg-init.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anchor"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [nordstern-net]
+
+  traefik:
+    image: traefik:v3.7
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=nordstern-net
+      - --entrypoints.web.address=:80
+      - --api.dashboard=true
+      - --api.insecure=true
+    ports: ["80:80", "8090:8080"]
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    networks: [nordstern-net]
+
+  # ── REAL provisioner (dockerode → keygen, Friendbot, asset issuance, container stack) ──
+  control-plane:
+    build: ../../anchor-service/control-plane
+    restart: unless-stopped
+    ports: ["3002:3002"]
+    environment:
+      PORT: 3002
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: controldb
+      DB_USER: anchor
+      DB_PASSWORD: anchor
+      JWT_SECRET: ${CP_JWT_SECRET:-dev-cp-secret}
+      # Same secret platform-api signs operator sessions with (must match the value
+      # below on platform-api). Forwarded into each business-server so its money-admin
+      # API can verify the operator session (see anchor-template/business-server/adminAuth).
+      PLATFORM_JWT_ACCESS_SECRET: ${PLATFORM_JWT_ACCESS_SECRET:-dev-access-secret-change-me}
+      # Same value as platform-api's SERVICE_SECRET — forwarded into each business-server so
+      # it can propagate DIDIT KYC decisions to the central customer profile.
+      SERVICE_SECRET: ${SERVICE_SECRET:-dev-service-to-service-secret}
+      MASTER_KEK: ${MASTER_KEK:?run anchor-service/scripts/setup-base.mjs and export MASTER_KEK}
+      DOCKER_NETWORK: nordstern-net
+      AP_IMAGE: stellar/anchor-platform:latest
+      BIZ_IMAGE: nordstern/business-server:dev
+      ANCHOR_CONFIG_DIR: /anchor-configs
+      ANCHOR_CONFIG_HOST_ROOT: ${ANCHOR_CONFIG_HOST_ROOT:?run anchor-service/scripts/setup-base.mjs and export ANCHOR_CONFIG_HOST_ROOT}
+      ANCHOR_DOMAIN_SUFFIX: anchors.127.0.0.1.sslip.io
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-TESTNET}
+      HORIZON_URL: ${HORIZON_URL:-https://horizon-testnet.stellar.org}
+      NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}
+      ASSET_MODEL: ${ASSET_MODEL:-self-issued}
+      EXTERNAL_ASSET_CODE: ${EXTERNAL_ASSET_CODE:-USDC}
+      EXTERNAL_ASSET_ISSUER: ${EXTERNAL_ASSET_ISSUER:-}
+      TREASURY_PUBLIC: ${TREASURY_PUBLIC:-}
+      TREASURY_SECRET: ${TREASURY_SECRET:-}
+      MIN_TREASURY_XLM: ${MIN_TREASURY_XLM:-5}
+      # SEP-45 (contract-account / passkey smart-wallet web auth). Empty by default → every
+      # anchor provisions SEP-10-only, unchanged. Set to the deployed stellar/sep45-reference
+      # `web_auth` contract id (see nordstern-passkey-smart-wallets) to enable passkey wallets
+      # network-wide; SOROBAN_RPC_URL is the RPC the AP simulates SEP-45 challenges against.
+      SEP45_WEB_AUTH_CONTRACT_ID: ${SEP45_WEB_AUTH_CONTRACT_ID:-}
+      SOROBAN_RPC_URL: ${SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
+      # Universal DIDIT KYC — one NordStern-level account injected into EVERY provisioned
+      # anchor's business-server (see orchestrator.ts). Values come from the git-ignored
+      # anchor-service/.env.base (loaded via --env-file); never committed, never per-anchor.
+      DIDIT_API_KEY: ${DIDIT_API_KEY:-}
+      DIDIT_WORKFLOW_ID: ${DIDIT_WORKFLOW_ID:-}
+      DIDIT_WEBHOOK_SECRET: ${DIDIT_WEBHOOK_SECRET:-}
+      # SecretStore reader — pulls each anchor's PSP creds at container launch and
+      # injects them (mirrors External Secrets Operator in prod). Same path as platform-api.
+      SECRETS_PREFIX: nordstern
+      SECRETS_ENV: testnet
+      AWS_REGION: us-east-1
+      SECRETS_ENDPOINT: http://secrets:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on:
+      db: { condition: service_healthy }
+      secrets: { condition: service_healthy }
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock        # dockerode spins up anchor stacks
+      - ${ANCHOR_CONFIG_HOST_ROOT}:/anchor-configs
+    networks: [nordstern-net]
+
+  # ── SecretStore backend (LocalStack = AWS Secrets Manager, same API) ──────────
+  # PSP/banking credentials live HERE, never in Postgres. The platform-api talks to
+  # it with the same @aws-sdk/client-secrets-manager it uses against real AWS in prod
+  # — only the endpoint differs. See docs decision-log DL-010.
+  secrets:
+    image: localstack/localstack:3
+    restart: unless-stopped
+    environment:
+      SERVICES: secretsmanager
+      DEBUG: "0"
+      # NOTE: LocalStack community is EPHEMERAL — a container restart wipes secrets
+      # (PERSISTENCE is a Pro feature). Prod AWS Secrets Manager is durable, so this is
+      # a local-dev artifact only. Don't restart this service mid-test and expect creds
+      # to survive; re-provision writes them fresh.
+    ports: ["4566:4566"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [nordstern-net]
+
+  # ── Aggregator (routing/quote + registry). Discovers real anchors registered by the platform. ──
+  aggregator:
+    build: ../../anchor-template/aggregator-service
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["3005:3005"]
+    environment:
+      PORT: 3005
+      DATABASE_URL: postgres://anchor:anchor@db:5432/aggregatordb
+    networks: [nordstern-net]
+
+  # ── One-shot schema push for the platform DB, then exits. ──
+  platform-migrate:
+    build: ../../platform/api
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://anchor:anchor@db:5432/platformdb
+    command: ["npx", "drizzle-kit", "push"]
+    restart: "no"
+    networks: [nordstern-net]
+
+  # ── Onboarding platform. Drives the REAL provisioner + registers with the aggregator. ──
+  platform-api:
+    build: ../../platform/api
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      platform-migrate: { condition: service_completed_successfully }
+      control-plane: { condition: service_started }
+      aggregator: { condition: service_started }
+      secrets: { condition: service_healthy }
+    ports: ["4000:4000"]
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      DATABASE_URL: postgres://anchor:anchor@db:5432/platformdb
+      # Required by the platform's env schema (zod) — server won't boot without these.
+      JWT_ACCESS_SECRET: ${PLATFORM_JWT_ACCESS_SECRET:-dev-access-secret-change-me}
+      JWT_REFRESH_SECRET: ${PLATFORM_JWT_REFRESH_SECRET:-dev-refresh-secret-change-me}
+      # Transactional email (OTP + onboarding lifecycle). Unset RESEND_API_KEY → the
+      # console mailer logs emails instead of sending (dev fallback). Secret comes from
+      # the git-ignored root .env, never committed.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-NordStern <onboarding@resend.dev>}
+      CONSOLE_URL: ${CONSOLE_URL:-http://localhost:4001}
+      # Suffix + scheme each provisioned anchor is served under — used to derive the
+      # founder's live anchor URLs ("my anchors" portfolio). Matches control-plane.
+      ANCHOR_DOMAIN_SUFFIX: ${ANCHOR_DOMAIN_SUFFIX:-anchors.127.0.0.1.sslip.io}
+      ANCHOR_PUBLIC_SCHEME: ${ANCHOR_PUBLIC_SCHEME:-http}
+      # Network the provisioner runs on — surfaced to the redeem UI so custom
+      # self-issued tokens are only offered on testnet (matches control-plane).
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-TESTNET}
+      # Integration wiring (this is what connects the three services):
+      CONTROL_PLANE_URL: http://control-plane:3002
+      AGGREGATOR_URL: http://aggregator:3005
+      CP_SERVICE_EMAIL: platform-service@nordstern.internal
+      CP_SERVICE_PASSWORD: ${CP_SERVICE_PASSWORD:-dev-service-secret}
+      # Shared secret for backend→platform service calls (e.g. business-server propagating
+      # a DIDIT KYC decision into the central customer profile). Must match the value
+      # injected into each business-server (below, via control-plane).
+      SERVICE_SECRET: ${SERVICE_SECRET:-dev-service-to-service-secret}
+      # SecretStore → LocalStack (prod: drop SECRETS_ENDPOINT, use IAM role via IRSA).
+      SECRETS_BACKEND: aws
+      SECRETS_PREFIX: nordstern
+      SECRETS_ENV: testnet
+      AWS_REGION: us-east-1
+      SECRETS_ENDPOINT: http://secrets:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    networks: [nordstern-net]
+
+  # ── Founder console (platform/founder-console). The whole founder journey — apply,
+  #    login, redeem, overview, wallet. Proxies /api → platform-api same-origin (cookies
+  #    flow). Dev host: http://register.localhost (via Traefik). Also on :4001 directly
+  #    (keeps CONSOLE_URL/redeem links stable). Prod: register.nordstern.live.
+  founder-console:
+    build:
+      context: ../../platform
+      dockerfile: founder-console/Dockerfile
+      args: { API_URL: http://platform-api:4000 }
+    restart: unless-stopped
+    depends_on:
+      platform-api: { condition: service_started }
+    ports: ["4001:3000"]
+    environment:
+      API_URL: http://platform-api:4000
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.founder.rule=Host(`register.localhost`)
+      - traefik.http.routers.founder.entrypoints=web
+      - traefik.http.services.founder.loadbalancer.server.port=3000
+    networks: [nordstern-net]
+
+  # ── Admin console (platform/admin-console). NordStern internal team only — the anchor
+  #    applications review queue (approve / reject). Separate app, separate image, separate
+  #    host so no founder-facing code is ever served here. Dev host: http://admin.localhost
+  #    (via Traefik). Also on :4002 directly. Prod: admin.nordstern.live.
+  admin-console:
+    build:
+      context: ../../platform
+      dockerfile: admin-console/Dockerfile
+      args:
+        API_URL: http://platform-api:4000
+        # Redeem links the admin copies target the founder console (different origin).
+        NEXT_PUBLIC_FOUNDER_URL: http://register.localhost
+    restart: unless-stopped
+    depends_on:
+      platform-api: { condition: service_started }
+    ports: ["4002:3000"]
+    environment:
+      API_URL: http://platform-api:4000
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.admin.rule=Host(`admin.localhost`)
+      - traefik.http.routers.admin.entrypoints=web
+      - traefik.http.services.admin.loadbalancer.server.port=3000
+    networks: [nordstern-net]

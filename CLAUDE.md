@@ -9,10 +9,12 @@ truth for every coding agent). Read it before doing anything in this repo:
 
 - **This is the repo-root guidance.** It applies to the whole `nordstern/` repo:
   `anchor-service/control-plane` (the provisioner), `anchor-template/` (the anchor
-  stack), `platform/` (the SaaS + consoles), `frontend/` (brand + landing), `docs/`.
-- **Scoped instructions still apply and win locally.** `frontend/CLAUDE.md`
+  stack), `platform/` (the SaaS + consoles), `apps/` (landing, docs, consoles, mobile),
+  `packages/design-system/` (brand + design system), `infrastructure/` (docker, aws,
+  scripts), and `docs/`.
+- **Scoped instructions still apply and win locally.** `packages/design-system/CLAUDE.md`
   covers Cashfree Payments integration work in that subtree and its skills under
-  `frontend/.claude/skills/`; `frontend/landing/CLAUDE.md` covers the landing app.
+  `packages/design-system/.claude/skills/`; `apps/landing/CLAUDE.md` covers the landing app.
   When you're working in one of those directories, follow the nearest guidance in
   addition to this file.
 - **Before claiming any payment integration is "production-ready"/"done",** follow

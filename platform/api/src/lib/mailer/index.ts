@@ -17,7 +17,7 @@ if (!env.RESEND_API_KEY) {
 // One inline-styled shell (email clients ignore <style>/external CSS) so every NordStern email
 // mirrors the landing page 1:1: real logo lockup, white card at 32px radius on the mint-gray
 // surface, ink text, black pill button, mint (brand-100/800) badge. Tokens are copied straight
-// from frontend/landing/app/globals.css. Custom fonts cannot load in email, so we fall back to a
+// from apps/landing/app/globals.css. Custom fonts cannot load in email, so we fall back to a
 // clean system sans; every other value matches the site.
 const SURFACE = '#f2f4f3';     // landing --color-surface (backdrop)
 const CANVAS = '#ffffff';      // landing --color-canvas (card)

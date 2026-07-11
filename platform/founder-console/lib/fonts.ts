@@ -1,6 +1,6 @@
 import localFont from 'next/font/local';
 
-/** Clear Sans Display — the brand face, used across the console (matches frontend/landing). */
+/** Clear Sans Display — the brand face, used across the console (matches apps/landing). */
 export const clearSansDisplay = localFont({
   src: [{ path: '../public/ClearSansDisplayRegular.woff2', weight: '400', style: 'normal' }],
   variable: '--ff-clear-display',
